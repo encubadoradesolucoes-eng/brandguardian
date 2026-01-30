@@ -16,6 +16,5 @@ uploads/*
 # database/*.db
 # database/*.sqlite
 whatsapp-engine/node_modules/
-whatsapp-engine/auth_info/
-whatsapp-engine/*.json
+whatsapp-engine/tokens/
 whatsapp-engine/*.log
