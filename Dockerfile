@@ -17,6 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar o projeto
 COPY . .
 
+# Instalar dependências do WhatsApp Engine durante o Build
+WORKDIR /app/whatsapp-engine
+RUN npm install
+WORKDIR /app
+
 # Criar pastas persistentes
 RUN mkdir -p database uploads
 
