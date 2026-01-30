@@ -1,0 +1,496 @@
+{% extends "layout.html" %}
+
+{% block title %}Registro de Marca | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4rem;
+        position: relative;
+    }
+
+    .stepper::before {
+        content: '';
+        position: absolute;
+        top: 24px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--border-subtle);
+        z-index: 1;
+    }
+
+    .step-unit {
+        position: relative;
+        z-index: 2;
+        background: var(--bg-base);
+        padding: 0 1rem;
+        text-align: center;
+    }
+
+    .step-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        border: 2px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+        font-weight: 800;
+        transition: var(--transition-elite);
+        color: var(--text-dim);
+    }
+
+    .step-unit.active .step-circle {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: white;
+        box-shadow: 0 0 20px var(--brand-primary-glow);
+    }
+
+    .step-unit.completed .step-circle {
+        background: var(--success);
+        border-color: var(--success);
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .step-unit.active .step-label { color: var(--text-vibrant); }
+
+    /* Form Design Premium */
+    .form-section {
+        display: none;
+    }
+
+    .form-section.active {
+        display: block;
+        animation: revealUp 0.6s var(--cubic-standard);
+    }
+
+    .input-m24 {
+        width: 100%;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        padding: 1.25rem;
+        border-radius: var(--radius-xl);
+        color: var(--text-vibrant);
+        font-family: inherit;
+        font-size: 1rem;
+        transition: var(--transition-elite);
+        margin-top: 10px;
+    }
+
+    .input-m24:focus {
+        border-color: var(--brand-primary);
+        background: var(--bg-elevated);
+        box-shadow: 0 0 15px var(--brand-primary-glow);
+    }
+
+    .label-m24 {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+
+    .upload-box-m24 {
+        border: 2px dashed var(--border-strong);
+        border-radius: var(--radius-3xl);
+        padding: 4rem;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--transition-elite);
+        background: var(--bg-surface);
+    }
+
+    .upload-box-m24:hover {
+        border-color: var(--brand-primary);
+        background: var(--bg-elevated);
+        transform: scale(0.99);
+    }
+
+    .class-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 12px;
+        margin-top: 1.5rem;
+    }
+
+    .class-pill {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        padding: 12px;
+        border-radius: var(--radius-lg);
+        text-align: center;
+        cursor: pointer;
+        font-weight: 800;
+        font-family: 'JetBrains Mono';
+        transition: var(--transition-elite);
+        color: var(--text-dim);
+    }
+
+    .class-pill.selected {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: white;
+        box-shadow: 0 8px 15px var(--brand-primary-glow);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+    <div class="animate-reveal" style="text-align: center; margin-bottom: 5rem;">
+        <div class="page-header">
+            <h1 class="hero-title">Registro de Marca</h1>
+            <p class="hero-desc">Workflow inteligente para proteção global de Propriedade Industrial.</p>
+        </div>
+    </div>
+
+    <!-- Next-Gen Multi-step Wizard -->
+    <div class="stepper animate-reveal">
+        <div class="step-unit active" id="step1-indicator">
+            <div class="step-circle">1</div>
+            <div class="step-label">Identidade</div>
+        </div>
+        <div class="step-unit" id="step2-indicator">
+            <div class="step-circle">2</div>
+            <div class="step-label">Assets</div>
+        </div>
+        <div class="step-unit" id="step3-indicator">
+            <div class="step-circle">3</div>
+            <div class="step-label">Classes</div>
+        </div>
+        <div class="step-unit" id="step4-indicator">
+            <div class="step-circle">4</div>
+            <div class="step-label">Holders</div>
+        </div>
+    </div>
+
+    <form action="{{ url_for('register') }}" method="POST" enctype="multipart/form-data" id="registerForm">
+        <!-- Step 1: Identidade -->
+        <div class="form-section active" id="step1">
+            <div class="bento-card">
+                <h3 style="font-family: 'Outfit'; margin-bottom: 2.5rem; font-size: 1.5rem;">Informações do Processo</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                    <div class="form-group">
+                        <label class="label-m24">Nome Comercial / Marca</label>
+                        <input type="text" name="name" class="input-m24" placeholder="Ex: m24 Intelligence" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label-m24">Tipo de Ativo</label>
+                        <select name="type" class="input-m24">
+                            <option value="marca">Marca (Logotipo)</option>
+                            <option value="patente">Patente de Invenção</option>
+                            <option value="utilidade">Modelo de Utilidade</option>
+                            <option value="desenho">Desenho Industrial</option>
+                            <option value="insignia">Insígnia de Estabelecimento</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr; gap: 2.5rem;">
+                    <div class="form-group">
+                        <label class="label-m24">Finalidade do Registro</label>
+                        <select name="registration_mode" class="input-m24" style="border-color: var(--brand-primary);">
+                            <option value="NEW_REGISTRATION">🆕 Iniciar Pedido de Novo Registro (Inédito em Moçambique)</option>
+                            <option value="PROTECTION">🛡 Proteger Marca já Existente (Monitoramento 24h)</option>
+                        </select>
+                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Selecione 'Novo Registro' se a marca ainda não possui registro legal no IPI.</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; grid-column: span 2;">
+                        <label class="label-m24">Slogan Estratégico</label>
+                        <input type="text" name="slogan" class="input-m24" placeholder="A frase que define o seu valor">
+                    </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Assets -->
+        <div class="form-section" id="step2">
+            <div class="bento-card">
+                <h3 style="font-family: 'Outfit'; margin-bottom: 2.5rem; font-size: 1.5rem;">Assets Digitais</h3>
+                <div class="upload-box-m24" onclick="document.getElementById('logoInput').click()">
+                    <i class="ri-gallery-upload-line" style="font-size: 3.5rem; color: var(--brand-primary); margin-bottom: 1.5rem;"></i>
+                    <div style="font-weight: 800; font-size: 1.25rem; color: var(--text-vibrant); margin-bottom: 0.5rem;">Carregue a Representação Gráfica</div>
+                    <p style="color: var(--text-standard); font-size: 0.95rem;">Formatos suportados: SVG, High-Res PNG, PDF (Max 10MB)</p>
+                    <input type="file" name="logo" id="logoInput" style="display: none;" onchange="previewLogo(this)">
+                    <div id="logoPreview" style="margin-top: 2.5rem; display: none;">
+                        <img id="imgPreview" style="max-width: 240px; border-radius: var(--radius-2xl); border: 2px solid var(--brand-primary); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Classificação -->
+        <div class="form-section" id="step3">
+            <div class="bento-card">
+                <h3 style="font-family: 'Outfit'; margin-bottom: 1rem; font-size: 1.5rem;">Classificação de Nice</h3>
+                <p style="color: var(--text-standard); margin-bottom: 2.5rem;">As classes selecionadas definirão o escopo de proteção jurídica.</p>
+                
+                <div class="class-grid" style="grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));">
+                    {% for i in range(1, 46) %}
+                    <div class="class-pill" 
+                         onclick="toggleNiceClass(this, {{ i }})" 
+                         data-class="{{ i }}" 
+                         title="{{ nice_dict[i|string] if nice_dict else 'Classe ' ~ i }}">
+                         {{ i }}
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="nice_classes" id="niceClassesInput">
+                
+                <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl); display: flex; align-items: center; gap: 1.5rem;">
+                    <div class="type-icon" style="background: var(--brand-primary-glow); color: var(--brand-primary); font-size: 1.5rem;"><i class="ri-lightbulb-flash-line"></i></div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.7rem; color: var(--brand-primary); text-transform: uppercase;">M24 IA SUGGESTION</div>
+                        <p style="font-size: 0.95rem; color: var(--text-standard);">Para serviços de tecnologia e software, considere as classes <strong>9, 35, 38 e 42</strong>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Holders -->
+        <div class="form-section" id="step4">
+            <div class="bento-card">
+                <h3 style="font-family: 'Outfit'; margin-bottom: 2.5rem; font-size: 1.5rem;">Informações do Titular</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                    
+                    <!-- Seleção de Entidade -->
+                    {% if current_user.role == 'admin' %}
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="label-m24">Selecionar Titular Existente ou Criar Novo</label>
+                        <select name="entity_id" id="entitySelect" class="input-m24" onchange="toggleEntityFields()" style="border-color: var(--brand-primary);">
+                            <option value="new" style="font-weight:bold; color: var(--brand-primary);">+ Criar Novo Titular Manualmente</option>
+                            {% for entity in entities %}
+                            <option value="{{ entity.id }}" 
+                                data-name="{{ entity.name }}"
+                                data-nuit="{{ entity.nuit }}"
+                                data-email="{{ entity.email }}"
+                                data-phone="{{ entity.phone }}"
+                                data-address="{{ entity.address }}"
+                                data-city="{{ entity.city }}"
+                                data-country="{{ entity.country }}"
+                            >
+                                {{ entity.name }} ({{ entity.nuit }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% else %}
+                    <!-- Cliente Logado: Vínculo Automático -->
+                    <div class="form-group" style="grid-column: span 2; padding: 1.5rem; background: var(--bg-elevated); border-radius: 12px; border-left: 4px solid var(--brand-primary);">
+                        <div style="font-weight: 800; font-size: 0.7rem; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 5px;">Vínculo Automático</div>
+                        <p style="font-size: 0.95rem; color: white; margin: 0;">O registro será vinculado automaticamente à sua conta: <strong>{{ current_user.name }}</strong></p>
+                        <input type="hidden" name="entity_id" id="entitySelect" value="current_user">
+                    </div>
+                    {% endif %}
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;" {% if current_user.role != 'admin' %}style="display:none;" id="entityFieldsContainer"{% endif %}>
+                    <div class="form-group">
+                        <label class="label-m24">Nome do Titular / Empresa</label>
+                        <input type="text" name="owner_name" id="owner_name" class="input-m24" placeholder="Ex: Global Tech, SA" required {% if current_user.role != 'admin' %}value="{{ current_user.name }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
+                    </div>
+                    <div class="form-group">
+                        <label class="label-m24">NUIT / TAX ID</label>
+                        <input type="text" name="nuit" id="nuit" class="input-m24" placeholder="Identificador Fiscal" required {% if current_user.role != 'admin' %}value="{{ entity.nuit if entity else '' }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="label-m24">Email de Contato</label>
+                        <input type="email" name="owner_email" id="owner_email" class="input-m24" placeholder="legal@dominio.com" required {% if current_user.role != 'admin' %}value="{{ current_user.email }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
+                    </div>
+                    <div class="form-group">
+                        <label class="label-m24">Telefone</label>
+                        <input type="text" name="owner_phone" id="owner_phone" class="input-m24" placeholder="+258 ..." {% if current_user.role != 'admin' %}value="{{ entity.phone if entity else '' }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label-m24">Cidade</label>
+                        <input type="text" name="owner_city" id="owner_city" class="input-m24" placeholder="Maputo">
+                    </div>
+                    <div class="form-group">
+                        <label class="label-m24">País</label>
+                        <input type="text" name="owner_country" id="owner_country" class="input-m24" value="Moçambique">
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="label-m24">Endereço Físico</label>
+                        <input type="text" name="owner_address" id="owner_address" class="input-m24" placeholder="Av. Julius Nyerere, ...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nav Controls -->
+        <div style="display: flex; justify-content: space-between; margin-top: 4rem;">
+            <button type="button" class="btn-m24 btn-m24-ghost" id="prevBtn" onclick="changeStep(-1)">Retornar</button>
+            <button type="button" class="btn-m24 btn-m24-primary" style="min-width: 180px; justify-content: center;" id="nextBtn" onclick="changeStep(1)">Prosseguir</button>
+            <button type="submit" class="btn-m24 btn-m24-primary" style="min-width: 180px; justify-content: center; display: none;" id="submitBtn">Finalizar Registro</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let currentStep = 1;
+    const totalSteps = 4;
+    const selectedClasses = new Set();
+
+    function changeStep(n) {
+        if (n === 1 && !validateStep(currentStep)) return;
+
+        document.getElementById(`step${currentStep}`).classList.remove('active');
+        document.getElementById(`step${currentStep}-indicator`).classList.remove('active');
+        if (n === 1) document.getElementById(`step${currentStep}-indicator`).classList.add('completed');
+
+        currentStep += n;
+
+        document.getElementById(`step${currentStep}`).classList.add('active');
+        document.getElementById(`step${currentStep}-indicator`).classList.add('active');
+
+        document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'block';
+        if (currentStep === totalSteps) {
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'flex';
+        } else {
+            document.getElementById('nextBtn').style.display = 'flex';
+            document.getElementById('submitBtn').style.display = 'none';
+        }
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateStep(step) {
+        const inputs = document.getElementById(`step${step}`).querySelectorAll('[required]');
+        for (let input of inputs) {
+            if (!input.value) {
+                input.style.borderColor = 'var(--danger)';
+                return false;
+            } else {
+                input.style.borderColor = 'var(--border-subtle)';
+            }
+        }
+        return true;
+    }
+
+    function toggleNiceClass(element, clsId) {
+        if (selectedClasses.has(clsId)) {
+            selectedClasses.delete(clsId);
+            element.classList.remove('selected');
+        } else {
+            selectedClasses.add(clsId);
+            element.classList.add('selected');
+        }
+        document.getElementById('niceClassesInput').value = Array.from(selectedClasses).join(',');
+    }
+
+    function previewLogo(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imgPreview').src = e.target.result;
+                document.getElementById('logoPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function toggleEntityFields() {
+        const select = document.getElementById('entitySelect');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        const fields = ['owner_name', 'nuit', 'owner_email', 'owner_phone', 'owner_address', 'owner_city', 'owner_country'];
+        const isNew = select.value === 'new';
+
+        fields.forEach(fieldId => {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+
+            if (isNew) {
+                // Modo Criar: Limpar e Habilitar
+                input.value = '';
+                input.readOnly = false;
+                input.style.backgroundColor = 'var(--bg-surface)';
+                input.style.color = 'var(--text-vibrant)';
+            } else {
+                // Modo Existente: Preencher e Bloquear
+                // Mapeamento de data-attributes (remove 'owner_' prefixo para data keys se necessário)
+                // data-name, data-nuit, data-email...
+                let dataKey = fieldId.replace('owner_', '');
+                if (fieldId === 'owner_name') dataKey = 'name'; // Exception
+
+                const val = selectedOption.dataset[dataKey] || '';
+                input.value = val;
+                input.readOnly = true;
+                input.style.backgroundColor = 'var(--bg-base)'; // Visualmente indicar travado
+                input.style.color = 'var(--text-dim)';
+            }
+        });
+    }
+
+    // AUTO-DETECÇÃO DE ENTIDADE POR NUIT/EMAIL
+    async function autoCheckEntity(field, type) {
+        const val = field.value;
+        const select = document.getElementById('entitySelect');
+        
+        // Só verifica se estiver em modo "Novo"
+        if (select.value !== 'new' || !val || val.length < 3) return;
+
+        try {
+            const res = await fetch(`/api/check-entity-exists?${type}=${val}`);
+            const data = await res.json();
+            
+            if (data) {
+                // Encontrou! Selecionar no dropdown e preencher
+                
+                // Tenta achar a option correspondente
+                let optionFound = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value == data.id) {
+                        select.selectedIndex = i;
+                        optionFound = true;
+                        break;
+                    }
+                }
+                
+                if (optionFound) {
+                    // Feedback visual
+                    const feedback = document.createElement('div');
+                    feedback.textContent = `⚡ Entidade '${data.name}' encontrada! Carregando dados...`;
+                    feedback.style.color = 'var(--success)';
+                    feedback.style.fontSize = '0.8rem';
+                    feedback.style.marginTop = '5px';
+                    feedback.style.fontWeight = 'bold';
+                    field.parentNode.appendChild(feedback);
+                    
+                    setTimeout(() => {
+                        feedback.remove();
+                        toggleEntityFields(); // Dispara o preenchimento e lock
+                    }, 1500);
+                }
+            }
+        } catch (e) {
+            console.error("Erro check entity:", e);
+        }
+    }
+
+    document.getElementById('nuit').addEventListener('blur', function() { autoCheckEntity(this, 'nuit'); });
+    document.getElementById('owner_email').addEventListener('blur', function() { autoCheckEntity(this, 'email'); });
+
+    document.getElementById('prevBtn').style.display = 'none';
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="page-header" style="margin-bottom: 3rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h1 class="hero-title">Support Center & Inbox</h1>
+                <p class="hero-desc">Gestão de atendimento e assistência especializada aos titulares.</p>
+            </div>
+            <div style="background: var(--brand-primary-glow); padding: 10px 20px; border-radius: 12px; border: 1px solid var(--brand-primary); color: white; display: flex; align-items: center; gap: 10px;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 10px #4ade80;"></span>
+                <span style="font-size: 0.9rem; font-weight: 700;">Gestor Online: {{ current_user.name }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 400px 1fr; gap: 2rem; height: calc(100vh - 250px);">
+        <!-- Sidebar: Active Tickets -->
+        <div class="bento-card" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-family: 'Outfit'; font-size: 1.1rem; margin: 0;">Fila de Pedidos</h3>
+                <span class="badge" style="background: var(--brand-primary); color: white;">{{ tickets|selectattr('is_unread_admin')|list|length }} Novos</span>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 10px;">
+                {% if tickets %}
+                    {% for t in tickets %}
+                    <div class="ticket-item {{ 'unread' if t.is_unread_admin else '' }}" onclick="loadTicket({{ t.id }}, this)">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 0.65rem; font-weight: 900; color: var(--brand-primary); text-transform: uppercase;">#{{ t.id }} - {{ t.channel|upper }}</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">{{ t.created_at.strftime('%H:%M') }}</span>
+                        </div>
+                        <div style="font-weight: 700; color: white; font-size: 0.95rem; margin-bottom: 4px;">{{ t.subject }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ t.last_message }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-dim);">
+                        <i class="ri-inbox-line" style="font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 1rem;"></i>
+                        Fila de atendimento vazia.
+                    </div>
+{% endif %}
+            </div>
+        </div>
+
+        <!-- Main Workspace: Active Conversation -->
+        <div id="ticketWorkspace" class="bento-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: rgba(255,255,255,0.02); border-style: dashed;">
+            <i class="ri-message-3-line" style="font-size: 4rem; color: var(--brand-primary); opacity: 0.5; margin-bottom: 2rem;"></i>
+            <h2 style="font-family: 'Outfit'; color: white;">Central de Respostas</h2>
+            <p style="color: var(--text-dim); max-width: 400px; margin: 0 auto 2rem auto;">Selecione um pedido na fila à esquerda para iniciar a assistência técnica ou jurídica.</p>
+            <div style="display: flex; gap: 15px;">
+                <div class="stat-mini">
+                    <strong>{{ tickets|length }}</strong>
+                    <span>Total Atendimentos</span>
+                </div>
+                <div class="stat-mini">
+                    <strong>{{ tickets|selectattr('status', 'equalto', 'open')|list|length }}</strong>
+                    <span>Tickets Abertos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadTicket(id, element) {
+    // UI: Marcar como selecionado
+    document.querySelectorAll('.ticket-item').forEach(i => i.classList.remove('active'));
+    element.classList.add('active');
+    element.classList.remove('unread');
+
+    const workspace = document.getElementById('ticketWorkspace');
+    workspace.innerHTML = '<div style="margin: auto;"><i class="ri-loader-4-line ri-spin" style="font-size: 2rem; color: var(--brand-primary);"></i></div>';
+    workspace.style.textAlign = 'left';
+    workspace.style.justifyContent = 'flex-start';
+    workspace.style.borderStyle = 'solid';
+
+    try {
+        const response = await fetch(`/api/support/ticket/${id}`);
+        const t = await response.json();
+
+        workspace.innerHTML = `
+            <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+                <div style="padding-bottom: 2rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span class="badge" style="background: var(--brand-primary); color: white;">#${t.id}</span>
+                            <span style="font-weight: 800; color: white; font-size: 1.2rem;">${t.subject}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-dim);">
+                            Canal: <strong>${t.channel.toUpperCase()}</strong> | Aberto em: ${t.created_at}
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="status-pill info" style="margin-bottom: 8px;">${t.status.toUpperCase()}</div>
+                    </div>
+                </div>
+
+                <div style="flex: 1; padding: 2rem 0; overflow-y: auto;">
+                    <div style="display: grid; grid-template-columns: 1fr 250px; gap: 2rem;">
+                        <div>
+                            <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border-subtle); margin-bottom: 2rem;">
+                                <div style="font-size: 0.7rem; font-weight: 900; color: var(--brand-primary); margin-bottom: 10px; text-transform: uppercase;">Mensagem do Cliente</div>
+                                <div style="color: white; line-height: 1.6;">${t.message || 'Sem descrição.'}</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label-m24">Sua Resposta / Ação</label>
+                                <textarea id="replyText" class="input-m24" rows="4" placeholder="Escreva aqui as orientações para o cliente..."></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 1.5rem;">
+                                <button onclick="sendReply(${t.id}, 'in_progress')" class="btn-m24" style="background: var(--bg-elevated); color: white; border: 1px solid var(--border-subtle); flex: 1; justify-content: center;">
+                                    Marcar Em Andamento
+                                </button>
+                                <button onclick="sendReply(${t.id}, 'closed')" class="btn-m24 btn-m24-primary" style="flex: 1; justify-content: center;">
+                                    Concluir Atendimento
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border-subtle);">
+                                <h4 style="font-size: 0.75rem; font-weight: 900; color: var(--text-dim); text-transform: uppercase; margin-bottom: 1.5rem;">Dados do Solicitante</h4>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 15px;">
+                                    <div>
+                                        <small style="color: var(--text-dim); display: block;">Titular</small>
+                                        <strong style="color: white;">${t.user.name}</strong>
+                                    </div>
+                                    <div>
+                                        <small style="color: var(--text-dim); display: block;">Telefone / WhatsApp</small>
+                                        <strong style="color: #22c55e;">${t.user.phone}</strong>
+                                    </div>
+                                    <div>
+                                        <small style="color: var(--text-dim); display: block;">Email</small>
+                                        <strong style="color: white; font-size: 0.8rem;">${t.user.email}</strong>
+                                    </div>
+                                    ${t.brand ? `
+                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-subtle);">
+                                        <small style="color: var(--brand-primary); font-weight: 800; text-transform: uppercase; font-size: 0.65rem;">Marca Relacionada</small>
+                                        <strong style="color: white; display: block; margin-top: 5px;">${t.brand.name}</strong>
+                                        <span style="font-size: 0.7rem; color: var(--text-dim);">${t.brand.process}</span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+
+                                ${t.channel === 'call' ? `
+                                <div style="margin-top: 2rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; text-align: center;">
+                                    <i class="ri-phone-fill" style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 5px; display: block;"></i>
+                                    <span style="font-size: 0.75rem; color: #f59e0b; font-weight: 700;">CHAMADA SOLICITADA</span>
+                                    <a href="tel:${t.user.phone}" class="btn-m24" style="background: #f59e0b; color: white; border: none; margin-top: 10px; width: 100%; justify-content: center; font-size: 0.8rem;">Ligar Agora</a>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Marcar como lido no servidor
+        fetch(`/api/support/mark_read/${id}`, { method: 'POST' });
+
+    } catch (e) {
+        workspace.innerHTML = '<div style="color: var(--danger);">Erro ao carregar detalhes do ticket.</div>';
+    }
+}
+
+async function sendReply(id, status) {
+    const reply = document.getElementById('replyText').value;
+    
+    try {
+        const response = await fetch('/api/support/reply', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ ticket_id: id, status: status, message: reply })
+        });
+        
+        const res = await response.json();
+        if(res.status === 'success') {
+            alert('Ação registada com sucesso!');
+            window.location.reload();
+        }
+    } catch (e) {
+        alert('Erro ao processar resposta.');
+    }
+}
+</script>
+
+<style>
+    .ticket-item {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        padding: 1.25rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .ticket-item:hover {
+        border-color: var(--brand-primary);
+        transform: translateX(5px);
+        background: rgba(255,255,255,0.05);
+    }
+    .ticket-item.active {
+        border-color: var(--brand-primary);
+        background: rgba(99, 102, 241, 0.1);
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+    }
+    .ticket-item.unread {
+        border-left: 4px solid var(--brand-primary);
+        background: var(--brand-primary-glow);
+    }
+    .stat-mini {
+        background: var(--bg-surface);
+        padding: 15px 25px;
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+    }
+    .stat-mini strong {
+        display: block;
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 4px;
+    }
+    .stat-mini span {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}

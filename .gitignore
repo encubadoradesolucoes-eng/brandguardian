@@ -1,0 +1,21 @@
+venv/
+.venv/
+env/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+.sqlite
+instance/
+.idea/
+.vscode/
+uploads/*
+!uploads/.gitkeep
+# database/*.db
+# database/*.sqlite
+whatsapp-engine/node_modules/
+whatsapp-engine/auth_info/
+whatsapp-engine/*.json
+whatsapp-engine/*.log

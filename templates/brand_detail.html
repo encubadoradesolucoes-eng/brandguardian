@@ -1,0 +1,465 @@
+{% extends "layout.html" %}
+
+{% block title %}Processo Completo | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --accent-glow: 0 0 30px rgba(139, 92, 246, 0.2);
+    }
+
+    .brand-hero-pro {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        padding: 4rem;
+        display: flex;
+        align-items: center;
+        gap: 4rem;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+        .brand-hero-pro {
+            flex-direction: column;
+            padding: 2rem;
+            gap: 2rem;
+            text-align: center;
+        }
+    }
+
+    .brand-viz-pro {
+        width: 280px;
+        height: 280px;
+        background: #fff;
+        border-radius: var(--radius-3xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2.5rem;
+        border: 1px solid var(--border-strong);
+        box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .brand-viz-pro {
+            width: 200px;
+            height: 200px;
+            padding: 1.5rem;
+        }
+    }
+
+    .brand-viz-pro img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    /* Grid de Dados */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2.5rem;
+    }
+
+    @media (max-width: 1024px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .section-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .card-title-pro {
+        font-family: 'Outfit';
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .data-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .data-item label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 6px;
+    }
+
+    .data-item span {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-vibrant);
+        font-family: 'Inter';
+    }
+
+    /* Análise IA */
+    .analysis-bubble {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+    }
+
+    .risk-meter {
+        height: 8px;
+        background: var(--bg-base);
+        border-radius: 10px;
+        margin: 1.5rem 0;
+        overflow: hidden;
+    }
+
+    .risk-fill {
+        height: 100%;
+        transition: width 1s ease-out;
+    }
+
+    /* Timeline */
+    .step-list {
+        list-style: none;
+        padding-left: 20px;
+        border-left: 1px solid var(--border-subtle);
+    }
+
+    .step-item {
+        position: relative;
+        padding-bottom: 2rem;
+        padding-left: 20px;
+    }
+
+    .step-item::before {
+        content: '';
+        position: absolute;
+        left: -26px;
+        top: 4px;
+        width: 10px;
+        height: 100%;
+        border-left: 1px solid var(--border-subtle);
+    }
+
+    .step-item::after {
+        content: '';
+        position: absolute;
+        left: -31px;
+        top: 4px;
+        width: 12px;
+        height: 12px;
+        background: var(--bg-surface);
+        border: 2px solid var(--border-strong);
+        border-radius: 50%;
+    }
+
+    .step-item.completed::after {
+        background: var(--success);
+        border-color: var(--success);
+        box-shadow: 0 0 10px var(--success);
+    }
+
+    .step-item.pending::after {
+        background: #f59e0b;
+        border-color: #f59e0b;
+    }
+
+    @media (max-width: 768px) {
+        .brand-name-mobile {
+            font-size: 2.5rem !important;
+        }
+        .stats-grid-mobile {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+        }
+        .data-row {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    
+    <!-- Top Nav -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+        <a href="{{ url_for('index') }}" class="btn-m24-ghost" style="padding: 10px 20px;">
+            <i class="ri-arrow-left-line"></i> Voltar à Listagem
+        </a>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-m24-ghost"><i class="ri-history-line"></i> Log de Auditoria</button>
+            <button class="btn-m24-ghost"><i class="ri-file-pdf-line"></i> Exportar Dossier</button>
+            <button class="btn-m24 btn-m24-primary"><i class="ri-edit-2-line"></i> Editar Processo</button>
+        </div>
+    </div>
+
+    <!-- Process Hero -->
+    <div class="brand-hero-pro">
+        <div class="brand-viz-pro">
+            {% if brand.logo_path %}
+            <img src="/uploads/{{ brand.logo_path }}" alt="Logo {{ brand.name }}">
+            {% else %}
+            <i class="ri-trademark-fill" style="font-size: 6rem; color: #e2e8f0;"></i>
+            {% endif %}
+        </div>
+
+        <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 1rem; flex-wrap: wrap; justify-content: center;">
+                <h1 style="font-family: 'Outfit'; font-size: 4rem; font-weight: 900; color: white; line-height: 1;" class="brand-name-mobile">{{ brand.name }}</h1>
+                <span class="status-pill {% if brand.status == 'approved' %}success{% elif brand.status == 'rejected' %}danger{% else %}warning{% endif %}" style="padding: 10px 25px; font-size: 1rem;">
+                    {{ brand.status|upper }}
+                </span>
+            </div>
+            <p style="font-size: 1.4rem; color: var(--text-standard); margin-bottom: 2.5rem; font-weight: 300;">{{ brand.slogan or 'Identidade visual em monitoramento estratégico.' }}</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;" class="stats-grid-mobile">
+                <div class="analysis-bubble" style="padding: 1.5rem;">
+                    <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom: 5px;">Processo M24</label>
+                    <div style="font-size: 1.2rem; font-weight: 800; color: var(--brand-primary); font-family: 'JetBrains Mono';">{{ brand.process_number or 'M24-2026-X' }}</div>
+                </div>
+                <div class="analysis-bubble" style="padding: 1.5rem;">
+                    <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom: 5px;">Tipo de Ativo</label>
+                    <div style="font-size: 1.2rem; font-weight: 800; color: white;">{{ (brand.property_type or 'Marca')|upper }}</div>
+                </div>
+                <div class="analysis-bubble" style="padding: 1.5rem;">
+                    <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom: 5px;">Jurisdição</label>
+                    <div style="font-size: 1.2rem; font-weight: 800; color: white;">{{ brand.country }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ADMIN DECISION HUB (Centro de Decisão) -->
+    {% if current_user.role == 'admin' %}
+    <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid var(--brand-primary); padding: 1.5rem; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; animation: revealUp 0.5s ease;">
+        <div>
+            <div style="font-weight: 800; color: var(--brand-primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Centro de Decisão m24</div>
+            <div style="color: white; font-size: 0.95rem; margin-top: 4px;">Este processo aguarda validação humana após diagnóstico IA.</div>
+        </div>
+        <div style="display: flex; gap: 15px;">
+            <a href="{{ url_for('update_brand_status', brand_id=brand.id, action='reject') }}" class="btn-m24" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); text-decoration: none; padding: 10px 25px;">Reprovar</a>
+            <a href="{{ url_for('update_brand_status', brand_id=brand.id, action='approve') }}" class="btn-m24 btn-m24-primary" style="text-decoration: none; padding: 10px 25px;">Aprovar e Validar</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="detail-grid">
+        <!-- Left Column -->
+        <div>
+            <!-- Dados da Marca -->
+            <div class="section-card">
+                <h3 class="card-title-pro"><i class="ri-fingerprint-line" style="color:var(--brand-primary);"></i> Atributos do Registro</h3>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Classes de Nice</label>
+                        <span style="color: var(--brand-primary); font-weight: 700;">{{ brand.nice_classes|nice_translate }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Modo de Registro</label>
+                        <span>{% if brand.registration_mode == 'NEW_REGISTRATION' %}Novo Pedido (Inédito){% else %}Proteção de Existente{% endif %}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Paleta de Cores</label>
+                        <span>{{ brand.colors or 'Baseada no Asset' }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Tipografia Dominante</label>
+                        <span>{{ brand.typography or 'Identificada via IA' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Nº IPI (Oficial)</label>
+                        <span style="color: var(--brand-primary);">{{ brand.registration_number or 'Em Aberto' }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Responsável pelo Cadastro</label>
+                        <span style="color: #4ade80;">{{ brand.registered_by or 'Sistema Automático' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados da Entidade -->
+            <div class="section-card">
+                <h3 class="card-title-pro"><i class="ri-building-line" style="color:var(--brand-primary);"></i> Detalhes do Titular</h3>
+                {% if entity %}
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Nome / Razão Social</label>
+                        <span>{{ entity.name }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>NUIT / Tax ID</label>
+                        <span class="nuit-badge">{{ entity.nuit or 'N/A' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Email de Contato</label>
+                        <span>{{ entity.email }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Telefone</label>
+                        <span>{{ entity.phone or 'N/A' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item" style="grid-column: span 2;">
+                        <label>Endereço Completo</label>
+                        <span>{{ entity.address }}, {{ entity.city }} - {{ entity.country }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="analysis-bubble" style="text-align: center; color: var(--text-dim);">
+                    <i class="ri-error-warning-line" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Dados da entidade detalhada não encontrados. Vínculo apenas via E-mail: {{ brand.owner_email }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Análise Detalhada IA -->
+            <div class="section-card">
+                <h3 class="card-title-pro"><i class="ri-radar-line" style="color:var(--brand-primary);"></i> Diagnóstico m24 Intelligence</h3>
+                <div class="analysis-bubble">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <label>Risco de Conflito Identificado</label>
+                            <div style="font-size: 3rem; font-weight: 900; color: {% if brand.risk_level == 'high' %}var(--danger){% else %}var(--success){% endif %}; line-height: 1;">
+                                {{ brand.risk_score|int }}%
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="status-pill {% if brand.risk_level == 'high' %}danger{% else %}success{% endif %}">
+                                {{ brand.risk_level|upper }} IMPACTO
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="risk-meter">
+                        <div class="risk-fill" style="width: {{ brand.risk_score|int }}%; background: {% if brand.risk_level == 'high' %}var(--danger-glow){% else %}var(--success-glow){% endif %};"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                        <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid var(--brand-primary);">
+                            <div style="font-weight: 800; font-size: 0.7rem; color: var(--brand-primary); text-transform: uppercase;">Similaridade Fonética</div>
+                            <div style="font-size: 1.1rem; color: white; margin-top: 5px;">{{ brand.phonetic_score|default(0)|int }}% <small style="color: var(--text-dim); font-weight: 400;">({% if brand.phonetic_score > 70 %}Crítica{% elif brand.phonetic_score > 40 %}Média{% else %}Baixa{% endif %})</small></div>
+                        </div>
+                        <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #38bdf8;">
+                            <div style="font-weight: 800; font-size: 0.7rem; color: #38bdf8; text-transform: uppercase;">Similaridade Visual (Imagem)</div>
+                            <div style="font-size: 1.1rem; color: white; margin-top: 5px;">{{ brand.visual_score|default(0)|int }}% <small style="color: var(--text-dim); font-weight: 400;">({% if brand.visual_score > 70 %}Crítica{% elif brand.visual_score > 40 %}Média{% else %}Baixa{% endif %})</small></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 15px; display: flex; gap: 1rem; align-items: center;">
+                        <i class="ri-lightbulb-flash-line" style="font-size: 1.5rem; color: var(--brand-primary);"></i>
+                        <p style="font-size: 0.9rem; color: var(--text-standard);">
+                            <strong>Parecer Automatizado:</strong> {% if brand.risk_level == 'high' %}Conflito crítico detectado. Não prossiga sem orientação jurídica.{% elif brand.risk_level == 'medium' %}Risco moderado. Recomendamos consultoria especializada para verificação de provas de uso.{% else %}Processo limpo. Recomendamos seguir com o depósito imediato no IPI.{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MENSAGENS E NOTAS INTERNAS -->
+            <div class="section-card">
+                <h3 class="card-title-pro"><i class="ri-chat-history-line" style="color:var(--brand-primary);"></i> Chat de Suporte e Notas Internas</h3>
+                
+                <div id="notes-container" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; padding-right: 10px;">
+                    {% if notes %}
+                        {% for n in notes %}
+                        <div style="background: {% if n.user_id == current_user.id %}rgba(99, 102, 241, 0.1){% else %}var(--bg-elevated){% endif %}; padding: 1.2rem; border-radius: 16px; align-self: {% if n.user_id == current_user.id %}flex-end{% else %}flex-start{% endif %}; max-width: 80%; border-left: 3px solid var(--brand-primary);">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 5px;">
+                                <strong style="color: white;">{{ n.user_name }}</strong>
+                                <span style="color: var(--text-dim);">{{ n.timestamp.strftime('%H:%M - %d/%m') }}</span>
+                            </div>
+                            <p style="font-size: 0.9rem; color: var(--text-standard); margin: 0;">{{ n.content }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; color: var(--text-dim); padding: 2rem;">Nenhuma mensagem trocada ainda.</div>
+                    {% endif %}
+                </div>
+
+                <form action="{{ url_for('add_brand_note', brand_id=brand.id) }}" method="POST" style="display: flex; gap: 10px;">
+                    <input type="text" name="content" class="input-m24" placeholder="Escreva uma orientação ou dúvida..." required style="flex: 1;">
+                    <button type="submit" class="btn-m24 btn-m24-primary" style="padding: 10px 20px;"><i class="ri-send-plane-2-line"></i></button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column (Status & Timeline) -->
+        <div>
+            <div class="section-card">
+                <h3 class="card-title-pro"><i class="ri-calendar-event-line" style="color:var(--brand-primary);"></i> Evolução do Processo</h3>
+                
+                <ul class="step-list" style="margin-top: 1rem;">
+                    {% for h in history %}
+                    <li class="step-item completed">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary);">{{ h.date.strftime('%d %b %Y') if h.date else 'DATA N/D' }}</div>
+                        <div style="font-weight: 700; color: white; margin-top: 3px;">{{ h.title }}</div>
+                        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">{{ h.desc }}</p>
+                    </li>
+                    {% endfor %}
+
+                    <li class="step-item pending">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: #f59e0b;">AGUARDANDO</div>
+                        <div style="font-weight: 700; color: white; margin-top: 3px;">Publicação no BPI</div>
+                        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">Aguardando o próximo boletim oficial para varredura definitiva.</p>
+                    </li>
+
+                    <li class="step-item" style="border-left: none;">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim);">FUTURO</div>
+                        <div style="font-weight: 700; color: var(--text-dim); margin-top: 3px;">Concessão de Registro</div>
+                        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">Prazo legal de 10 anos após deferimento.</p>
+                    </li>
+                </ul>
+
+                <div style="margin-top: 3rem; padding: 1.5rem; border: 1px dashed var(--border-subtle); border-radius: 20px;">
+                    <h4 style="font-size: 0.8rem; font-weight: 800; color: white; margin-bottom: 1rem; text-transform: uppercase;">Próximos Passos</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <span style="font-size: 0.85rem; color: var(--text-standard); display: flex; align-items: center; gap: 8px;">
+                            <i class="ri-checkbox-blank-circle-line" style="color: #f59e0b;"></i> Solicitar Exame Prioritário
+                        </span>
+                        <span style="font-size: 0.85rem; color: var(--text-standard); display: flex; align-items: center; gap: 8px;">
+                            <i class="ri-checkbox-blank-circle-line" style="color: #f59e0b;"></i> Anexar Procuração Assinada
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if current_user.role != 'admin' %}
+            <div class="section-card" style="background: var(--brand-primary-glow); border: 1px solid var(--brand-primary);">
+                <h3 class="card-title-pro" style="margin-bottom: 1rem;">Suporte Especializado</h3>
+                <p style="font-size: 0.85rem; color: var(--text-standard); margin-bottom: 1rem;">Dúvidas jurídicas sobre este processo? Fale diretamente com o consultor de plantão.</p>
+                <button class="btn-m24 btn-m24-primary" style="width: 100%; justify-content: center;" onclick="window.open('https://wa.me/258840000000?text=Olá, preciso de consultoria técnica para o processo {{ brand.name }} ({{ brand.process_number }})', '_blank')">
+                    <i class="ri-whatsapp-line"></i> Consultoria Técnica
+                </button>
+                <div style="margin-top: 15px; text-align: center;">
+                    <a href="/DADOS_ANALISE_INTELIGENTE.md" target="_blank" style="color: var(--brand-primary); font-size: 0.8rem; font-weight: 700; text-decoration: none;"><i class="ri-article-line"></i> Ler Metodologia de IA</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
