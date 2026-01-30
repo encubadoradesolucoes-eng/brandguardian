@@ -24,5 +24,8 @@ RUN mkdir -p database uploads
 ENV PORT=7000
 EXPOSE 7000
 
-# Comando de arranque
-CMD ["gunicorn", "--bind", "0.0.0.0:7000", "--timeout", "120", "app:app"]
+# Dar permissão de execução ao script de arranque
+RUN chmod +x /app/start.sh
+
+# Comando de arranque via script
+CMD ["/app/start.sh"]

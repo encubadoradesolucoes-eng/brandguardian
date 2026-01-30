@@ -1580,8 +1580,10 @@ def entity_action():
                 'filePath': os.path.join(os.getcwd(), 'static', 'm24_card.png'),
                 'caption': f"Olá {entity.name}, aqui está o nosso cartão de visita digital. Estamos à disposição para proteger suas marcas!"
             }
+            # URL do motor WhatsApp vinda de env ou default local
+            wa_api = os.environ.get('WHATSAPP_API_URL', 'http://localhost:3002')
             try:
-                requests.post('http://localhost:3002/send-file', json=payload, timeout=10)
+                requests.post(f'{wa_api}/send-file', json=payload, timeout=10)
                 return jsonify({'status': 'success', 'details': 'Cartão enviado via WhatsApp.'})
             except:
                 return jsonify({'status': 'error', 'details': 'Motor WhatsApp offline.'})
@@ -1610,8 +1612,11 @@ def entity_action():
                         for b in brands_list:
                             status_pt = "Registrada" if b.status == 'registered' else "Em Análise"
                             wa_msg += f"\n• *{b.name}*: {status_pt}"
-                        wa_msg += "\n\nAceda ao painel para detalhes: http://localhost:7000"
-                        requests.post('http://localhost:3002/send', json={'phone': ent.phone, 'message': wa_msg}, timeout=5)
+                        # Detectar URL base dinamicamente para o link no WA
+                        base_url = request.host_url.rstrip('/')
+                        wa_msg += f"\n\nAceda ao painel para detalhes: {base_url}"
+                        wa_api = os.environ.get('WHATSAPP_API_URL', 'http://localhost:3002')
+                        requests.post(f'{wa_api}/send', json={'phone': ent.phone, 'message': wa_msg}, timeout=5)
 
             threading.Thread(target=send_status_notif, args=(app, entity, brands)).start()
             return jsonify({'status': 'success', 'details': 'Relatórios de status disparados.'})
@@ -1652,8 +1657,9 @@ def send_validation(entity_id):
                         subject="⚠️ AÇÃO NECESSÁRIA: Valide seu Cadastro - M24 Pro",
                         recipients=[entity_data['email']]
                     )
-                    # O link de validação aponta para uma rota que marca como validado e loga
-                    validation_url = f"http://localhost:7000/confirm_validation/{entity_data['id']}"
+                    # O link de validação deve ser dinâmico para funcionar no servidor
+                    base_url = request.host_url.rstrip('/')
+                    validation_url = f"{base_url}/confirm_validation/{entity_data['id']}"
                     
                     msg.html = (f"<div style='font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;'>"
                                 f"<div style='background: #1e1b4b; padding: 30px; text-align: center;'>"
