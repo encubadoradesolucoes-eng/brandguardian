@@ -30,6 +30,7 @@ def prepare_demo_data():
             )
             db.session.add(demo_user)
             print("✅ Usuário demo criado: demo / demo123")
+        db.session.commit()
         
         # 2. Criar entidade titular
         demo_entity = Entity.query.filter_by(name='TechCorp Moçambique').first()
@@ -41,13 +42,11 @@ def prepare_demo_data():
                 phone='258840000000',
                 address='Av. Julius Nyerere, 1234',
                 city='Maputo',
-                country='Moçambique',
-                user_id=demo_user.id
+                country='Moçambique'
             )
             db.session.add(demo_entity)
+            db.session.commit()
             print("✅ Entidade criada: TechCorp Moçambique")
-        
-        db.session.commit()
         
         # 3. Criar marcas de exemplo
         demo_brands = [
