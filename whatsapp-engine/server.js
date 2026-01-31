@@ -57,22 +57,29 @@ wppconnect.create({
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--single-process', // Pode ajudar em ambientes de baixo recurso
+        '--single-process',
         '--disable-gpu',
         '--disable-extensions',
-        '--disable-default-apps'
+        '--disable-default-apps',
+        '--disable-software-rasterizer',
+        '--js-flags="--max-old-space-size=150"'
     ],
     puppeteerOptions: {
-        protocolTimeout: 120000, // 120 segundos (2 minutos) para máquinas lentas
+        protocolTimeout: 180000,
         userDataDir: path.join(__dirname, 'tokens/puppeteer_cache'),
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--js-flags="--max-old-space-size=150"'
+        ]
     },
     sessionToken: {
         WABrowserId: 'brandguardian',
     },
     disableWelcome: true,
-    autoClose: 180000, // 3 minutos
-    protocolTimeout: 120000
+    autoClose: 0,
+    protocolTimeout: 180000
 })
     .then((wpp) => {
         client = wpp;
