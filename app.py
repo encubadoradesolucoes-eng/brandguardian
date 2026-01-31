@@ -96,6 +96,14 @@ app.config['MAIL_DEFAULT_SENDER'] = ('M24 Brand Guardian', 'encubadoradesolucoes
 
 mail = Mail(app)
 
+# Filtro Jinja2 para JSON
+@app.template_filter('from_json')
+def from_json_filter(value):
+    """Converte string JSON para dict"""
+    if isinstance(value, str):
+        return json.loads(value)
+    return value
+
 def send_m24_email(recipient, subject, html_content, attachments=None):
     """Função unificada de envio de email com auditoria automática."""
     with app.app_context():
@@ -1070,6 +1078,62 @@ def support():
         
         return render_template('support.html', brands=my_brands, admins=online_admins, tickets=tickets)
 
+@app.route('/pricing')
+@login_required
+def pricing():
+    """Página de planos e assinaturas"""
+    import json
+    
+    # Buscar todos os planos
+    plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.price_monthly).all()
+    
+    # Plano atual do usuário
+    current_plan = SubscriptionPlan.query.filter_by(name=current_user.subscription_plan).first()
+    if not current_plan:
+        # Fallback para plano free
+        current_plan = SubscriptionPlan.query.filter_by(name='free').first()
+    
+    # Contar marcas do usuário
+    brands_count = Brand.query.filter_by(user_id=current_user.id).count()
+    
+    return render_template('pricing.html',
+                           plans=plans,
+                           current_plan=current_plan,
+                           brands_count=brands_count)
+
+@app.route('/api/subscription/upgrade', methods=['POST'])
+@login_required
+def upgrade_subscription():
+    """API para fazer upgrade de plano"""
+    plan_name = request.form.get('plan_name')
+    payment_method = request.form.get('payment_method')
+    
+    # Validar plano
+    new_plan = SubscriptionPlan.query.filter_by(name=plan_name, is_active=True).first()
+    if not new_plan:
+        return jsonify({'status': 'error', 'message': 'Plano inválido'}), 400
+    
+    # Verificar se não é downgrade para free (não permitido sem cancelamento)
+    if new_plan.name == 'free' and current_user.subscription_plan != 'free':
+        return jsonify({'status': 'error', 'message': 'Para cancelar assinatura, contacte o suporte'}), 400
+    
+    # TODO: Integrar com gateway de pagamento (M-Pesa, Stripe, etc)
+    # Por enquanto, apenas simular upgrade
+    
+    from datetime import timedelta
+    current_user.subscription_plan = new_plan.name
+    current_user.max_brands = new_plan.max_brands
+    current_user.subscription_start = datetime.utcnow()
+    current_user.subscription_end = datetime.utcnow() + timedelta(days=30)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'success',
+        'message': f'Upgrade para {new_plan.display_name} realizado com sucesso!',
+        'redirect': url_for('pricing')
+    })
+
 @app.route('/api/create_support_ticket', methods=['POST'])
 @login_required
 def create_support_ticket():
@@ -1110,6 +1174,55 @@ def property_types():
     # Grid de tipos de propriedade intelectual
     return render_template('property_types.html')
 
+
+
+@app.route('/reports/generate', methods=['POST'])
+@login_required
+def generate_report():
+    """Gera relatório PDF da carteira de marcas"""
+    from modules.report_generator import BrandReportGenerator
+    
+    report_type = request.form.get('type', 'portfolio')
+    
+    if report_type == 'portfolio':
+        # Relatório completo da carteira
+        brands = Brand.query.filter_by(user_id=current_user.id).all()
+        generator = BrandReportGenerator()
+        filepath = generator.generate_brand_portfolio_report(current_user, brands)
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Relatório gerado com sucesso!',
+            'download_url': url_for('download_report', filename=os.path.basename(filepath))
+        })
+    
+    elif report_type == 'conflicts':
+        # Relatório de conflitos de uma marca específica
+        brand_id = request.form.get('brand_id')
+        brand = Brand.query.get_or_404(brand_id)
+        
+        # Verificar permissão
+        if brand.user_id != current_user.id and current_user.role != 'admin':
+            return jsonify({'status': 'error', 'message': 'Sem permissão'}), 403
+        
+        conflicts = BrandConflict.query.filter_by(brand_id=brand_id).all()
+        generator = BrandReportGenerator()
+        filepath = generator.generate_conflict_alert_report(brand, conflicts)
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Relatório de conflitos gerado!',
+            'download_url': url_for('download_report', filename=os.path.basename(filepath))
+        })
+    
+    return jsonify({'status': 'error', 'message': 'Tipo de relatório inválido'}), 400
+
+@app.route('/reports/download/<filename>')
+@login_required
+def download_report(filename):
+    """Download de relatório PDF"""
+    reports_dir = os.path.join(get_persistence_path('uploads'), 'reports')
+    return send_from_directory(reports_dir, filename, as_attachment=True)
 
 @app.route('/scan-live')
 def scan_live_page():
