@@ -336,23 +336,66 @@
             </div>
         </div>
 
-        <!-- Nav Controls: Sticky Bottom Bar for Accessibility -->
-        <div style="position: sticky; bottom: 0; background: var(--bg-base); padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; z-index: 100;">
-            <button type="button" class="btn-m24 btn-m24-ghost" id="prevBtn" onclick="changeStep(-1)" style="min-width: 150px;">
-                <i class="ri-arrow-left-line"></i> Retornar
-            </button>
-            
-            <div style="display: flex; gap: 1rem;">
-                <button type="button" class="btn-m24 btn-m24-primary" style="min-width: 180px; justify-content: center;" id="nextBtn" onclick="changeStep(1)">
-                    Prosseguir <i class="ri-arrow-right-line"></i>
-                </button>
-                <button type="submit" class="btn-m24 btn-m24-primary" style="min-width: 180px; justify-content: center; display: none; background: linear-gradient(135deg, var(--success), #059669);" id="submitBtn">
-                    Finalizar Registro <i class="ri-check-double-line"></i>
-                </button>
-            </div>
-        </div>
     </form>
+    <!-- Spacer so the floating footer doesn't cover content -->
+    <div style="height: 180px;"></div>
 </div>
+
+<!-- Footer Moved OUTSIDE the containers for maximum visibility -->
+<div class="registration-footer" id="mainFooter">
+    <div class="footer-progress">
+        <div class="step-label" style="margin: 0; font-size: 0.7rem;">Etapa Atual:</div>
+        <div class="progress-track">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+    </div>
+
+    <div class="footer-actions">
+        <button type="button" class="btn-m24 btn-m24-ghost" id="prevBtn" onclick="changeStep(-1)">
+            <i class="ri-arrow-left-s-line"></i> VOLTAR
+        </button>
+        <button type="button" class="btn-m24 btn-m24-primary" id="nextBtn" onclick="changeStep(1)">
+            PROSSEGUIR <i class="ri-arrow-right-s-line"></i>
+        </button>
+        <!-- This button triggers the form submission via JS -->
+        <button type="button" class="btn-m24 btn-m24-primary finalize-btn" id="submitBtn" onclick="document.getElementById('registerForm').submit()">
+            FINALIZAR PROTEÇÃO <i class="ri-shield-check-line"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+    .registration-footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 320px !important; /* Sidebar width + gap */
+        right: 0 !important;
+        background: rgba(12, 14, 23, 0.98) !important;
+        backdrop-filter: blur(20px) !important;
+        padding: 1rem 3rem !important;
+        border-top: 1px solid var(--border-strong) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+    }
+    
+    .footer-progress { display: flex; align-items: center; gap: 12px; }
+    .progress-track { width: 100px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+    .progress-bar { width: 25%; height: 100%; background: var(--brand-primary); transition: width 0.5s ease; }
+    .footer-actions { display: flex; gap: 0.75rem; }
+    .finalize-btn { display: none; background: linear-gradient(135deg, #10b981, #059669) !important; }
+
+    @media (max-width: 1024px) {
+        .registration-footer { left: 0 !important; padding: 1rem 1.5rem !important; }
+        .footer-progress { display: none; }
+    }
+</style>
+
+<!-- Huge spacer at the end of content -->
+<div style="height: 250px;"></div>
+
 
 <script>
     let currentStep = 1;
@@ -371,7 +414,9 @@
         document.getElementById(`step${currentStep}`).classList.add('active');
         document.getElementById(`step${currentStep}-indicator`).classList.add('active');
 
-        document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'block';
+        document.getElementById('progressBar').style.width = `${(currentStep / totalSteps) * 100}%`;
+
+        document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'flex';
         if (currentStep === totalSteps) {
             document.getElementById('nextBtn').style.display = 'none';
             document.getElementById('submitBtn').style.display = 'flex';

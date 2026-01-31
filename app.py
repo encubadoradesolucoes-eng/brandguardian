@@ -82,6 +82,42 @@ app.config['MAIL_DEFAULT_SENDER'] = ('M24 Brand Guardian', 'encubadoradesolucoes
 
 mail = Mail(app)
 
+def send_m24_email(recipient, subject, html_content, attachments=None):
+    """Função unificada de envio de email com auditoria automática."""
+    with app.app_context():
+        msg = Message(subject=subject, recipients=[recipient])
+        msg.html = html_content
+        
+        if attachments:
+            for att in attachments:
+                # att = {'filename': '...', 'content_type': '...', 'data': ...}
+                msg.attach(att['filename'], att['content_type'], att['data'])
+        
+        try:
+            mail.send(msg)
+            # Log de Sucesso
+            log = EmailLog(recipient=recipient, subject=subject, status='sent')
+            db.session.add(log)
+            db.session.commit()
+            return True
+        except Exception as e:
+            error_str = str(e)
+            print(f">>> FALHA SMTP ({recipient}): {error_str}")
+            # Log de Erro
+            log = EmailLog(recipient=recipient, subject=subject, status='error', error_message=error_str)
+            db.session.add(log)
+            db.session.commit()
+            return False
+
+def send_welcome_async(entity_id, name, email):
+    with app.app_context():
+        try:
+            validation_url = f"http://localhost:7000/confirm_validation/{entity_id}"
+            html = render_template('emails/welcome_finalize.html', name=name, url=validation_url)
+            send_m24_email(email, "🚀 Bem-vindo ao m24 PRO - Finalize seu Acesso", html)
+        except Exception as e:
+            print(f"Erro render welcome: {e}")
+
 from modules.brand_analyzer import BrandAnalyzer
 from modules.web_scraper import WebScraper
 
@@ -355,27 +391,8 @@ def signup():
             db.session.commit()
             
             # 3. Enviar Instrução de Finalização (Email)
-            # Reaproveitamos a lógica de envio já existente ou criamos uma específica
-            try:
-                def send_welcome_email(app, entity_id, entity_name, entity_email):
-                    with app.app_context():
-                        try:
-                            msg = Message(
-                                subject="🚀 Bem-vindo ao m24 PRO - Finalize seu Acesso",
-                                recipients=[entity_email]
-                            )
-                            validation_url = f"http://localhost:7000/confirm_validation/{entity_id}"
-                            msg.html = render_template('emails/welcome_finalize.html', 
-                                                     name=entity_name, 
-                                                     url=validation_url)
-                            mail.send(msg)
-                        except Exception as e:
-                            print(f"Erro ao enviar email de boas-vindas: {e}")
-
-                threading.Thread(target=send_welcome_email, 
-                               args=(app, new_entity.id, name, email)).start()
-            except:
-                pass
+            threading.Thread(target=send_welcome_async, 
+                           args=(new_entity.id, name, email)).start()
 
             flash('Conta criada! Verifique seu email para validar o acesso.', 'success')
             return redirect(url_for('login'))
@@ -599,9 +616,13 @@ def register():
         db.session.commit()
 
         # --- NOTIFICAÇÕES TUDO-EM-UM (Threaded) ---
-        def notify_async(app_obj, ent, pwd, brand_data):
-            with app_obj.app_context():
+        def notify_async(entity_id, brand_id, pwd):
+            with app.app_context():
                 try:
+                    ent = Entity.query.get(entity_id)
+                    brand_data = Brand.query.get(brand_id)
+                    if not ent or not brand_data: return
+
                     # 1. WhatsApp
                     wa_api = os.environ.get('WHATSAPP_API_URL', 'http://localhost:3002')
                     if ent.phone:
@@ -617,34 +638,20 @@ def register():
                             print(f">>> Erro WhatsApp Async: {wa_err}")
                     
                     # 2. Email
-                    msg_mail = Message(
-                        subject=f"Protocolo de Proteção: {brand_data.name} - M24 Brand Guardian",
-                        recipients=[ent.email]
-                    )
                     cred_html = f"<div style='background:#f3f4f6; padding:15px; margin:20px 0;'><strong>Dados de Acesso:</strong> {ent.email} / {pwd}</div>" if pwd else ""
-                    msg_mail.html = (f"<h3>Olá, {ent.name}</h3>"
+                    html_content = (f"<h3>Olá, {ent.name}</h3>"
                                      f"<p>Confirmamos o início do processo de proteção para a marca <strong>{brand_data.name}</strong>.</p>"
                                      f"<p>Número de Processo: <strong>{brand_data.process_number or 'Monitoramento'}</strong></p>"
                                      f"{cred_html}"
                                      f"<p>Nossa IA já está varrendo a base nacional para detectar possíveis conflitos.</p>"
                                      f"<hr><small>M24 Security Systems</small>")
-                    try:
-                        mail.send(msg_mail)
-                        # Log de Sucesso
-                        log = EmailLog(recipient=ent.email, subject=msg_mail.subject, status='sent')
-                        db.session.add(log)
-                        db.session.commit()
-                    except Exception as mail_err:
-                        print(f">>> Erro Email Async: {mail_err}")
-                        # Log de Erro
-                        log = EmailLog(recipient=ent.email, subject=msg_mail.subject, status='error', error_message=str(mail_err))
-                        db.session.add(log)
-                        db.session.commit()
+                    
+                    send_m24_email(ent.email, f"Protocolo de Proteção: {brand_data.name} - M24 Brand Guardian", html_content)
 
                 except Exception as ex:
                     print(f"Erro Crítico Notificação Async: {ex}")
 
-        threading.Thread(target=notify_async, args=(app, entity, raw_password, new_brand)).start()
+        threading.Thread(target=notify_async, args=(entity.id, new_brand.id, raw_password)).start()
 
         # Iniciar análise automática inteligente
         try:
@@ -1326,6 +1333,28 @@ def whatsapp_status():
     return jsonify({'status': status, 'qr_code': qr_code})
 
 
+@app.route('/admin/email-audit')
+@login_required
+def email_audit():
+    if current_user.role != 'admin':
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('index'))
+    logs = EmailLog.query.order_by(EmailLog.timestamp.desc()).limit(100).all()
+    return render_template('admin/email_audit.html', logs=logs)
+
+@app.route('/test-email')
+@login_required
+def test_email():
+    if current_user.role != 'admin':
+        return "Denied", 403
+    try:
+        msg = Message(subject="M24 Teste de Conexão", recipients=[current_user.email])
+        msg.body = "Se você recebeu isso, o SMTP do m24 está funcionando perfeitamente!"
+        mail.send(msg)
+        return "Email enviado com sucesso! Verifique sua caixa de entrada."
+    except Exception as e:
+        return f"Falha no SMTP: {str(e)}"
+
 @app.route('/api/check-entity-exists')
 @login_required
 def check_entity_exists():
@@ -1458,29 +1487,20 @@ def invite_entity(entity_id):
     try:
         credenciais_html = f"<div style='background:#f3f4f6; padding:15px; border-radius:8px; margin:20px 0;'><strong>🔑 As suas Credenciais:</strong><br>Login: {entity.email}<br>Senha: {raw_password}</div>"
         
-        def send_email_async(app, entity_data, password_html):
-            with app.app_context():
-                try:
-                    msg = Message(
-                        subject="Convite Oficial - M24 Brand Guardian",
-                        recipients=[entity_data['email']]
-                    )
-                    msg.html = (f"<h2>Bem-vindo ao M24 Brand Guardian</h2>"
-                                f"<p>Prezado(a) <strong>{entity_data['name']}</strong>,</p>"
-                                f"<p>Sua conta foi regularizada em nosso sistema.</p>"
-                                f"<div style='background: #d1fae5; color: #065f46; padding: 15px; border-radius: 8px; border: 1px solid #10b981; margin: 15px 0;'>"
-                                f"<strong>🎁 PLANO BETA ATIVADO:</strong><br>"
-                                f"Você recebeu acesso completo ao painel de proteção de marcas."
-                                f"</div>"
-                                f"{password_html}"
-                                f"<p><a href='http://localhost:7000/login' style='background: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display:inline-block;'>Acessar Painel Agora</a></p>"
-                                f"<hr><small>M24 Security | #EncubadoraDeSolucoes</small>")
-                    mail.send(msg)
-                except Exception as e:
-                     print(f"Erro Email Invite: {e}")
+        def invite_async_task(ent_name, ent_email, pwd_html):
+            html = (f"<h2>Bem-vindo ao M24 Brand Guardian</h2>"
+                    f"<p>Prezado(a) <strong>{ent_name}</strong>,</p>"
+                    f"<p>Sua conta foi regularizada em nosso sistema.</p>"
+                    f"<div style='background: #d1fae5; color: #065f46; padding: 15px; border-radius: 8px; border: 1px solid #10b981; margin: 15px 0;'>"
+                    f"<strong>🎁 PLANO BETA ATIVADO:</strong><br>"
+                    f"Você recebeu acesso completo ao painel de proteção de marcas."
+                    f"</div>"
+                    f"{pwd_html}"
+                    f"<p><a href='http://localhost:7000/login' style='background: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display:inline-block;'>Acessar Painel Agora</a></p>"
+                    f"<hr><small>M24 Security | #EncubadoraDeSolucoes</small>")
+            send_m24_email(ent_email, "Convite Oficial - M24 Brand Guardian", html)
 
-        ent_data = {'name': entity.name, 'email': entity.email}
-        threading.Thread(target=send_email_async, args=(app, ent_data, credenciais_html)).start()
+        threading.Thread(target=invite_async_task, args=(entity.name, entity.email, credenciais_html)).start()
 
         if entity.phone:
             msg = (f"🔐 *M24 Brand Guardian - Convite de Acesso*\n\n"
@@ -1571,24 +1591,29 @@ def entity_action():
 
         elif action == 'card-email':
             # Enviar Cartão de Visita via Email
-            def send_card_email(app_obj, ent):
-                with app_obj.app_context():
+            def send_card_email_async(ent_id):
+                with app.app_context():
                     try:
-                        msg = Message(
-                            subject="📇 Cartão de Visita Digital - M24 Pro",
-                            recipients=[ent.email]
-                        )
-                        msg.html = render_template('emails/business_card.html', entity=ent)
-                        # Adicionar anexo da imagem se necessário, ou usar cid
-                        card_path = os.path.join(app_obj.static_folder, 'm24_card.png')
+                        ent = Entity.query.get(ent_id)
+                        if not ent: return
+                        
+                        html = render_template('emails/business_card.html', entity=ent)
+                        attachments = []
+                        
+                        card_path = os.path.join(app.static_folder, 'm24_card.png')
                         if os.path.exists(card_path):
-                            with app_obj.open_resource(card_path) as fp:
-                                msg.attach("m24_card.png", "image/png", fp.read())
-                        mail.send(msg)
+                            with app.open_resource(card_path) as fp:
+                                attachments.append({
+                                    'filename': 'm24_card.png',
+                                    'content_type': 'image/png',
+                                    'data': fp.read()
+                                })
+                        
+                        send_m24_email(ent.email, "📇 Cartão de Visita Digital - M24 Pro", html, attachments)
                     except Exception as e:
-                        print(f"Erro ao enviar cartão por email: {e}")
+                        print(f"Erro async card email: {e}")
 
-            threading.Thread(target=send_card_email, args=(app, entity)).start()
+            threading.Thread(target=send_card_email_async, args=(entity.id,)).start()
             return jsonify({'status': 'success', 'details': 'Cartão enviado para o e-mail.'})
 
         elif action == 'card-whatsapp':

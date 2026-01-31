@@ -830,6 +830,13 @@
                 </span>
                 <span class="pulse-status" style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; margin-left: auto;"></span>
             </a>
+            {% if current_user.role == 'admin' %}
+            <a href="/admin/email-audit" class="nav-link {% if request.path == '/admin/email-audit' %}active{% endif %}" style="color: #fbbf24;">
+                <span class="link-content">
+                    <i class="ri-mail-settings-line"></i> Auditoria de Email
+                </span>
+            </a>
+            {% endif %}
         </div>
     </aside>
     {% endif %}
@@ -963,7 +970,7 @@
             {% endif %}
         </div>
 
-        <div class="view-body animate-reveal">
+        <div class="view-body">
             {% block content %}{% endblock %}
         </div>
     </div>
