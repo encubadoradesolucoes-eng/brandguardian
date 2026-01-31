@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -12,22 +13,36 @@ import threading
 import socket
 import secrets # Para gerar senhas automáticas
 
-# Configuração da aplicação
-app = Flask(__name__)
+# Suporte para Executável (PyInstaller)
+def get_resource_path(relative_path):
+    """Retorna o caminho do recurso (templates, static) no bundle ou local."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
+
+def get_persistence_path(relative_path):
+    """Retorna o caminho para persistência (db, uploads) next to the .exe."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.abspath(os.path.join(os.path.dirname(sys.executable), relative_path))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
+
+app = Flask(__name__, 
+            template_folder=get_resource_path('templates'),
+            static_folder=get_resource_path('static'))
 app.config['SECRET_KEY'] = 'm24_super_secure_key_2026'
 
 # Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-basedir = os.path.abspath(os.path.dirname(__file__))
+
 # Suporte para PostgreSQL (Produção) ou SQLite (Local)
 database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or ('sqlite:///' + os.path.join(basedir, 'database', 'brands.db'))
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or ('sqlite:///' + os.path.join(get_persistence_path('database'), 'brands.db'))
+app.config['UPLOAD_FOLDER'] = get_persistence_path('uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
 # Extensões permitidas
