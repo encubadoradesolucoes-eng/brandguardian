@@ -208,12 +208,18 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Método de Pagamento</label>
-                        <select class="form-select" name="payment_method" required>
+                        <select class="form-select" name="payment_method" id="paymentMethodSelect" required onchange="togglePhoneField()">
                             <option value="">Selecione...</option>
                             <option value="mpesa">M-Pesa</option>
                             <option value="card">Cartão de Crédito</option>
                             <option value="transfer">Transferência Bancária</option>
                         </select>
+                    </div>
+                    
+                    <div class="mb-3" id="phoneField" style="display: none;">
+                        <label class="form-label">Número de Telefone M-Pesa</label>
+                        <input type="tel" class="form-select" name="phone_number" id="phoneNumber" placeholder="84XXXXXXX ou 258XXXXXXXXX">
+                        <small class="text-muted">Digite o número que receberá a solicitação de pagamento</small>
                     </div>
                     
                     <div class="form-check mb-3">
@@ -292,6 +298,20 @@
 </style>
 
 <script>
+function togglePhoneField() {
+    const method = document.getElementById('paymentMethodSelect').value;
+    const phoneField = document.getElementById('phoneField');
+    const phoneInput = document.getElementById('phoneNumber');
+    
+    if (method === 'mpesa') {
+        phoneField.style.display = 'block';
+        phoneInput.required = true;
+    } else {
+        phoneField.style.display = 'none';
+        phoneInput.required = false;
+    }
+}
+
 function selectPlan(planName, price) {
     document.getElementById('selectedPlanName').textContent = planName.charAt(0).toUpperCase() + planName.slice(1);
     document.getElementById('selectedPlanPrice').textContent = price.toLocaleString('pt-MZ') + ' MT';
@@ -303,13 +323,43 @@ function selectPlan(planName, price) {
 
 function submitUpgrade() {
     const form = document.getElementById('upgradeForm');
-    if (form.checkValidity()) {
-        // Aqui você integraria com o gateway de pagamento
-        alert('Funcionalidade de pagamento em desenvolvimento. Em breve você poderá fazer upgrade!');
-        // form.submit();
-    } else {
+    if (!form.checkValidity()) {
         form.reportValidity();
+        return;
     }
+    
+    // Desabilitar botão para evitar duplo clique
+    const submitBtn = event.target;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+    
+    // Enviar via AJAX
+    const formData = new FormData(form);
+    
+    fetch('/api/subscription/upgrade', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                location.reload();
+            }
+        } else {
+            alert('Erro: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Upgrade';
+        }
+    })
+    .catch(error => {
+        alert('Erro ao processar pagamento. Tente novamente.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Upgrade';
+    });
 }
 </script>
 {% endblock %}

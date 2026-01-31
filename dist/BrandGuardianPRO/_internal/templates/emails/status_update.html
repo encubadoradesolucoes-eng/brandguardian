@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualização de Status - Processo INPI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .brand-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .brand-info h2 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+        .status-change {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            gap: 20px;
+        }
+        .status-box {
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .status-old {
+            background-color: #e0e0e0;
+            color: #666;
+        }
+        .status-new {
+            background-color: #10b981;
+            color: white;
+        }
+        .arrow {
+            font-size: 24px;
+            color: #666;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="status-icon">📋</div>
+            <h1>Atualização de Status</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Processo INPI</p>
+        </div>
+        
+        <div class="content">
+            <div class="brand-info">
+                <h2>{{ brand.name }}</h2>
+                <div class="info-row">
+                    <span class="info-label">Processo:</span>
+                    <span>{{ brand.process_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Classes Nice:</span>
+                    <span>{{ brand.nice_classes }}</span>
+                </div>
+            </div>
+            
+            <p style="color: #555; line-height: 1.6; text-align: center;">
+                O status do seu processo no INPI foi atualizado:
+            </p>
+            
+            <div class="status-change">
+                <div class="status-box status-old">
+                    {{ old_status|replace('_', ' ')|title }}
+                </div>
+                <div class="arrow">→</div>
+                <div class="status-box status-new">
+                    {{ new_status|replace('_', ' ')|title }}
+                </div>
+            </div>
+            
+            <p style="color: #555; margin-top: 20px; padding: 15px; background-color: #e8f4f8; border-radius: 8px;">
+                <strong>💡 O que fazer agora:</strong><br>
+                Acompanhe o andamento completo do seu processo no painel do M24 PRO. 
+                Caso haja necessidade de ação, você será notificado.
+            </p>
+            
+            <center>
+                <a href="http://localhost:7000/brand/{{ brand.id }}" class="cta-button">
+                    Ver Detalhes do Processo →
+                </a>
+            </center>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 0 0 10px 0;">
+                <strong>M24 Brand Guardian PRO</strong><br>
+                Monitoramento Automático INPI
+            </p>
+            <p style="margin: 0; opacity: 0.8;">
+                Você está recebendo este email porque ativou o monitoramento de processos.<br>
+                <a href="http://localhost:7000/settings">Gerenciar Preferências</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

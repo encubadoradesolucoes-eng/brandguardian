@@ -1,0 +1,229 @@
+{% extends "layout.html" %}
+
+{% block title %}Alertas de Conflito - M24 PRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-danger text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="icon icon-lg icon-shape bg-white shadow text-center border-radius-md me-3">
+                            <i class="fas fa-exclamation-triangle text-danger text-lg opacity-10" aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 text-white">Alertas de Conflito</h3>
+                            <p class="mb-0 text-sm opacity-8">Monitoramento automático RPI/INPI</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="d-flex">
+                        <div class="icon icon-shape bg-gradient-danger shadow text-center border-radius-md">
+                            <i class="fas fa-exclamation-circle text-lg opacity-10" aria-hidden="true"></i>
+                        </div>
+                        <div class="ms-3">
+                            <p class="text-sm mb-0 text-capitalize font-weight-bold">Conflitos Ativos</p>
+                            <h5 class="font-weight-bolder mb-0">{{ pending_conflicts }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="d-flex">
+                        <div class="icon icon-shape bg-gradient-warning shadow text-center border-radius-md">
+                            <i class="fas fa-eye text-lg opacity-10" aria-hidden="true"></i>
+                        </div>
+                        <div class="ms-3">
+                            <p class="text-sm mb-0 text-capitalize font-weight-bold">Em Análise</p>
+                            <h5 class="font-weight-bolder mb-0">{{ reviewed_conflicts }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="d-flex">
+                        <div class="icon icon-shape bg-gradient-success shadow text-center border-radius-md">
+                            <i class="fas fa-check-circle text-lg opacity-10" aria-hidden="true"></i>
+                        </div>
+                        <div class="ms-3">
+                            <p class="text-sm mb-0 text-capitalize font-weight-bold">Resolvidos</p>
+                            <h5 class="font-weight-bolder mb-0">{{ dismissed_conflicts }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="d-flex">
+                        <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
+                            <i class="fas fa-file-alt text-lg opacity-10" aria-hidden="true"></i>
+                        </div>
+                        <div class="ms-3">
+                            <p class="text-sm mb-0 text-capitalize font-weight-bold">RPIs Processadas</p>
+                            <h5 class="font-weight-bolder mb-0">{{ total_rpis }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conflicts List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6>Conflitos Detectados</h6>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="filterConflicts('all')">Todos</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="filterConflicts('pending')">Pendentes</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="filterConflicts('dismissed')">Resolvidos</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Sua Marca</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Marca Conflitante</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Similaridade</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tipo</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Data</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
+                                    <th class="text-secondary opacity-7">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for conflict in conflicts %}
+                                <tr class="conflict-row" data-status="{{ conflict.status }}">
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">{{ conflict.brand.name }}</h6>
+                                                <p class="text-xs text-secondary mb-0">{{ conflict.brand.process_number }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">{{ conflict.conflicting_mark_name }}</p>
+                                        <p class="text-xs text-secondary mb-0">{{ conflict.conflicting_mark_number }}</p>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge badge-sm 
+                                            {% if conflict.similarity_score > 80 %}bg-gradient-danger
+                                            {% elif conflict.similarity_score > 60 %}bg-gradient-warning
+                                            {% else %}bg-gradient-info{% endif %}">
+                                            {{ conflict.similarity_score }}%
+                                        </span>
+                                    </td>
+                                    <td class="align-middle text-center text-sm">
+                                        <span class="badge badge-sm bg-gradient-secondary">{{ conflict.conflict_type|title }}</span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="text-secondary text-xs font-weight-bold">{{ conflict.created_at.strftime('%d/%m/%Y') }}</span>
+                                    </td>
+                                    <td class="align-middle text-center text-sm">
+                                        {% if conflict.status == 'pending' %}
+                                        <span class="badge badge-sm bg-gradient-warning">Pendente</span>
+                                        {% elif conflict.status == 'reviewed' %}
+                                        <span class="badge badge-sm bg-gradient-info">Em Análise</span>
+                                        {% else %}
+                                        <span class="badge badge-sm bg-gradient-success">Resolvido</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="dropdown">
+                                            <button class="btn btn-link text-secondary mb-0" type="button" data-bs-toggle="dropdown">
+                                                <i class="fa fa-ellipsis-v text-xs"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#" onclick="viewDetails({{ conflict.id }})">Ver Detalhes</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="markAsReviewed({{ conflict.id }})">Marcar como Analisado</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="dismissConflict({{ conflict.id }})">Resolver</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterConflicts(status) {
+    const rows = document.querySelectorAll('.conflict-row');
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function markAsReviewed(conflictId) {
+    if (confirm('Marcar este conflito como analisado?')) {
+        fetch(`/api/conflicts/${conflictId}/review`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    }
+}
+
+function dismissConflict(conflictId) {
+    if (confirm('Marcar este conflito como resolvido?')) {
+        fetch(`/api/conflicts/${conflictId}/dismiss`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    }
+}
+
+function viewDetails(conflictId) {
+    // TODO: Implementar modal com detalhes completos
+    alert('Funcionalidade em desenvolvimento');
+}
+</script>
+{% endblock %}

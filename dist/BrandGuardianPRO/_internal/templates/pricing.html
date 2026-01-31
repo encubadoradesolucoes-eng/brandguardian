@@ -1,0 +1,315 @@
+{% extends "layout.html" %}
+
+{% block title %}Planos e Assinaturas - M24 PRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h3 class="mb-0 text-white">Planos e Assinaturas</h3>
+                            <p class="mb-0 text-sm opacity-8">Escolha o plano ideal para proteger suas marcas</p>
+                        </div>
+                        {% if current_user.subscription_plan != 'free' %}
+                        <div class="text-end">
+                            <p class="mb-0 text-sm opacity-8">Plano Atual</p>
+                            <h4 class="mb-0 text-white">{{ current_plan.display_name }}</h4>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Plan Info -->
+    {% if current_user.subscription_plan != 'free' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Status</p>
+                            <h6 class="mb-0">
+                                <span class="badge bg-gradient-success">Ativo</span>
+                            </h6>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Marcas Utilizadas</p>
+                            <h6 class="mb-0">{{ brands_count }} / {{ current_user.max_brands }}</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Próxima Renovação</p>
+                            <h6 class="mb-0">{{ current_user.subscription_end.strftime('%d/%m/%Y') if current_user.subscription_end else 'N/A' }}</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Valor Mensal</p>
+                            <h6 class="mb-0">{{ "{:,.0f}".format(current_plan.price_monthly) }} MT</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pricing Cards -->
+    <div class="row">
+        {% for plan in plans %}
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100 {% if plan.name == current_user.subscription_plan %}border-primary{% endif %}" 
+                 style="{% if plan.name == 'professional' %}transform: scale(1.05); z-index: 1;{% endif %}">
+                
+                {% if plan.name == 'professional' %}
+                <div class="ribbon ribbon-top-right"><span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 5px 30px;">Recomendado</span></div>
+                {% endif %}
+                
+                <div class="card-header text-center pt-4 pb-3 {% if plan.name == 'professional' %}bg-gradient-primary{% endif %}">
+                    <h4 class="mb-0 {% if plan.name == 'professional' %}text-white{% endif %}">{{ plan.display_name }}</h4>
+                    <div class="mt-3">
+                        {% if plan.price_monthly > 0 %}
+                        <h1 class="mb-0 {% if plan.name == 'professional' %}text-white{% endif %}">
+                            {{ "{:,.0f}".format(plan.price_monthly) }}
+                            <small class="text-sm">MT</small>
+                        </h1>
+                        <p class="text-sm mb-0 {% if plan.name == 'professional' %}text-white opacity-8{% else %}opacity-7{% endif %}">por mês</p>
+                        {% elif plan.name == 'free' %}
+                        <h1 class="mb-0">Grátis</h1>
+                        <p class="text-sm mb-0 opacity-7">para sempre</p>
+                        {% else %}
+                        <h1 class="mb-0">Sob Consulta</h1>
+                        <p class="text-sm mb-0 opacity-7">personalizado</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        {% set features = plan.features|from_json %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <strong>{{ plan.max_brands }}</strong> marcas
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.email_notifications %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Notificações por Email
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.whatsapp_notifications %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Notificações WhatsApp
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.rpi_monitoring %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Monitoramento RPI/INPI
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.conflict_alerts %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Alertas de Conflito
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.pdf_reports %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Relatórios PDF
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.api_access %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Acesso API
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-{% if features.priority_support %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                            Suporte Prioritário
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-footer text-center">
+                    {% if plan.name == current_user.subscription_plan %}
+                    <button class="btn btn-outline-secondary w-100" disabled>
+                        <i class="fas fa-check me-2"></i>Plano Atual
+                    </button>
+                    {% elif plan.name == 'enterprise' %}
+                    <a href="{{ url_for('support') }}" class="btn btn-primary w-100">
+                        <i class="fas fa-envelope me-2"></i>Contactar Vendas
+                    </a>
+                    {% else %}
+                    <button class="btn btn-primary w-100" onclick="selectPlan('{{ plan.name }}', {{ plan.price_monthly }})">
+                        {% if plan.name == 'free' %}
+                        <i class="fas fa-download me-2"></i>Começar Grátis
+                        {% else %}
+                        <i class="fas fa-arrow-up me-2"></i>Fazer Upgrade
+                        {% endif %}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Métodos de Pagamento Aceites</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+                        <div class="payment-method">
+                            <i class="fas fa-mobile-alt text-primary" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2 text-sm">M-Pesa</p>
+                        </div>
+                        <div class="payment-method">
+                            <i class="fas fa-credit-card text-success" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2 text-sm">Cartão de Crédito</p>
+                        </div>
+                        <div class="payment-method">
+                            <i class="fas fa-university text-info" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2 text-sm">Transferência Bancária</p>
+                        </div>
+                    </div>
+                    <p class="text-sm text-secondary mt-3 mb-0">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Pagamentos seguros e criptografados
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Upgrade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-arrow-circle-up text-primary" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3" id="selectedPlanName"></h4>
+                    <h2 class="mb-0" id="selectedPlanPrice"></h2>
+                    <p class="text-sm text-secondary">por mês</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Você será redirecionado para completar o pagamento via M-Pesa ou Cartão de Crédito.
+                </div>
+                
+                <form id="upgradeForm" action="/api/subscription/upgrade" method="POST">
+                    <input type="hidden" name="plan_name" id="planNameInput">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Método de Pagamento</label>
+                        <select class="form-select" name="payment_method" required>
+                            <option value="">Selecione...</option>
+                            <option value="mpesa">M-Pesa</option>
+                            <option value="card">Cartão de Crédito</option>
+                            <option value="transfer">Transferência Bancária</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                        <label class="form-check-label text-sm" for="termsCheck">
+                            Concordo com os <a href="#">Termos de Serviço</a> e <a href="#">Política de Privacidade</a>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitUpgrade()">
+                    <i class="fas fa-check me-2"></i>Confirmar Upgrade
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ribbon {
+    width: 150px;
+    height: 150px;
+    overflow: hidden;
+    position: absolute;
+}
+.ribbon::before,
+.ribbon::after {
+    position: absolute;
+    z-index: -1;
+    content: '';
+    display: block;
+    border: 5px solid #2980b9;
+}
+.ribbon span {
+    position: absolute;
+    display: block;
+    width: 225px;
+    padding: 15px 0;
+    box-shadow: 0 5px 10px rgba(0,0,0,.1);
+    color: #fff;
+    font: 700 14px/1 'Lato', sans-serif;
+    text-shadow: 0 1px 1px rgba(0,0,0,.2);
+    text-transform: uppercase;
+    text-align: center;
+}
+.ribbon-top-right {
+    top: -10px;
+    right: -10px;
+}
+.ribbon-top-right::before,
+.ribbon-top-right::after {
+    border-top-color: transparent;
+    border-right-color: transparent;
+}
+.ribbon-top-right::before {
+    top: 0;
+    left: 0;
+}
+.ribbon-top-right::after {
+    bottom: 0;
+    right: 0;
+}
+.ribbon-top-right span {
+    left: -25px;
+    top: 30px;
+    transform: rotate(45deg);
+}
+.payment-method {
+    padding: 1rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    min-width: 120px;
+}
+</style>
+
+<script>
+function selectPlan(planName, price) {
+    document.getElementById('selectedPlanName').textContent = planName.charAt(0).toUpperCase() + planName.slice(1);
+    document.getElementById('selectedPlanPrice').textContent = price.toLocaleString('pt-MZ') + ' MT';
+    document.getElementById('planNameInput').value = planName;
+    
+    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    modal.show();
+}
+
+function submitUpgrade() {
+    const form = document.getElementById('upgradeForm');
+    if (form.checkValidity()) {
+        // Aqui você integraria com o gateway de pagamento
+        alert('Funcionalidade de pagamento em desenvolvimento. Em breve você poderá fazer upgrade!');
+        // form.submit();
+    } else {
+        form.reportValidity();
+    }
+}
+</script>
+{% endblock %}

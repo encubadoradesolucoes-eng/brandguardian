@@ -227,6 +227,33 @@ class BrandConflict(db.Model):
     
     brand = db.relationship('Brand', backref='conflicts')
 
+class Payment(db.Model):
+    """Transações de pagamento de assinaturas"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan_name = db.Column(db.String(50))  # Plano adquirido
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), default='MZN')
+    payment_method = db.Column(db.String(50))  # 'mpesa', 'card', 'transfer'
+    
+    # Detalhes M-Pesa
+    phone_number = db.Column(db.String(20))
+    mpesa_transaction_id = db.Column(db.String(100))
+    mpesa_conversation_id = db.Column(db.String(100))
+    reference = db.Column(db.String(100), unique=True)
+    
+    # Status
+    status = db.Column(db.String(50), default='pending')  # 'pending', 'completed', 'failed', 'refunded'
+    response_code = db.Column(db.String(50))
+    response_message = db.Column(db.Text)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    
+    # Relacionamento
+    user = db.relationship('User', backref='payments')
+
 class Entity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -1104,35 +1131,131 @@ def pricing():
 @app.route('/api/subscription/upgrade', methods=['POST'])
 @login_required
 def upgrade_subscription():
-    """API para fazer upgrade de plano"""
+    """API para fazer upgrade de plano com pagamento M-Pesa"""
     plan_name = request.form.get('plan_name')
     payment_method = request.form.get('payment_method')
+    phone_number = request.form.get('phone_number', '')
     
     # Validar plano
     new_plan = SubscriptionPlan.query.filter_by(name=plan_name, is_active=True).first()
     if not new_plan:
         return jsonify({'status': 'error', 'message': 'Plano inválido'}), 400
     
-    # Verificar se não é downgrade para free (não permitido sem cancelamento)
+    # Verificar se não é downgrade para free
     if new_plan.name == 'free' and current_user.subscription_plan != 'free':
         return jsonify({'status': 'error', 'message': 'Para cancelar assinatura, contacte o suporte'}), 400
     
-    # TODO: Integrar com gateway de pagamento (M-Pesa, Stripe, etc)
-    # Por enquanto, apenas simular upgrade
+    # Plano Free não requer pagamento
+    if new_plan.name == 'free':
+        current_user.subscription_plan = 'free'
+        current_user.max_brands = 5
+        db.session.commit()
+        return jsonify({
+            'status': 'success',
+            'message': 'Plano Free ativado!'
+        })
     
-    from datetime import timedelta
-    current_user.subscription_plan = new_plan.name
-    current_user.max_brands = new_plan.max_brands
-    current_user.subscription_start = datetime.utcnow()
-    current_user.subscription_end = datetime.utcnow() + timedelta(days=30)
+    # Processar pagamento via M-Pesa
+    if payment_method == 'mpesa':
+        from modules.mpesa_integration import get_mpesa_client, generate_payment_reference
+        
+        # Validar número de telefone
+        if not phone_number:
+            return jsonify({'status': 'error', 'message': 'Número de telefone obrigatório para M-Pesa'}), 400
+        
+        # Gerar referência única
+        reference = generate_payment_reference(current_user.id, plan_name)
+        
+        # Criar registro de pagamento
+        payment = Payment(
+            user_id=current_user.id,
+            plan_name=new_plan.name,
+            amount=new_plan.price_monthly,
+            currency='MZN',
+            payment_method='mpesa',
+            phone_number=phone_number,
+            reference=reference,
+            status='pending'
+        )
+        db.session.add(payment)
+        db.session.commit()
+        
+        # Iniciar pagamento M-Pesa
+        mpesa = get_mpesa_client(use_simulator=True)  # Mudar para False em produção
+        result = mpesa.initiate_c2b_payment(
+            amount=new_plan.price_monthly,
+            phone_number=phone_number,
+            reference=reference,
+            description=f"M24 PRO - {new_plan.display_name}"
+        )
+        
+        # Atualizar registro de pagamento
+        payment.mpesa_transaction_id = result.get('transaction_id')
+        payment.mpesa_conversation_id = result.get('conversation_id')
+        payment.response_code = result.get('response_code') or result.get('code')
+        payment.response_message = result.get('response_desc') or result.get('message')
+        
+        if result['status'] == 'success':
+            # Pagamento bem-sucedido - ativar assinatura
+            from datetime import timedelta
+            
+            payment.status = 'completed'
+            payment.completed_at = datetime.utcnow()
+            
+            current_user.subscription_plan = new_plan.name
+            current_user.max_brands = new_plan.max_brands
+            current_user.subscription_start = datetime.utcnow()
+            current_user.subscription_end = datetime.utcnow() + timedelta(days=30)
+            
+            db.session.commit()
+            
+            # Enviar email de confirmação
+            try:
+                html = render_template('emails/payment_success.html',
+                                       user=current_user,
+                                       plan=new_plan,
+                                       payment=payment)
+                send_m24_email(current_user.email,
+                               f"✅ Pagamento Confirmado - {new_plan.display_name}",
+                               html)
+            except:
+                pass  # Não falhar se email não enviar
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Pagamento confirmado! Upgrade para {new_plan.display_name} realizado.',
+                'transaction_id': payment.mpesa_transaction_id,
+                'redirect': url_for('pricing')
+            })
+        else:
+            # Pagamento falhou
+            payment.status = 'failed'
+            db.session.commit()
+            
+            return jsonify({
+                'status': 'error',
+                'message': f"Erro no pagamento: {result.get('message', 'Erro desconhecido')}",
+                'code': result.get('code')
+            }), 400
     
-    db.session.commit()
+    elif payment_method == 'card':
+        # TODO: Integrar com Stripe ou outro gateway de cartão
+        return jsonify({'status': 'error', 'message': 'Pagamento por cartão em breve'}), 501
     
-    return jsonify({
-        'status': 'success',
-        'message': f'Upgrade para {new_plan.display_name} realizado com sucesso!',
-        'redirect': url_for('pricing')
-    })
+    elif payment_method == 'transfer':
+        # Transferência bancária - gerar instruções
+        return jsonify({
+            'status': 'pending',
+            'message': 'Instruções de transferência enviadas por email',
+            'instructions': {
+                'bank': 'Millennium BIM',
+                'account': '0001234567890',
+                'amount': new_plan.price_monthly,
+                'reference': generate_payment_reference(current_user.id, plan_name)
+            }
+        })
+    
+    return jsonify({'status': 'error', 'message': 'Método de pagamento inválido'}), 400
 
 @app.route('/api/create_support_ticket', methods=['POST'])
 @login_required

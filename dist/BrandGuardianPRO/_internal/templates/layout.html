@@ -784,6 +784,12 @@
                     <i class="ri-settings-4-line"></i> Integrações & API
                 </span>
             </a>
+            <a href="{{ url_for('conflicts') }}" class="nav-link {% if request.endpoint == 'conflicts' %}active{% endif %}" style="color: #ef4444;">
+                <span class="link-content">
+                    <i class="ri-alert-line"></i> Alertas de Conflito
+                </span>
+                <span class="pulse-status" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-left: auto;"></span>
+            </a>
 
             {% else %}
             <!-- CLIENT MENU -->
@@ -796,6 +802,16 @@
             <a href="{{ url_for('register') }}" class="nav-link {% if request.endpoint == 'register' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-add-circle-line"></i> Registrar Nova Marca
+                </span>
+            </a>
+            <a href="{{ url_for('conflicts') }}" class="nav-link {% if request.endpoint == 'conflicts' %}active{% endif %}">
+                <span class="link-content">
+                    <i class="ri-alert-line"></i> Alertas de Conflito
+                </span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="nav-link {% if request.endpoint == 'pricing' %}active{% endif %}" style="color: #fbbf24;">
+                <span class="link-content">
+                    <i class="ri-vip-crown-line"></i> Planos & Assinaturas
                 </span>
             </a>
             {% endif %}
