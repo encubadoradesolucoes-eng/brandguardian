@@ -790,6 +790,11 @@
                 </span>
                 <span class="pulse-status" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-left: auto;"></span>
             </a>
+            <a href="{{ url_for('pricing') }}" class="nav-link {% if request.endpoint == 'pricing' %}active{% endif %}" style="color: #fbbf24;">
+                <span class="link-content">
+                    <i class="ri-vip-crown-line"></i> Planos & Assinaturas
+                </span>
+            </a>
 
             {% else %}
             <!-- CLIENT MENU -->
