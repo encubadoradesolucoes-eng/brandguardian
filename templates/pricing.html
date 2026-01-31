@@ -3,53 +3,311 @@
 {% block title %}Planos e Assinaturas - M24 PRO{% endblock %}
 
 {% block content %}
+<style>
+    .pricing-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 30px;
+        padding: 80px 50px;
+        margin-bottom: 50px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(102, 126, 234, 0.4);
+    }
+    
+    .pricing-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-30px) rotate(5deg); }
+    }
+    
+    .pricing-card {
+        background: white;
+        border-radius: 24px;
+        padding: 0;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 3px solid transparent;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-15px) scale(1.02);
+        box-shadow: 0 25px 60px rgba(102, 126, 234, 0.25);
+        border-color: #667eea;
+    }
+    
+    .pricing-card.featured {
+        transform: scale(1.08);
+        border-color: #667eea;
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+    }
+    
+    .pricing-card.featured:hover {
+        transform: translateY(-15px) scale(1.1);
+    }
+    
+    .pricing-card.featured::before {
+        content: '⭐ MAIS POPULAR';
+        position: absolute;
+        top: 20px;
+        right: -35px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 8px 50px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        transform: rotate(45deg);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    }
+    
+    .pricing-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 40px 30px;
+        text-align: center;
+        border-radius: 24px 24px 0 0;
+    }
+    
+    .pricing-card.featured .pricing-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .plan-name {
+        font-size: 24px;
+        font-weight: 800;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .plan-price {
+        font-size: 56px;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 10px;
+    }
+    
+    .plan-price small {
+        font-size: 20px;
+        font-weight: 600;
+        opacity: 0.8;
+    }
+    
+    .plan-period {
+        font-size: 14px;
+        opacity: 0.7;
+        font-weight: 600;
+    }
+    
+    .pricing-body {
+        padding: 40px 30px;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 30px 0;
+    }
+    
+    .feature-item {
+        padding: 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 15px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+    
+    .feature-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+    
+    .feature-icon.check {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .feature-icon.cross {
+        background: #f3f4f6;
+        color: #9ca3af;
+    }
+    
+    .pricing-cta {
+        padding: 16px 32px;
+        border-radius: 14px;
+        border: none;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .pricing-cta.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .pricing-cta.primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+    }
+    
+    .pricing-cta.secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+    
+    .pricing-cta.secondary:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .pricing-cta.current {
+        background: #f3f4f6;
+        color: #6b7280;
+        cursor: not-allowed;
+    }
+    
+    .comparison-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 13px;
+        gap: 8px;
+        margin: 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .comparison-badge.active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    
+    .comparison-badge.inactive {
+        background: #f3f4f6;
+        color: #9ca3af;
+    }
+    
+    .current-plan-banner {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 20px;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+    }
+    
+    .stat-box {
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 15px 20px;
+        border: 2px solid rgba(255,255,255,0.2);
+    }
+</style>
+
 <div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-gradient-primary text-white">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h3 class="mb-0 text-white">Planos e Assinaturas</h3>
-                            <p class="mb-0 text-sm opacity-8">Escolha o plano ideal para proteger suas marcas</p>
-                        </div>
-                        {% if current_user.subscription_plan != 'free' %}
-                        <div class="text-end">
-                            <p class="mb-0 text-sm opacity-8">Plano Atual</p>
-                            <h4 class="mb-0 text-white">{{ current_plan.display_name }}</h4>
-                        </div>
-                        {% endif %}
-                    </div>
+    <!-- Hero Section -->
+    <div class="pricing-hero">
+        <div class="text-center" style="position: relative; z-index: 1;">
+            <div style="display: inline-flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 12px 30px; border-radius: 50px; margin-bottom: 25px; border: 2px solid rgba(255,255,255,0.2);">
+                <i class="fas fa-crown" style="font-size: 24px;"></i>
+                <span style="font-weight: 700; font-size: 14px; letter-spacing: 1px;">PLANOS E ASSINATURAS</span>
+            </div>
+            
+            <h1 style="font-size: 56px; font-weight: 900; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                Escolha Seu Plano Ideal
+            </h1>
+            
+            <p style="font-size: 20px; opacity: 0.95; max-width: 700px; margin: 0 auto 30px; line-height: 1.6;">
+                Proteja suas marcas com inteligência artificial e monitoramento automático 24/7. 
+                Planos flexíveis para empresas de todos os tamanhos.
+            </p>
+            
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <div class="comparison-badge active">
+                    <i class="fas fa-check-circle"></i>Sem Contratos Longos
+                </div>
+                <div class="comparison-badge active">
+                    <i class="fas fa-check-circle"></i>Cancele Quando Quiser
+                </div>
+                <div class="comparison-badge active">
+                    <i class="fas fa-check-circle"></i>Suporte em Português
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Current Plan Info -->
+    <!-- Current Plan Banner -->
     {% if current_user.subscription_plan != 'free' %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Status</p>
-                            <h6 class="mb-0">
-                                <span class="badge bg-gradient-success">Ativo</span>
-                            </h6>
+    <div class="current-plan-banner">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center mb-3 mb-md-0">
+                <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 36px;">
+                    ✅
+                </div>
+            </div>
+            <div class="col-md-9">
+                <h4 style="font-weight: 800; margin-bottom: 15px; font-size: 24px;">
+                    Seu Plano Atual: {{ current_plan.display_name }}
+                </h4>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <div class="stat-box">
+                            <p style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">Status</p>
+                            <h6 style="font-weight: 700; margin: 0;">Ativo</h6>
                         </div>
-                        <div class="col-md-3">
-                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Marcas Utilizadas</p>
-                            <h6 class="mb-0">{{ brands_count }} / {{ current_user.max_brands }}</h6>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="stat-box">
+                            <p style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">Marcas</p>
+                            <h6 style="font-weight: 700; margin: 0;">{{ brands_count }} / {{ current_user.max_brands }}</h6>
                         </div>
-                        <div class="col-md-3">
-                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Próxima Renovação</p>
-                            <h6 class="mb-0">{{ current_user.subscription_end.strftime('%d/%m/%Y') if current_user.subscription_end else 'N/A' }}</h6>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="stat-box">
+                            <p style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">Renovação</p>
+                            <h6 style="font-weight: 700; margin: 0;">{{ current_user.subscription_end.strftime('%d/%m/%Y') if current_user.subscription_end else 'N/A' }}</h6>
                         </div>
-                        <div class="col-md-3">
-                            <p class="text-sm mb-1 text-uppercase font-weight-bold opacity-7">Valor Mensal</p>
-                            <h6 class="mb-0">{{ "{:,.0f}".format(current_plan.price_monthly) }} MT</h6>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="stat-box">
+                            <p style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">Valor</p>
+                            <h6 style="font-weight: 700; margin: 0;">{{ "{:,.0f}".format(current_plan.price_monthly) }} MT/mês</h6>
                         </div>
                     </div>
                 </div>
@@ -59,86 +317,98 @@
     {% endif %}
 
     <!-- Pricing Cards -->
-    <div class="row">
+    <div class="row justify-content-center">
         {% for plan in plans %}
         <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card h-100 {% if plan.name == current_user.subscription_plan %}border-primary{% endif %}" 
-                 style="{% if plan.name == 'professional' %}transform: scale(1.05); z-index: 1;{% endif %}">
-                
-                {% if plan.name == 'professional' %}
-                <div class="ribbon ribbon-top-right"><span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 5px 30px;">Recomendado</span></div>
-                {% endif %}
-                
-                <div class="card-header text-center pt-4 pb-3 {% if plan.name == 'professional' %}bg-gradient-primary{% endif %}">
-                    <h4 class="mb-0 {% if plan.name == 'professional' %}text-white{% endif %}">{{ plan.display_name }}</h4>
-                    <div class="mt-3">
+            <div class="pricing-card {% if plan.name == 'professional' %}featured{% endif %}">
+                <div class="pricing-header">
+                    <div class="plan-name">{{ plan.display_name }}</div>
+                    <div class="plan-price">
                         {% if plan.price_monthly > 0 %}
-                        <h1 class="mb-0 {% if plan.name == 'professional' %}text-white{% endif %}">
-                            {{ "{:,.0f}".format(plan.price_monthly) }}
-                            <small class="text-sm">MT</small>
-                        </h1>
-                        <p class="text-sm mb-0 {% if plan.name == 'professional' %}text-white opacity-8{% else %}opacity-7{% endif %}">por mês</p>
+                            {{ "{:,.0f}".format(plan.price_monthly) }}<small>MT</small>
                         {% elif plan.name == 'free' %}
-                        <h1 class="mb-0">Grátis</h1>
-                        <p class="text-sm mb-0 opacity-7">para sempre</p>
+                            Grátis
                         {% else %}
-                        <h1 class="mb-0">Sob Consulta</h1>
-                        <p class="text-sm mb-0 opacity-7">personalizado</p>
+                            Custom
+                        {% endif %}
+                    </div>
+                    <div class="plan-period">
+                        {% if plan.price_monthly > 0 %}
+                            por mês
+                        {% elif plan.name == 'free' %}
+                            para sempre
+                        {% else %}
+                            sob consulta
                         {% endif %}
                     </div>
                 </div>
                 
-                <div class="card-body">
-                    <ul class="list-unstyled">
+                <div class="pricing-body">
+                    <ul class="feature-list">
                         {% set features = plan.features|from_json %}
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success me-2"></i>
-                            <strong>{{ plan.max_brands }}</strong> marcas
+                        <li class="feature-item">
+                            <div class="feature-icon check">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <strong>{{ plan.max_brands if plan.max_brands < 9999 else 'Ilimitadas' }}</strong> marcas
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.email_notifications %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
-                            Notificações por Email
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.email_notifications %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.email_notifications %}check{% else %}times{% endif %}"></i>
+                            </div>
+                            Notificações Email
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.whatsapp_notifications %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.whatsapp_notifications %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.whatsapp_notifications %}check{% else %}times{% endif %}"></i>
+                            </div>
                             Notificações WhatsApp
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.rpi_monitoring %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
-                            Monitoramento RPI/INPI
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.rpi_monitoring %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.rpi_monitoring %}check{% else %}times{% endif %}"></i>
+                            </div>
+                            Monitoramento BPI/IPI
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.conflict_alerts %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.conflict_alerts %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.conflict_alerts %}check{% else %}times{% endif %}"></i>
+                            </div>
                             Alertas de Conflito
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.pdf_reports %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.pdf_reports %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.pdf_reports %}check{% else %}times{% endif %}"></i>
+                            </div>
                             Relatórios PDF
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.api_access %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.api_access %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.api_access %}check{% else %}times{% endif %}"></i>
+                            </div>
                             Acesso API
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-{% if features.priority_support %}check text-success{% else %}times text-secondary{% endif %} me-2"></i>
+                        <li class="feature-item">
+                            <div class="feature-icon {% if features.priority_support %}check{% else %}cross{% endif %}">
+                                <i class="fas fa-{% if features.priority_support %}check{% else %}times{% endif %}"></i>
+                            </div>
                             Suporte Prioritário
                         </li>
                     </ul>
-                </div>
-                
-                <div class="card-footer text-center">
+                    
                     {% if plan.name == current_user.subscription_plan %}
-                    <button class="btn btn-outline-secondary w-100" disabled>
-                        <i class="fas fa-check me-2"></i>Plano Atual
+                    <button class="pricing-cta current" disabled>
+                        <i class="fas fa-check-circle me-2"></i>Plano Atual
                     </button>
                     {% elif plan.name == 'enterprise' %}
-                    <a href="{{ url_for('support') }}" class="btn btn-primary w-100">
+                    <a href="{{ url_for('support') }}" class="pricing-cta primary" style="text-decoration: none; display: block; text-align: center;">
                         <i class="fas fa-envelope me-2"></i>Contactar Vendas
                     </a>
                     {% else %}
-                    <button class="btn btn-primary w-100" onclick="selectPlan('{{ plan.name }}', {{ plan.price_monthly }})">
+                    <button class="pricing-cta {% if plan.name == 'professional' %}primary{% else %}secondary{% endif %}" 
+                            onclick="selectPlan('{{ plan.name }}', {{ plan.price_monthly }})">
                         {% if plan.name == 'free' %}
-                        <i class="fas fa-download me-2"></i>Começar Grátis
+                        <i class="fas fa-rocket me-2"></i>Começar Grátis
                         {% else %}
                         <i class="fas fa-arrow-up me-2"></i>Fazer Upgrade
                         {% endif %}
@@ -149,191 +419,120 @@
         </div>
         {% endfor %}
     </div>
-
-    <!-- Payment Methods -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Métodos de Pagamento Aceites</h6>
-                </div>
-                <div class="card-body text-center">
-                    <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
-                        <div class="payment-method">
-                            <i class="fas fa-mobile-alt text-primary" style="font-size: 2rem;"></i>
-                            <p class="mb-0 mt-2 text-sm">M-Pesa</p>
-                        </div>
-                        <div class="payment-method">
-                            <i class="fas fa-credit-card text-success" style="font-size: 2rem;"></i>
-                            <p class="mb-0 mt-2 text-sm">Cartão de Crédito</p>
-                        </div>
-                        <div class="payment-method">
-                            <i class="fas fa-university text-info" style="font-size: 2rem;"></i>
-                            <p class="mb-0 mt-2 text-sm">Transferência Bancária</p>
-                        </div>
-                    </div>
-                    <p class="text-sm text-secondary mt-3 mb-0">
-                        <i class="fas fa-shield-alt me-1"></i>
-                        Pagamentos seguros e criptografados
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Upgrade</h5>
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+            <div class="modal-header" style="border-bottom: 2px solid #f3f4f6; padding: 25px;">
+                <h5 class="modal-title" style="font-weight: 800; font-size: 24px;">
+                    <i class="fas fa-credit-card me-2" style="color: #667eea;"></i>
+                    Finalizar Upgrade
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="text-center mb-4">
-                    <i class="fas fa-arrow-circle-up text-primary" style="font-size: 3rem;"></i>
-                    <h4 class="mt-3" id="selectedPlanName"></h4>
-                    <h2 class="mb-0" id="selectedPlanPrice"></h2>
-                    <p class="text-sm text-secondary">por mês</p>
-                </div>
-                
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Você será redirecionado para completar o pagamento via M-Pesa ou Cartão de Crédito.
-                </div>
-                
-                <form id="upgradeForm" action="/api/subscription/upgrade" method="POST">
-                    <input type="hidden" name="plan_name" id="planNameInput">
+            <div class="modal-body" style="padding: 30px;">
+                <form id="upgradeForm" method="POST" action="{{ url_for('upgrade_subscription') }}">
+                    <input type="hidden" name="plan_name" id="selectedPlan">
                     
-                    <div class="mb-3">
-                        <label class="form-label">Método de Pagamento</label>
-                        <select class="form-select" name="payment_method" id="paymentMethodSelect" required onchange="togglePhoneField()">
-                            <option value="">Selecione...</option>
-                            <option value="mpesa">M-Pesa</option>
-                            <option value="card">Cartão de Crédito</option>
-                            <option value="transfer">Transferência Bancária</option>
-                        </select>
+                    <div class="mb-4">
+                        <label style="font-weight: 700; margin-bottom: 15px; font-size: 16px;">Método de Pagamento</label>
+                        <div class="d-grid gap-3">
+                            <label class="payment-method-option" style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s ease;">
+                                <input type="radio" name="payment_method" value="mpesa" required style="margin-right: 15px;">
+                                <i class="fas fa-mobile-alt" style="color: #667eea; font-size: 24px; margin-right: 15px;"></i>
+                                <strong>M-Pesa</strong>
+                                <span style="color: #10b981; font-size: 12px; margin-left: 10px; background: #d1fae5; padding: 4px 12px; border-radius: 50px;">Recomendado</span>
+                            </label>
+                            <label class="payment-method-option" style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; cursor: pointer; opacity: 0.5;">
+                                <input type="radio" name="payment_method" value="card" disabled style="margin-right: 15px;">
+                                <i class="fas fa-credit-card" style="color: #9ca3af; font-size: 24px; margin-right: 15px;"></i>
+                                <strong>Cartão</strong>
+                                <span style="color: #9ca3af; font-size: 12px; margin-left: 10px;">Em breve</span>
+                            </label>
+                        </div>
                     </div>
                     
-                    <div class="mb-3" id="phoneField" style="display: none;">
-                        <label class="form-label">Número de Telefone M-Pesa</label>
-                        <input type="tel" class="form-select" name="phone_number" id="phoneNumber" placeholder="84XXXXXXX ou 258XXXXXXXXX">
-                        <small class="text-muted">Digite o número que receberá a solicitação de pagamento</small>
+                    <div class="mb-4" id="phoneNumberField" style="display: none;">
+                        <label for="phone_number" style="font-weight: 700; margin-bottom: 10px;">Número M-Pesa</label>
+                        <input type="tel" class="form-control" name="phone_number" id="phone_number" 
+                               placeholder="84 000 0000" 
+                               style="border-radius: 12px; padding: 15px; border: 2px solid #e5e7eb; font-size: 16px;">
+                        <small style="color: #6b7280; margin-top: 8px; display: block;">
+                            <i class="fas fa-info-circle me-1"></i>Digite o número sem prefixo (+258)
+                        </small>
                     </div>
                     
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="termsCheck" required>
-                        <label class="form-check-label text-sm" for="termsCheck">
-                            Concordo com os <a href="#">Termos de Serviço</a> e <a href="#">Política de Privacidade</a>
-                        </label>
+                    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-weight: 600; color: #1e40af;">Plano Selecionado:</span>
+                            <span id="selectedPlanName" style="font-weight: 800; color: #1e40af; font-size: 18px;"></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="font-weight: 600; color: #1e40af;">Valor Total:</span>
+                            <span id="selectedPlanPrice" style="font-weight: 900; color: #1e40af; font-size: 28px;"></span>
+                        </div>
                     </div>
+                    
+                    <button type="submit" class="pricing-cta primary" onclick="submitUpgrade(event)">
+                        <i class="fas fa-lock me-2"></i>Confirmar Pagamento Seguro
+                    </button>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="submitUpgrade()">
-                    <i class="fas fa-check me-2"></i>Confirmar Upgrade
-                </button>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.ribbon {
-    width: 150px;
-    height: 150px;
-    overflow: hidden;
-    position: absolute;
-}
-.ribbon::before,
-.ribbon::after {
-    position: absolute;
-    z-index: -1;
-    content: '';
-    display: block;
-    border: 5px solid #2980b9;
-}
-.ribbon span {
-    position: absolute;
-    display: block;
-    width: 225px;
-    padding: 15px 0;
-    box-shadow: 0 5px 10px rgba(0,0,0,.1);
-    color: #fff;
-    font: 700 14px/1 'Lato', sans-serif;
-    text-shadow: 0 1px 1px rgba(0,0,0,.2);
-    text-transform: uppercase;
-    text-align: center;
-}
-.ribbon-top-right {
-    top: -10px;
-    right: -10px;
-}
-.ribbon-top-right::before,
-.ribbon-top-right::after {
-    border-top-color: transparent;
-    border-right-color: transparent;
-}
-.ribbon-top-right::before {
-    top: 0;
-    left: 0;
-}
-.ribbon-top-right::after {
-    bottom: 0;
-    right: 0;
-}
-.ribbon-top-right span {
-    left: -25px;
-    top: 30px;
-    transform: rotate(45deg);
-}
-.payment-method {
-    padding: 1rem;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    min-width: 120px;
-}
-</style>
-
 <script>
-function togglePhoneField() {
-    const method = document.getElementById('paymentMethodSelect').value;
-    const phoneField = document.getElementById('phoneField');
-    const phoneInput = document.getElementById('phoneNumber');
-    
-    if (method === 'mpesa') {
-        phoneField.style.display = 'block';
-        phoneInput.required = true;
-    } else {
-        phoneField.style.display = 'none';
-        phoneInput.required = false;
-    }
-}
+// Show phone field when M-Pesa is selected
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const phoneField = document.getElementById('phoneNumberField');
+        if (this.value === 'mpesa') {
+            phoneField.style.display = 'block';
+            document.getElementById('phone_number').required = true;
+        } else {
+            phoneField.style.display = 'none';
+            document.getElementById('phone_number').required = false;
+        }
+    });
+});
+
+// Highlight selected payment method
+document.querySelectorAll('.payment-method-option').forEach(option => {
+    option.addEventListener('click', function() {
+        document.querySelectorAll('.payment-method-option').forEach(opt => {
+            opt.style.borderColor = '#e5e7eb';
+            opt.style.background = 'white';
+        });
+        this.style.borderColor = '#667eea';
+        this.style.background = '#f5f3ff';
+    });
+});
 
 function selectPlan(planName, price) {
+    document.getElementById('selectedPlan').value = planName;
     document.getElementById('selectedPlanName').textContent = planName.charAt(0).toUpperCase() + planName.slice(1);
-    document.getElementById('selectedPlanPrice').textContent = price.toLocaleString('pt-MZ') + ' MT';
-    document.getElementById('planNameInput').value = planName;
+    document.getElementById('selectedPlanPrice').textContent = price.toLocaleString('pt-MZ') + ' MT/mês';
     
     const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
     modal.show();
 }
 
-function submitUpgrade() {
+function submitUpgrade(event) {
+    event.preventDefault();
     const form = document.getElementById('upgradeForm');
+    
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
     
-    // Desabilitar botão para evitar duplo clique
     const submitBtn = event.target;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
     
-    // Enviar via AJAX
     const formData = new FormData(form);
     
     fetch('/api/subscription/upgrade', {
@@ -343,22 +542,22 @@ function submitUpgrade() {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert(data.message);
+            alert('✅ ' + data.message);
             if (data.redirect) {
                 window.location.href = data.redirect;
             } else {
                 location.reload();
             }
         } else {
-            alert('Erro: ' + data.message);
+            alert('❌ Erro: ' + data.message);
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Upgrade';
+            submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Confirmar Pagamento Seguro';
         }
     })
     .catch(error => {
-        alert('Erro ao processar pagamento. Tente novamente.');
+        alert('❌ Erro ao processar pagamento. Tente novamente.');
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Upgrade';
+        submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Confirmar Pagamento Seguro';
     });
 }
 </script>

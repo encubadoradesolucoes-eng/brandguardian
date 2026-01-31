@@ -5,95 +5,229 @@
 {% block content %}
 <style>
     .conflict-hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-        padding: 40px;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border-radius: 24px;
+        padding: 50px;
         margin-bottom: 30px;
         color: white;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 20px 60px rgba(239, 68, 68, 0.3);
     }
     
     .conflict-hero::before {
         content: '';
         position: absolute;
         top: -50%;
-        right: -10%;
-        width: 500px;
-        height: 500px;
-        background: rgba(255,255,255,0.1);
+        right: -20%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
         border-radius: 50%;
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    
+    .monitoring-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+        border: 2px solid #f3f4f6;
+        transition: all 0.3s ease;
+    }
+    
+    .monitoring-card:hover {
+        border-color: #667eea;
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(102, 126, 234, 0.15);
     }
     
     .stat-card {
         background: white;
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
-        border-left: 4px solid;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 5px solid;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: currentColor;
+        opacity: 0.05;
+        border-radius: 50%;
+        transform: translate(30%, -30%);
     }
     
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 50px rgba(0,0,0,0.12);
     }
     
-    .stat-card.danger { border-left-color: #ef4444; }
-    .stat-card.warning { border-left-color: #f59e0b; }
-    .stat-card.success { border-left-color: #10b981; }
-    .stat-card.info { border-left-color: #3b82f6; }
+    .stat-card.danger { border-left-color: #ef4444; color: #ef4444; }
+    .stat-card.warning { border-left-color: #f59e0b; color: #f59e0b; }
+    .stat-card.success { border-left-color: #10b981; color: #10b981; }
+    .stat-card.info { border-left-color: #3b82f6; color: #3b82f6; }
     
     .stat-icon {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .stat-icon.danger { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; }
+    .stat-icon.warning { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706; }
+    .stat-icon.success { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #059669; }
+    .stat-icon.info { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #2563eb; }
+    
+    .timeline-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+        border-left: 4px solid #e5e7eb;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-card:hover {
+        border-left-color: #667eea;
+        transform: translateX(8px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+    }
+    
+    .timeline-icon {
+        width: 50px;
+        height: 50px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 28px;
-        margin-bottom: 15px;
+        font-size: 24px;
+        margin-right: 20px;
     }
     
-    .stat-icon.danger { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #ef4444; }
-    .stat-icon.warning { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #f59e0b; }
-    .stat-icon.success { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #10b981; }
-    .stat-icon.info { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #3b82f6; }
-    
-    .empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    .feature-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 14px;
+        gap: 10px;
+        margin: 5px;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #374151;
+        transition: all 0.3s ease;
     }
     
-    .empty-state-icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-        opacity: 0.5;
+    .feature-badge:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .feature-badge.active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
     }
     
     .action-btn {
-        padding: 10px 20px;
-        border-radius: 10px;
+        padding: 14px 28px;
+        border-radius: 12px;
         border: none;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        font-size: 15px;
     }
     
     .action-btn.primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
     
     .action-btn.primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+    
+    .action-btn.secondary {
+        background: white;
+        color: #374151;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .action-btn.secondary:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-left: 4px solid #3b82f6;
+        border-radius: 12px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-left: 4px solid #f59e0b;
+        border-radius: 12px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+    }
+    
+    .comparison-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    
+    .comparison-table th {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        color: white;
+        padding: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+    
+    .comparison-table td {
+        padding: 20px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .comparison-table tr:hover {
+        background: #f9fafb;
     }
 </style>
 
@@ -102,15 +236,36 @@
     <div class="conflict-hero">
         <div class="row align-items-center" style="position: relative; z-index: 1;">
             <div class="col-md-8">
-                <h1 class="mb-2" style="font-size: 36px; font-weight: 700;">🛡️ Alertas de Conflito</h1>
-                <p class="mb-0" style="font-size: 18px; opacity: 0.9;">
-                    Monitoramento automático RPI/INPI • Detecção inteligente de similaridade
-                </p>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px;">
+                        🛡️
+                    </div>
+                    <div>
+                        <h1 class="mb-0" style="font-size: 42px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            Alertas de Conflito
+                        </h1>
+                        <p class="mb-0" style="font-size: 16px; opacity: 0.95;">
+                            Monitoramento Automático 24/7 • Proteção Inteligente de Marcas
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                    <span class="feature-badge active">
+                        <i class="fas fa-check-circle"></i>Monitoramento Boletim IPI
+                    </span>
+                    <span class="feature-badge active">
+                        <i class="fas fa-check-circle"></i>Detecção Automática
+                    </span>
+                    <span class="feature-badge active">
+                        <i class="fas fa-check-circle"></i>Alertas Instantâneos
+                    </span>
+                </div>
             </div>
             <div class="col-md-4 text-end">
-                <button class="btn btn-light btn-lg" style="border-radius: 12px; font-weight: 600;">
-                    <i class="fas fa-download me-2"></i>Exportar Relatório
-                </button>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; border: 2px solid rgba(255,255,255,0.2);">
+                    <p class="mb-1" style="font-size: 14px; opacity: 0.9;">Próxima Verificação</p>
+                    <h3 class="mb-0" style="font-size: 24px; font-weight: 700;">Após Publicação IPI</h3>
+                </div>
             </div>
         </div>
     </div>
@@ -122,8 +277,11 @@
                 <div class="stat-icon danger">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 32px; font-weight: 700; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 500;">Conflitos Ativos</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Conflitos Ativos</p>
+                <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
+                    <i class="fas fa-shield-alt me-1"></i>Suas marcas estão seguras
+                </p>
             </div>
         </div>
         
@@ -132,8 +290,11 @@
                 <div class="stat-icon warning">
                     <i class="fas fa-eye"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 32px; font-weight: 700; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 500;">Em Análise</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Em Análise</p>
+                <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
+                    <i class="fas fa-search me-1"></i>Aguardando revisão
+                </p>
             </div>
         </div>
         
@@ -142,8 +303,11 @@
                 <div class="stat-icon success">
                     <i class="fas fa-check-circle"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 32px; font-weight: 700; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 500;">Resolvidos</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Resolvidos</p>
+                <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
+                    <i class="fas fa-history me-1"></i>Histórico limpo
+                </p>
             </div>
         </div>
         
@@ -152,23 +316,144 @@
                 <div class="stat-icon info">
                     <i class="fas fa-file-alt"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 32px; font-weight: 700; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 500;">RPIs Processadas</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">BPIs Processados</p>
+                <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
+                    <i class="fas fa-calendar-check me-1"></i>Última: Nunca
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Empty State -->
-    <div class="empty-state">
-        <div class="empty-state-icon">🎉</div>
-        <h3 style="font-size: 28px; font-weight: 700; color: #1f2937; margin-bottom: 10px;">
-            Nenhum Conflito Detectado!
-        </h3>
-        <p style="font-size: 16px; color: #6b7280; max-width: 500px; margin: 0 auto 30px;">
-            Suas marcas estão seguras. Nosso sistema monitora automaticamente a RPI toda semana e você será notificado imediatamente se algum conflito for detectado.
-        </p>
+    <!-- Info Box: Como Funciona -->
+    <div class="info-box">
+        <div class="d-flex align-items-start gap-3">
+            <div style="width: 50px; height: 50px; background: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-info-circle" style="font-size: 24px; color: white;"></i>
+            </div>
+            <div>
+                <h5 style="font-weight: 700; color: #1e40af; margin-bottom: 10px;">
+                    <i class="fas fa-robot me-2"></i>Como Funciona o Monitoramento Automático?
+                </h5>
+                <p style="color: #1e3a8a; margin-bottom: 10px; line-height: 1.6;">
+                    Nosso sistema monitora automaticamente o <strong>Boletim Oficial de Propriedade Industrial</strong> do <strong>IPI (Instituto da Propriedade Industrial de Moçambique)</strong> semanalmente. 
+                    Quando novas marcas são publicadas, comparamos com as suas usando inteligência artificial para detectar similaridades visuais e fonéticas.
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span style="background: white; padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #1e40af;">
+                        <i class="fas fa-calendar-week me-1"></i>Verificação Semanal
+                    </span>
+                    <span style="background: white; padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #1e40af;">
+                        <i class="fas fa-bell me-1"></i>Alertas Instantâneos
+                    </span>
+                    <span style="background: white; padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #1e40af;">
+                        <i class="fas fa-envelope me-1"></i>Email + WhatsApp
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="monitoring-card">
+        <h4 style="font-weight: 700; color: #1f2937; margin-bottom: 20px;">
+            <i class="fas fa-balance-scale me-2" style="color: #667eea;"></i>
+            Diferença: Análise Inteligente vs Alertas de Conflito
+        </h4>
+        
+        <div class="comparison-table">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Característica</th>
+                        <th><i class="fas fa-brain me-2"></i>Análise Inteligente</th>
+                        <th><i class="fas fa-shield-alt me-2"></i>Alertas de Conflito</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600;">Quando Usar</td>
+                        <td><span style="background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;">Antes de registrar</span></td>
+                        <td><span style="background: #fee2e2; color: #dc2626; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;">Após registrar</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Tipo de Análise</td>
+                        <td>Análise <strong>pontual</strong> de UMA marca nova</td>
+                        <td>Monitoramento <strong>contínuo</strong> de TODAS as suas marcas</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Frequência</td>
+                        <td>Manual (quando você quiser)</td>
+                        <td>Automático (toda terça-feira)</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Comparação</td>
+                        <td>Com marcas <strong>já existentes</strong> no banco</td>
+                        <td>Com marcas <strong>novas</strong> publicadas no Boletim IPI</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Resultado</td>
+                        <td>Imediato (segundos)</td>
+                        <td>Semanal (após publicação IPI)</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Notificações</td>
+                        <td>Não envia alertas</td>
+                        <td>Email + WhatsApp automáticos</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Objetivo</td>
+                        <td>Validar se sua marca é <strong>registrável</strong></td>
+                        <td>Proteger suas marcas de <strong>novos conflitos</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Timeline of Monitoring -->
+    <div class="monitoring-card">
+        <h4 style="font-weight: 700; color: #1f2937; margin-bottom: 25px;">
+            <i class="fas fa-history me-2" style="color: #667eea;"></i>
+            Histórico de Monitoramento
+        </h4>
+        
+        <div class="timeline-card">
+            <div class="d-flex align-items-center">
+                <div class="timeline-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #2563eb;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <h6 style="font-weight: 700; color: #1f2937; margin-bottom: 5px;">Sistema Aguardando Primeira Execução</h6>
+                    <p style="color: #6b7280; margin-bottom: 0; font-size: 14px;">
+                        O monitoramento automático será executado semanalmente após cada publicação do Boletim IPI. Você receberá um email de confirmação quando o primeiro scan for concluído.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="timeline-card">
+            <div class="d-flex align-items-center">
+                <div class="timeline-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #059669;">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div>
+                    <h6 style="font-weight: 700; color: #1f2937; margin-bottom: 5px;">Sistema Configurado com Sucesso</h6>
+                    <p style="color: #6b7280; margin-bottom: 0; font-size: 14px;">
+                        Scheduler ativado • Jobs agendados • Notificações configuradas
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="text-center">
         <button class="action-btn primary" onclick="window.location.href='/register'">
-            <i class="fas fa-plus-circle"></i>Registrar Nova Marca
+            <i class="fas fa-brain"></i>Fazer Análise Inteligente Agora
+        </button>
+        <button class="action-btn secondary" onclick="window.location.href='/dashboard'">
+            <i class="fas fa-chart-line"></i>Ver Dashboard
         </button>
     </div>
 </div>
