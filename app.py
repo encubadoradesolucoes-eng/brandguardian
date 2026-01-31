@@ -603,6 +603,7 @@ def register():
             with app_obj.app_context():
                 try:
                     # 1. WhatsApp
+                    wa_api = os.environ.get('WHATSAPP_API_URL', 'http://localhost:3002')
                     if ent.phone:
                         cred_text = f"\n\n🔑 *Acesso ao Portal:* {ent.email} / {pwd}" if pwd else ""
                         msg_wa = (f"🔐 *M24 Brand Guardian*\n\n"
@@ -610,7 +611,10 @@ def register():
                                   f"Recebemos seu pedido de proteção para a marca *{brand_data.name}*.\n"
                                   f"Processo: {brand_data.process_number or 'Vigilância Ativa'}{cred_text}\n\n"
                                   f"Status: *Sob Análise IA*")
-                        requests.post('http://localhost:3002/send', json={'phone': ent.phone, 'message': msg_wa}, timeout=5)
+                        try:
+                            requests.post(f'{wa_api}/send', json={'phone': ent.phone, 'message': msg_wa}, timeout=5)
+                        except Exception as wa_err:
+                            print(f">>> Erro WhatsApp Async: {wa_err}")
                     
                     # 2. Email
                     msg_mail = Message(
@@ -624,9 +628,21 @@ def register():
                                      f"{cred_html}"
                                      f"<p>Nossa IA já está varrendo a base nacional para detectar possíveis conflitos.</p>"
                                      f"<hr><small>M24 Security Systems</small>")
-                    mail.send(msg_mail)
+                    try:
+                        mail.send(msg_mail)
+                        # Log de Sucesso
+                        log = EmailLog(recipient=ent.email, subject=msg_mail.subject, status='sent')
+                        db.session.add(log)
+                        db.session.commit()
+                    except Exception as mail_err:
+                        print(f">>> Erro Email Async: {mail_err}")
+                        # Log de Erro
+                        log = EmailLog(recipient=ent.email, subject=msg_mail.subject, status='error', error_message=str(mail_err))
+                        db.session.add(log)
+                        db.session.commit()
+
                 except Exception as ex:
-                    print(f"Erro Notificação Async: {ex}")
+                    print(f"Erro Crítico Notificação Async: {ex}")
 
         threading.Thread(target=notify_async, args=(app, entity, raw_password, new_brand)).start()
 
