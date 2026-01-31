@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
     libnss3 \
+    libnss3-tools \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
@@ -19,6 +20,9 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libcairo2 \
     libglib2.0-0 \
+    libxkbcommon0 \
+    libxshmfence1 \
+    libnspr4 \
     && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*

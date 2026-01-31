@@ -226,6 +226,13 @@ class Brand(db.Model):
     phonetic_name = db.Column(db.String(200))
     registered_by = db.Column(db.String(100), default='Sistema m24') # Quem registrou (Ex: Admin, Titular)
 
+    def generate_process_number(self):
+        """Gera um número de processo único no formato M24-YYYY-XXX."""
+        year = datetime.utcnow().year
+        # Conta marcas criadas este ano
+        count = Brand.query.filter(Brand.submission_date >= datetime(year, 1, 1)).count()
+        return f"M24-{year}-{(count + 1):03d}"
+
 class BrandNote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     brand_id = db.Column(db.Integer, db.ForeignKey('brand.id'), nullable=False)
@@ -534,23 +541,27 @@ def register():
         owner_city = request.form.get('owner_city')
         owner_country = request.form.get('owner_country')
         
-        if entity_id and entity_id != 'new':
-            # Usar Titular Existente
+        if entity_id and entity_id not in ['new', 'current_user']:
+            # Usar Titular Existente (Admin escolhendo)
             entity = Entity.query.get(int(entity_id))
-            if entity:
-                # --- ATUALIZAR DADOS DA ENTIDADE (Se editado no form) ---
-                # O usuário explicitamente pediu para atualizar dados
-                if owner_email and owner_email != entity.email:
-                     entity.email = owner_email
-                if owner_phone: entity.phone = owner_phone
-                if owner_address: entity.address = owner_address
-                if owner_city: entity.city = owner_city
-                if owner_country: entity.country = owner_country
-                if owner_name: entity.name = owner_name
-                if owner_nuit: entity.nuit = owner_nuit
-                
-                db.session.commit()
-                print(f">>> Dados da Entidade {entity.name} atualizados.")
+        elif entity_id == 'current_user':
+            # Cliente Logado vinculado automaticamente
+            entity = Entity.query.filter_by(email=current_user.email).first()
+        
+        if entity:
+            # --- ATUALIZAR DADOS DA ENTIDADE (Se editado no form) ---
+            # O usuário explicitamente pediu para atualizar dados
+            if owner_email and owner_email != entity.email:
+                 entity.email = owner_email
+            if owner_phone: entity.phone = owner_phone
+            if owner_address: entity.address = owner_address
+            if owner_city: entity.city = owner_city
+            if owner_country: entity.country = owner_country
+            if owner_name: entity.name = owner_name
+            if owner_nuit: entity.nuit = owner_nuit
+            
+            db.session.commit()
+            print(f">>> Dados da Entidade {entity.name} atualizados.")
         
         else:
             # Criar Novo Titular (Se não existir pelo email/nuit)
