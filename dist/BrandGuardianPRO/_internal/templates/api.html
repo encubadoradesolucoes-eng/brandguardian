@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+
+{% block title %}API m24 - Documentação para Desenvolvedores{% endblock %}
+
+{% block extra_css %}
+<style>
+    .api-endpoint {
+        background: var(--dark);
+        color: #00ff41;
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        font-family: 'Courier New', Courier, monospace;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow-x: auto;
+    }
+    
+    .method {
+        font-weight: 800;
+        margin-right: 1rem;
+    }
+    
+    .method.get { color: #61afef; }
+    .method.post { color: #98c379; }
+    
+    .api-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .param-table {
+        width: 100%;
+        margin-top: 1rem;
+        border-collapse: collapse;
+    }
+    
+    .param-table th, .param-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .copy-btn {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        color: white;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+    }
+    
+    .copy-btn:hover { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header animate-in">
+    <div class="api-header">
+        <div class="logo-icon" style="width: 64px; height: 64px; font-size: 2rem;">
+            <i class="ri-code-box-line"></i>
+        </div>
+        <div>
+            <h1 class="page-title" style="margin-bottom: 0;">API m24 DPI</h1>
+            <p class="page-subtitle">Integre a inteligência de monitoramento de marcas m24 nos seus sistemas internos.</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-3" style="gap: 1.5rem; margin-bottom: 3rem;">
+    <div class="stat-card">
+        <div class="stat-label">Status da API</div>
+        <div class="stat-value" style="color: var(--success); font-size: 1.5rem;">Operacional</div>
+        <div class="stat-change positive">99.9% uptime</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Latência Média</div>
+        <div class="stat-value" style="font-size: 1.5rem;">245ms</div>
+        <div class="stat-change positive"><i class="ri-flashlight-line"></i> Alta Performance</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total de Requests/Mês</div>
+        <div class="stat-value" style="font-size: 1.5rem;">1.2M</div>
+        <div class="stat-change positive">+15% vs mês anterior</div>
+    </div>
+</div>
+
+<div class="card animate-in">
+    <h2 class="card-title" style="margin-bottom: 2rem;">Endpoints Disponíveis</h2>
+
+    <!-- Endpoint 1 -->
+    <div style="margin-bottom: 3rem;">
+        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ri-search-line"></i> Análise Rápida de Marca
+        </h3>
+        <p style="color: var(--gray-800); margin-bottom: 1rem;">Executa uma análise de risco fonético e textual contra a base de dados m24.</p>
+        
+        <div class="api-endpoint">
+            <span class="method post">POST</span> /api/analyze
+            <i class="ri-file-copy-line copy-btn" title="Copiar Endpoint"></i>
+<pre style="margin-top: 1rem; color: #abb2bf;">
+{
+  "name": "Nome da Marca",
+  "classes": [9, 35, 42]
+}</pre>
+        </div>
+
+        <h4>Parâmetros de Entrada</h4>
+        <table class="param-table">
+            <thead>
+                <tr>
+                    <th>Campo</th>
+                    <th>Tipo</th>
+                    <th>Obrigatório</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>name</code></td>
+                    <td>string</td>
+                    <td>Sim</td>
+                    <td>O nome da marca a ser analisada.</td>
+                </tr>
+                <tr>
+                    <td><code>classes</code></td>
+                    <td>array</td>
+                    <td>Não</td>
+                    <td>Lista de IDs das Classes Nice (1-45).</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Endpoint 2 -->
+    <div style="margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ri-database-2-line"></i> Lista de Marcas do Portfólio
+        </h3>
+        <p style="color: var(--gray-800); margin-bottom: 1rem;">Retorna todas as marcas e processos cadastrados no seu perfil.</p>
+        
+        <div class="api-endpoint">
+            <span class="method get">GET</span> /api/brands
+            <i class="ri-file-copy-line copy-btn" title="Copiar Endpoint"></i>
+        </div>
+    </div>
+</div>
+
+<div class="card animate-in" style="margin-top: 2rem; background: var(--gray-100); border-left: 5px solid var(--primary);">
+    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+        <i class="ri-key-2-line" style="font-size: 2rem; color: var(--primary);"></i>
+        <div>
+            <h3 style="margin-bottom: 0.5rem;">Autenticação</h3>
+            <p style="color: var(--gray-800);">Todas as chamadas à API devem incluir a sua <strong>m24-API-KEY</strong> no cabeçalho <code>Authorization</code>.</p>
+            <div style="margin-top: 1rem; background: white; padding: 0.5rem 1rem; border-radius: 4px; display: inline-block; font-family: monospace; border: 1px solid var(--gray-300);">
+                Authorization: Bearer M24_PRO_KEY_XXXXXXX
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

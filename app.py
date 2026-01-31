@@ -149,6 +149,12 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     last_active = db.Column(db.DateTime, default=datetime.utcnow) # Para saber quem está online
     
+    # Sistema de Assinaturas
+    subscription_plan = db.Column(db.String(50), default='free') # 'free', 'starter', 'professional', 'business', 'enterprise'
+    subscription_start = db.Column(db.DateTime)
+    subscription_end = db.Column(db.DateTime)
+    max_brands = db.Column(db.Integer, default=5) # Limite de marcas por plano
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         
@@ -176,6 +182,42 @@ class EmailLog(db.Model):
     status = db.Column(db.String(50)) # 'sent' ou 'error'
     error_message = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SubscriptionPlan(db.Model):
+    """Planos de assinatura disponíveis"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False) # 'starter', 'professional', etc
+    display_name = db.Column(db.String(100)) # Nome amigável
+    price_monthly = db.Column(db.Float) # Preço em MT
+    max_brands = db.Column(db.Integer) # Limite de marcas
+    features = db.Column(db.Text) # JSON com features incluídas
+    is_active = db.Column(db.Boolean, default=True)
+
+class RPIMonitoring(db.Model):
+    """Monitoramento da Revista da Propriedade Industrial"""
+    id = db.Column(db.Integer, primary_key=True)
+    rpi_number = db.Column(db.String(20)) # Ex: "RPI 2756"
+    publication_date = db.Column(db.Date)
+    processed = db.Column(db.Boolean, default=False)
+    total_new_marks = db.Column(db.Integer, default=0)
+    conflicts_detected = db.Column(db.Integer, default=0)
+    data_file = db.Column(db.String(255)) # Caminho para arquivo processado
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class BrandConflict(db.Model):
+    """Conflitos detectados entre marcas do cliente e novos pedidos"""
+    id = db.Column(db.Integer, primary_key=True)
+    brand_id = db.Column(db.Integer, db.ForeignKey('brand.id'))
+    rpi_id = db.Column(db.Integer, db.ForeignKey('rpi_monitoring.id'))
+    conflicting_mark_name = db.Column(db.String(200))
+    conflicting_mark_number = db.Column(db.String(50)) # Número do processo INPI
+    similarity_score = db.Column(db.Float) # 0-100
+    conflict_type = db.Column(db.String(50)) # 'phonetic', 'visual', 'both'
+    status = db.Column(db.String(50), default='pending') # 'pending', 'reviewed', 'dismissed'
+    notified = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    brand = db.relationship('Brand', backref='conflicts')
 
 class Entity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -952,6 +994,48 @@ def dashboard():
         recent = my_brands.order_by(Brand.submission_date.desc()).limit(5).all()
         high_risk = my_brands.filter_by(risk_level='high').limit(5).all()
         return render_template('dashboard.html', stats=stats, recent=recent, high_risk=high_risk)
+
+@app.route('/conflicts')
+@login_required
+def conflicts():
+    """Página de alertas de conflitos detectados"""
+    if current_user.role == 'admin':
+        all_conflicts = BrandConflict.query.order_by(BrandConflict.created_at.desc()).all()
+    else:
+        # Cliente vê apenas conflitos de suas marcas
+        my_brand_ids = [b.id for b in Brand.query.filter_by(user_id=current_user.id).all()]
+        all_conflicts = BrandConflict.query.filter(BrandConflict.brand_id.in_(my_brand_ids)).order_by(BrandConflict.created_at.desc()).all()
+    
+    # Estatísticas
+    pending = sum(1 for c in all_conflicts if c.status == 'pending')
+    reviewed = sum(1 for c in all_conflicts if c.status == 'reviewed')
+    dismissed = sum(1 for c in all_conflicts if c.status == 'dismissed')
+    total_rpis = RPIMonitoring.query.filter_by(processed=True).count()
+    
+    return render_template('conflicts.html',
+                           conflicts=all_conflicts,
+                           pending_conflicts=pending,
+                           reviewed_conflicts=reviewed,
+                           dismissed_conflicts=dismissed,
+                           total_rpis=total_rpis)
+
+@app.route('/api/conflicts/<int:conflict_id>/review', methods=['POST'])
+@login_required
+def review_conflict(conflict_id):
+    """Marca conflito como analisado"""
+    conflict = BrandConflict.query.get_or_404(conflict_id)
+    conflict.status = 'reviewed'
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Conflito marcado como analisado'})
+
+@app.route('/api/conflicts/<int:conflict_id>/dismiss', methods=['POST'])
+@login_required
+def dismiss_conflict(conflict_id):
+    """Marca conflito como resolvido"""
+    conflict = BrandConflict.query.get_or_404(conflict_id)
+    conflict.status = 'dismissed'
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Conflito resolvido'})
 
 @app.route('/entities')
 @login_required
@@ -1787,4 +1871,12 @@ if __name__ == '__main__':
         db.create_all()
         seed_users()
         
-    app.run(debug=True, use_reloader=True, port=7000)
+        # Inicializar sistema de monitoramento automático
+        try:
+            from scheduler import init_scheduler
+            init_scheduler(app, db)
+            print("🤖 Sistema de monitoramento RPI ativado!")
+        except Exception as e:
+            print(f"⚠️ Scheduler não iniciado: {e}")
+        
+    app.run(debug=True, use_reloader=False, port=7000)  # use_reloader=False para evitar duplicação de jobs
