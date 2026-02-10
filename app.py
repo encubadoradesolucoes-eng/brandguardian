@@ -848,6 +848,15 @@ def delete_entity(id):
 
 
 
+
+@app.route('/analysis')
+@login_required
+def analysis_page():
+    """Página de Análise Inteligente IA - separada da listagem de marcas"""
+    # Redirecionar para a página de marcas por enquanto
+    # TODO: Criar template dedicado para análise inteligente
+    return redirect(url_for('index'))
+
 @app.route('/dossie')
 @login_required
 def index():
@@ -886,23 +895,9 @@ def index():
 
 @app.route('/agent/dashboard')
 @login_required
-def agent_dashboard():
-    if current_user.role != 'agent':
-        return redirect(url_for('index'))
-    
-    # Marcas sob responsabilidade deste agente
-    brands = Brand.query.filter_by(agent_id=current_user.id).order_by(Brand.submission_date.desc()).all()
-    
-    # Estatísticas simples
-    total = len(brands)
-    conflicts = sum(1 for b in brands if b.risk_score > 50)
-    pending = sum(1 for b in brands if b.status == 'waiting_admin')
-    
-    return render_template('agent/dashboard.html', brands=brands, stats={
-        'total': total,
-        'conflicts': conflicts,
-        'pending': pending
-    })
+def agent_dashboard_old():
+    """DEPRECATED - Redireciona para novo dashboard unificado"""
+    return redirect(url_for('agent_dashboard_new'))
 
 @app.route('/agent/prospecting')
 @login_required
@@ -930,7 +925,7 @@ def agent_claim_brand(brand_id):
     db.session.commit()
     
     flash(f"Você agora é o agente responsável pela marca {brand.name}!", "success")
-    return redirect(url_for('agent_dashboard'))
+    return redirect(url_for('agent_dashboard_new'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -1315,10 +1310,41 @@ def api_brands():
     return jsonify([brand.to_dict() for brand in brands])
 
 
+
+@app.route('/agents-list')
+@login_required
+def agents_list():
+    """Lista todos os Agentes de Propriedade Industrial (apenas para admin)"""
+    if current_user.role != 'admin':
+        flash('Acesso negado. Área restrita a administradores.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Buscar todos os usuários com role='agent'
+    agents = User.query.filter_by(role='agent').order_by(User.username).all()
+    
+    # Estatísticas dos agentes
+    agents_data = []
+    for agent in agents:
+        brands_count = Brand.query.filter_by(owner_id=agent.id).count()
+        agents_data.append({
+            'agent': agent,
+            'brands_count': brands_count,
+            'subscription': agent.subscription_plan,
+            'registration_number': agent.agent_registration_number or 'N/A'
+        })
+    
+    return render_template('agents_list.html', agents_data=agents_data)
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Lógica baseada no Perfil (Role)
+    # Redirecionamento inteligente baseado no role
+    if current_user.role == 'agent':
+        return redirect(url_for('agent_dashboard_new'))
+    elif current_user.role == 'client':
+        return redirect(url_for('client_dashboard'))
+    
+    # Lógica baseada no Perfil (Role) - ADMIN
     if current_user.role == 'admin':
         # ADMIN: Relatório Global de Inteligência
         total_brands = Brand.query.count()
@@ -1386,6 +1412,76 @@ def dashboard():
                                recent=recent, 
                                alerts=alerts,
                                documents=documents)
+
+@app.route('/client-dashboard')
+@login_required
+def client_dashboard():
+    """Dashboard exclusivo para Entidades/Clientes - vê apenas suas próprias marcas"""
+    if current_user.role != 'client':
+        flash('Acesso negado. Esta área é exclusiva para clientes.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Apenas marcas do próprio usuário
+    my_brands = Brand.query.filter_by(owner_id=current_user.id)
+    
+    stats = {
+        'total': my_brands.count(),
+        'pending': my_brands.filter(Brand.status.in_(['under_study', 'waiting_admin'])).count(),
+        'registered': my_brands.filter(Brand.status.in_(['approved', 'monitored'])).count(),
+        'high_risk': my_brands.filter_by(risk_level='high').count(),
+        'medium_risk': my_brands.filter_by(risk_level='medium').count(),
+        'low_risk': my_brands.filter_by(risk_level='low').count(),
+        'user_role': current_user.name or current_user.username,
+        'subscription_plan': current_user.subscription_plan,
+        'max_brands': current_user.max_brands
+    }
+    
+    recent = my_brands.order_by(Brand.submission_date.desc()).limit(5).all()
+    
+    # Alertas do cliente
+    alerts = Alert.query.filter_by(user_id=current_user.id).order_by(Alert.created_at.desc()).limit(10).all()
+    
+    # Documentos das marcas do cliente
+    my_brand_ids = [b.id for b in my_brands.all()]
+    documents = BrandDocument.query.filter(BrandDocument.brand_id.in_(my_brand_ids)).order_by(BrandDocument.uploaded_at.desc()).limit(10).all()
+    
+    return render_template('client_dashboard.html', 
+                           stats=stats, 
+                           recent=recent, 
+                           alerts=alerts,
+                           documents=documents)
+
+@app.route('/agent-dashboard')
+@login_required
+def agent_dashboard_new():
+    """Dashboard exclusivo para Agentes de PI - ferramentas profissionais"""
+    if current_user.role != 'agent':
+        flash('Acesso negado. Esta área é exclusiva para agentes de propriedade industrial.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Marcas do próprio agente (se tiver)
+    my_brands = Brand.query.filter_by(owner_id=current_user.id)
+    
+    # Clientes do agente (usuários que ele gerencia - implementar relacionamento depois)
+    # Por enquanto, mostrar estatísticas básicas
+    
+    stats = {
+        'my_brands': my_brands.count(),
+        'clients_count': 0,  # TODO: Implementar relacionamento agente-cliente
+        'opportunities': 0,  # TODO: Implementar prospector
+        'reports_generated': 0,  # TODO: Implementar contador de relatórios
+        'user_role': 'Agente de Propriedade Industrial',
+        'agent_number': current_user.agent_registration_number or 'Não informado',
+        'subscription_plan': current_user.subscription_plan
+    }
+    
+    recent = my_brands.order_by(Brand.submission_date.desc()).limit(5).all()
+    alerts = Alert.query.filter_by(user_id=current_user.id).order_by(Alert.created_at.desc()).limit(10).all()
+    
+    return render_template('agent_dashboard.html', 
+                           stats=stats, 
+                           recent=recent, 
+                           alerts=alerts)
 
 @app.route('/conflicts')
 @login_required

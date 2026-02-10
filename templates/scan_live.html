@@ -4,6 +4,14 @@
 
 {% block extra_css %}
 <style>
+    /* Background da landing page em toda a página */
+    body {
+        background: linear-gradient(to right, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0.6) 100%), url('/static/hero-guardian.png') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
+    }
+
     /* Estilo Retro-Moderno "Hacker" Limpo */
     :root {
         --terminal-bg: #0f172a;
@@ -13,7 +21,8 @@
 
     .scan-container {
         min-height: 80vh;
-        background: #000;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
         font-family: 'Courier New', Courier, monospace;
         color: #e2e8f0;
         padding: 20px;
@@ -23,7 +32,7 @@
         overflow: hidden;
     }
 
-    /* Linhas de grade sutis */
+    /* Linhas de grade sutis - mantém o efeito terminal */
     .scan-container::before {
         content: "";
         position: absolute;
@@ -144,6 +153,26 @@
         background: rgba(239, 68, 68, 0.1);
     }
 
+    /* Estilo especial para alertas BPI críticos */
+    .log-line.bpi-alert {
+        background: white !important;
+        color: #dc2626 !important;
+        border: 3px solid #dc2626 !important;
+        border-left-width: 8px !important;
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+        padding: 16px 20px !important;
+        margin: 12px 0 !important;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+        animation: pulse-alert 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-alert {
+        0%, 100% { box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3); }
+        50% { box-shadow: 0 4px 30px rgba(220, 38, 38, 0.6); }
+    }
+
     /* Mode Toggle */
     .mode-btn {
         background: transparent;
@@ -163,12 +192,137 @@
         border-color: #38bdf8;
         font-weight: bold;
     }
+
+    /* Sidebar Comercial */
+    .commercial-sidebar {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
+    .cta-card {
+        background: rgba(30, 41, 59, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cta-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    }
+
+    .cta-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(99, 102, 241, 0.6);
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+    }
+
+    .cta-card h4 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cta-card h4 i {
+        color: #6366f1;
+        font-size: 1.3rem;
+    }
+
+    .cta-card p {
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 16px;
+    }
+
+    .cta-btn {
+        display: block;
+        width: 100%;
+        padding: 12px 20px;
+        background: #6366f1;
+        color: white;
+        text-align: center;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        border: 1px solid #6366f1;
+    }
+
+    .cta-btn:hover {
+        background: #4f46e5;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        color: white;
+    }
+
+    .cta-btn.secondary {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+
+    .cta-btn.secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: white;
+    }
+
+    .cta-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    /* Scrollbar customizada para sidebar */
+    .commercial-sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .commercial-sidebar::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+
+    .commercial-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.5);
+        border-radius: 10px;
+    }
+
+    .commercial-sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.7);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
+
+<div class="row">
+    <!-- Terminal Principal -->
+    <div class="col-lg-8">
         <div class="scan-container">
             <div class="terminal-header">
                 <div>
@@ -207,10 +361,16 @@
     const logs = document.getElementById('scanLogs');
     const input = document.getElementById('brandInput');
 
-    function log(msg, type = 'info') {
+    function log(msg, type = 'info', isHtml = false) {
         const div = document.createElement('div');
         div.className = 'log-line ' + type;
-        div.innerText = msg;
+        
+        if (isHtml) {
+            div.innerHTML = msg;
+        } else {
+            div.innerText = msg;
+        }
+        
         logs.appendChild(div);
 
         // Auto scroll
@@ -314,7 +474,7 @@
             // Para usuários logados: res.bpi é array
             // Para não logados: res.resumo_bpi é string
             if (res.bpi && res.bpi.length > 0) {
-                log(`[!] [BPI] ALERTA: ${res.bpi.length} registro(s) similar(es) encontrado(s):`, 'danger');
+                log(`🚨 [BPI] ALERTA: ${res.bpi.length} registro(s) similar(es) encontrado(s)`, 'bpi-alert');
                 res.bpi.forEach(b => {
                     log(`   -> [${b.similaridade}%] ${b.marca} (Proc: ${b.processo})`, 'warning');
                 });
@@ -323,8 +483,7 @@
                 const temConflitos = res.resumo_bpi.includes('marcas similares encontradas') && 
                                      !res.resumo_bpi.startsWith('0 marcas');
                 if (temConflitos) {
-                    log(`[!] [BPI] ALERTA: ${res.resumo_bpi}`, 'danger');
-                    log(`     Faça login para ver detalhes completos.`, 'info');
+                    log(`🚨 [BPI] ALERTA: ${res.resumo_bpi}`, 'bpi-alert');
                 } else {
                     log(`[✓] [BPI] ${res.resumo_bpi}`, 'success');
                 }
@@ -354,9 +513,54 @@
                 log(`  ${res.analise_risco.recomendacao}`, 'info');
             }
 
-            if (data.mensagem_login) {
-                log(`\n[🔒] ${data.mensagem_login}`, 'info');
-                log(`     Faça login para ver detalhes completos e relatório jurídico.`, 'info');
+            // 5. Mensagem Comercial (se não logado)
+            if (res.mensagem_comercial) {
+                const msg = res.mensagem_comercial;
+                log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, 'info');
+                log(`${msg.titulo}`, 'warning');
+                log(`${msg.texto}`, 'info');
+                log(``, 'info');
+                
+                // Lista de benefícios
+                msg.beneficios.forEach(beneficio => {
+                    log(`  ${beneficio}`, 'success');
+                });
+                
+                log(``, 'info');
+                
+                // CTAs com botões clicáveis - cores da landing page
+                const ctaHtml = `
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <a href="/login" style="
+                            background: #6366f1;
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 6px;
+                            text-decoration: none;
+                            font-weight: bold;
+                            display: inline-block;
+                            transition: all 0.3s;
+                            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#4f46e5'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#6366f1'">
+                            🔓 ${msg.cta_login}
+                        </a>
+                        <a href="/pricing" style="
+                            background: #8b5cf6;
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 6px;
+                            text-decoration: none;
+                            font-weight: bold;
+                            display: inline-block;
+                            transition: all 0.3s;
+                            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.4);
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#7c3aed'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#8b5cf6'">
+                            💎 ${msg.cta_planos}
+                        </a>
+                    </div>
+                `;
+                log(ctaHtml, 'info', true);
+                log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, 'info');
             }
 
             log(`> VARREDURA CONCLUÍDA.`, 'success');
@@ -374,4 +578,55 @@
         document.querySelector('.scan-btn').innerText = 'EXECUTAR';
     }
 </script>
+        </div>
+    </div><!-- Fim col-lg-8 -->
+
+    <!-- Sidebar Visual com Cards Grandes -->
+    <div class="col-lg-4">
+        <div class="commercial-sidebar">
+            
+            <!-- Card: Planos Premium -->
+            <div class="cta-card" style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 16px;">
+                    <i class="ri-vip-crown-fill" style="color: #fbbf24;"></i>
+                </div>
+                <h4 style="font-size: 1.4rem; margin-bottom: 12px;">Planos Premium</h4>
+                <p style="margin-bottom: 20px;">Proteja até 100 marcas com monitoramento 24/7 e relatórios profissionais.</p>
+                <a href="/pricing" class="cta-btn">Ver Planos e Preços</a>
+            </div>
+
+            <!-- Card: Cadastro Grátis -->
+            <div class="cta-card" style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 16px;">
+                    <i class="ri-rocket-fill" style="color: #10b981;"></i>
+                </div>
+                <h4 style="font-size: 1.4rem; margin-bottom: 12px;">Comece Grátis</h4>
+                <p style="margin-bottom: 20px;">Crie sua conta e monitore 5 marcas gratuitamente. Sem cartão de crédito.</p>
+                <a href="/register" class="cta-btn">Criar Conta Agora</a>
+            </div>
+
+            <!-- Card: Agentes PI -->
+            <div class="cta-card" style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 16px;">
+                    <i class="ri-briefcase-4-fill" style="color: #8b5cf6;"></i>
+                </div>
+                <h4 style="font-size: 1.4rem; margin-bottom: 12px;">Agentes de PI</h4>
+                <p style="margin-bottom: 20px;">Dashboard profissional, prospector de oportunidades e relatórios white-label.</p>
+                <a href="/signup?role=agent&plan=agent_pro" class="cta-btn secondary">Plano para Agentes</a>
+            </div>
+
+            <!-- Card: Cursos -->
+            <div class="cta-card" style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 16px;">
+                    <i class="ri-book-open-fill" style="color: #3b82f6;"></i>
+                </div>
+                <h4 style="font-size: 1.4rem; margin-bottom: 12px;">Cursos de PI</h4>
+                <p style="margin-bottom: 20px;">Aprenda estratégias avançadas de proteção e gestão de propriedade industrial.</p>
+                <a href="#" class="cta-btn secondary" onclick="alert('Em breve! Cursos especializados.'); return false;">Em Breve</a>
+            </div>
+
+        </div>
+    </div><!-- Fim Sidebar -->
+
+</div><!-- Fim row -->
 {% endblock %}

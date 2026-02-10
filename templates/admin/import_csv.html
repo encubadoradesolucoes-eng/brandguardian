@@ -1,109 +1,245 @@
 {% extends "layout.html" %}
 
+{% block title %}Importar CSV | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --table-row-hover: rgba(99, 102, 241, 0.05);
+        --accent-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+    }
+
+    .container-wide {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .container-wide {
+            padding: 0 1rem;
+        }
+    }
+
+    .glass-card-header {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .upload-zone {
+        background: var(--bg-surface);
+        border: 2px dashed var(--border-subtle);
+        border-radius: var(--radius-2xl);
+        padding: 3rem;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .upload-zone:hover {
+        border-color: var(--brand-primary);
+        background: rgba(139, 92, 246, 0.05);
+    }
+
+    .upload-zone.dragover {
+        border-color: var(--brand-primary);
+        background: rgba(139, 92, 246, 0.1);
+        transform: scale(1.02);
+    }
+
+    .m24-table-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        overflow-x: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        margin-top: 2rem;
+    }
+
+    .m24-table-pro {
+        width: 100%;
+        border-collapse: collapse;
+        color: var(--text-standard);
+    }
+
+    .m24-table-pro th {
+        background: var(--bg-elevated);
+        padding: 1.25rem 1.5rem;
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-dim);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .m24-table-pro td {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-success { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .badge-danger { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .badge-info { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
-                <h4 class="mb-0"><i class="ri-file-excel-2-line text-success"></i> Importador CSV Inteligente</h4>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <i class="ri-information-line"></i> 
-                    Faça upload dos seus ficheiros CSV. O sistema detectará automaticamente as colunas correspondentes (Processo, Marca, Classe, etc.) mesmo que os nomes sejam diferentes.
-                </div>
-
-                <form id="csvImportForm" enctype="multipart/form-data">
-                    
-                    <!-- Passo 1: Fonte -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Fonte de Dados</label>
-                        <input type="text" name="source_name" class="form-control" placeholder="Ex: BPI-170, OMPI-2023..." required>
-                        <div class="form-text">Esta etiqueta será aplicada a todos os registros importados.</div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Ficheiro de Marcas/Concessões -->
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Ficheiro de Marcas/Concessões (CSV)</label>
-                            <input type="file" name="brands_file" id="brandsFile" class="form-control" accept=".csv" required>
-                        </div>
-
-                        <!-- Ficheiro de Requerentes (Opcional) -->
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Ficheiro de Requerentes (CSV)</label>
-                            <input type="file" name="applicants_file" id="applicantsFile" class="form-control" accept=".csv">
-                            <div class="form-text">Opcional. Se as marcas já tiverem o nome do requerente, não é necessário.</div>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2 mt-3">
-                        <button type="button" onclick="analyzeFiles()" class="btn btn-primary">
-                            <i class="ri-magic-line"></i> Analisar Estrutura & Mapear Colunas
-                        </button>
-                    </div>
-
-                    <!-- Área de Análise (Invisível até analisar) -->
-                    <div id="analysisResult" style="display:none;" class="mt-4 border-top pt-3">
-                        <h5 class="text-secondary">🧠 Mapeamento Inteligente Detectado:</h5>
-                        
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <h6>Marcas/Processos</h6>
-                                <table class="table table-sm table-bordered" id="brandsMappingTable">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Campo do Sistema</th>
-                                            <th>Coluna Detectada no CSV</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                            <div class="col-md-6" id="applicantsMappingDiv">
-                                <h6>Requerentes</h6>
-                                <table class="table table-sm table-bordered" id="applicantsMappingTable">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Campo do Sistema</th>
-                                            <th>Coluna Detectada no CSV</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="alert alert-warning mt-2">
-                            <i class="ri-check-double-line"></i> Revise o mapeamento acima. Se estiver correto, confirme a importação.
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="ri-save-line"></i> Confirmar Importação
-                            </button>
-                        </div>
-                    </div>
-
-                </form>
-                
-                <div id="importLog" class="mt-3"></div>
-            </div>
+<div class="container-wide animate-reveal">
+    
+    <!-- Hero Header -->
+    <div class="glass-card-header">
+        <div>
+            <h1 class="hero-title" style="margin-bottom: 0.5rem;">Importador CSV Inteligente</h1>
+            <p class="hero-desc">Sistema de mapeamento automático de colunas para importação de dados BPI.</p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('ipi_data') }}" class="btn-m24 btn-m24-ghost">
+                <i class="ri-database-2-line"></i> Ver Base de Dados
+            </a>
         </div>
     </div>
+
+    <!-- Formulário de Upload -->
+    <div class="m24-table-container" style="padding: 2.5rem;">
+        <form id="csvImportForm" enctype="multipart/form-data">
+            
+            <!-- Fonte de Dados -->
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; margin-bottom: 0.8rem; font-size: 0.75rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px;">
+                    <i class="ri-bookmark-line"></i> Fonte de Dados
+                </label>
+                <input type="text" name="source_name" class="input-m24" style="width: 100%;" placeholder="Ex: BPI-170, OMPI-2023..." required>
+                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;">
+                    Esta etiqueta será aplicada a todos os registros importados.
+                </div>
+            </div>
+
+            <!-- Zona de Upload -->
+            <div class="row" style="gap: 1.5rem;">
+                <div class="col-md-6">
+                    <label style="display: block; margin-bottom: 0.8rem; font-size: 0.75rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px;">
+                        <i class="ri-file-list-3-line"></i> Ficheiro de Marcas/Concessões
+                    </label>
+                    <div class="upload-zone" onclick="document.getElementById('brandsFile').click()">
+                        <i class="ri-upload-cloud-2-line" style="font-size: 3rem; color: var(--brand-primary); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--text-standard); font-weight: 600;">Clique ou arraste o ficheiro CSV</p>
+                        <p style="font-size: 0.8rem; color: var(--text-dim);">Formato: CSV com colunas de processo, marca, classe, etc.</p>
+                        <input type="file" name="brands_file" id="brandsFile" accept=".csv" required style="display: none;" onchange="updateFileName(this, 'brandsFileName')">
+                        <div id="brandsFileName" style="margin-top: 1rem; color: var(--brand-primary); font-weight: 600;"></div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label style="display: block; margin-bottom: 0.8rem; font-size: 0.75rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px;">
+                        <i class="ri-team-line"></i> Ficheiro de Requerentes (Opcional)
+                    </label>
+                    <div class="upload-zone" onclick="document.getElementById('applicantsFile').click()">
+                        <i class="ri-user-add-line" style="font-size: 3rem; color: #60a5fa; margin-bottom: 1rem;"></i>
+                        <p style="color: var(--text-standard); font-weight: 600;">Clique ou arraste o ficheiro CSV</p>
+                        <p style="font-size: 0.8rem; color: var(--text-dim);">Opcional. Se as marcas já tiverem o nome do requerente.</p>
+                        <input type="file" name="applicants_file" id="applicantsFile" accept=".csv" style="display: none;" onchange="updateFileName(this, 'applicantsFileName')">
+                        <div id="applicantsFileName" style="margin-top: 1rem; color: #60a5fa; font-weight: 600;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botão de Análise -->
+            <div style="margin-top: 2.5rem;">
+                <button type="button" onclick="analyzeFiles()" class="btn-m24 btn-m24-primary" style="width: 100%; justify-content: center; padding: 1.2rem;">
+                    <i class="ri-magic-line"></i> Analisar Estrutura & Mapear Colunas
+                </button>
+            </div>
+
+            <!-- Área de Análise -->
+            <div id="analysisResult" style="display:none; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-subtle);">
+                <h5 style="font-family: 'Outfit'; font-weight: 800; margin-bottom: 1.5rem; color: var(--brand-primary);">
+                    <i class="ri-brain-line"></i> Mapeamento Inteligente Detectado
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 style="font-size: 0.75rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 1rem;">Marcas/Processos</h6>
+                        <div class="m24-table-container" style="margin-top: 0;">
+                            <table class="m24-table-pro" id="brandsMappingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Campo do Sistema</th>
+                                        <th>Coluna Detectada</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="applicantsMappingDiv">
+                        <h6 style="font-size: 0.75rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 1rem;">Requerentes</h6>
+                        <div class="m24-table-container" style="margin-top: 0;">
+                            <table class="m24-table-pro" id="applicantsMappingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Campo do Sistema</th>
+                                        <th>Coluna Detectada</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
+                    <i class="ri-check-double-line" style="color: #fbbf24;"></i>
+                    <span style="color: #fbbf24; font-weight: 600;">Revise o mapeamento acima. Se estiver correto, confirme a importação.</span>
+                </div>
+
+                <button type="submit" class="btn-m24 btn-m24-primary" style="width: 100%; justify-content: center; padding: 1.2rem; margin-top: 1.5rem; background: #10b981;">
+                    <i class="ri-save-line"></i> Confirmar Importação
+                </button>
+            </div>
+
+        </form>
+        
+        <div id="importLog" style="margin-top: 2rem;"></div>
+    </div>
+
 </div>
 
 <script>
+function updateFileName(input, displayId) {
+    const display = document.getElementById(displayId);
+    if (input.files.length > 0) {
+        display.textContent = `✓ ${input.files[0].name}`;
+    }
+}
+
 async function analyzeFiles() {
     const form = document.getElementById('csvImportForm');
     const formData = new FormData(form);
-
-    // Enviar para rota de análise (não a de importação final)
-    // Vamos criar uma rota específica para 'preview'
     
-    const btn = document.querySelector('button[onclick="analyzeFiles()"]');
+    const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analisando...';
 
@@ -118,10 +254,8 @@ async function analyzeFiles() {
         if (data.status === 'success') {
             document.getElementById('analysisResult').style.display = 'block';
             
-            // Preencher Tabela de Marcas
             fillMappingTable('brandsMappingTable', data.mappings.brands);
             
-            // Preencher Tabela de Requerentes (se houver)
             if (data.mappings.applicants) {
                 fillMappingTable('applicantsMappingTable', data.mappings.applicants);
             } else {
@@ -143,10 +277,9 @@ function fillMappingTable(tableId, mapping) {
     tbody.innerHTML = '';
     
     for (const [sysField, csvCol] of Object.entries(mapping)) {
-        let statusHtml = csvCol ? '<span class="badge bg-success">Encontrado</span>' : '<span class="badge bg-danger">Ausente</span>';
-        let colName = csvCol || '<em class="text-muted">Não detectado</em>';
+        let statusHtml = csvCol ? '<span class="status-badge badge-success"><i class="ri-check-line"></i> Encontrado</span>' : '<span class="status-badge badge-danger"><i class="ri-close-line"></i> Ausente</span>';
+        let colName = csvCol || '<em style="color: var(--text-dim);">Não detectado</em>';
         
-        // Traduzir campos do sistema para legível
         let displayField = sysField;
         if(sysField === 'process_number') displayField = 'Número do Processo';
         if(sysField === 'brand_name') displayField = 'Nome da Marca';
@@ -156,15 +289,14 @@ function fillMappingTable(tableId, mapping) {
         if(sysField === 'name') displayField = 'Nome Requerente';
         
         const tr = `<tr>
-            <td>${displayField}</td>
-            <td class="fw-bold">${colName}</td>
+            <td style="font-weight: 600; color: white;">${displayField}</td>
+            <td style="font-family: 'JetBrains Mono'; color: var(--brand-primary);">${colName}</td>
             <td>${statusHtml}</td>
         </tr>`;
         tbody.innerHTML += tr;
     }
 }
 
-// Handler do Submit Final
 document.getElementById('csvImportForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     if(!confirm('Tem certeza que deseja importar estes dados?')) return;
@@ -172,7 +304,7 @@ document.getElementById('csvImportForm').addEventListener('submit', async functi
     const formData = new FormData(this);
     const logDiv = document.getElementById('importLog');
     
-    logDiv.innerHTML = '<div class="alert alert-info">Processando importação... Aguarde.</div>';
+    logDiv.innerHTML = '<div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1.5rem; color: #60a5fa;">Processando importação... Aguarde.</div>';
     
     try {
         const response = await fetch('/admin/import-csv/execute', {
@@ -182,20 +314,52 @@ document.getElementById('csvImportForm').addEventListener('submit', async functi
         const data = await response.json();
         
         if(data.status === 'success') {
-            logDiv.innerHTML = `<div class="alert alert-success">
-                <h4><i class="ri-check-line"></i> Sucesso!</h4>
-                <p>${data.message}</p>
-                <p>Total Importado: <b>${data.count}</b> registros.</p>
-                <a href="/admin/ipi-data" class="btn btn-outline-success btn-sm">Ver Dados</a>
+            logDiv.innerHTML = `<div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 2rem;">
+                <h4 style="color: #4ade80; font-family: 'Outfit'; font-weight: 800;"><i class="ri-check-line"></i> Sucesso!</h4>
+                <p style="color: var(--text-standard);">${data.message}</p>
+                <p style="color: white; font-weight: 700; font-size: 1.2rem;">Total Importado: ${data.count} registros</p>
+                <a href="/admin/ipi-data" class="btn-m24 btn-m24-primary" style="margin-top: 1rem;">Ver Dados Importados</a>
             </div>`;
             document.getElementById('csvImportForm').reset();
             document.getElementById('analysisResult').style.display = 'none';
+            document.getElementById('brandsFileName').textContent = '';
+            document.getElementById('applicantsFileName').textContent = '';
         } else {
-             logDiv.innerHTML = `<div class="alert alert-danger">Erro: ${data.details}</div>`;
+             logDiv.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 1.5rem; color: #f87171;">Erro: ${data.details}</div>`;
         }
     } catch (e) {
-         logDiv.innerHTML = `<div class="alert alert-danger">Erro Crítico: ${e}</div>`;
+         logDiv.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 1.5rem; color: #f87171;">Erro Crítico: ${e}</div>`;
     }
+});
+
+// Drag and drop support
+['brandsFile', 'applicantsFile'].forEach(id => {
+    const input = document.getElementById(id);
+    const zone = input.closest('.upload-zone');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.add('dragover'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.remove('dragover'), false);
+    });
+    
+    zone.addEventListener('drop', function(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        input.files = files;
+        updateFileName(input, id + 'Name');
+    }, false);
 });
 </script>
 {% endblock %}

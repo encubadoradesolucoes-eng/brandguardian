@@ -840,7 +840,9 @@
             
             {% elif current_user.role == 'admin' %}
             <!-- ADMIN MENU -->
-            <div class="nav-header">Administração</div>
+            
+            <!-- GRUPO: GESTÃO DE PORTFÓLIO -->
+            <div class="nav-header">Gestão de Portfólio</div>
             
             <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
                 <span class="link-content">
@@ -852,26 +854,45 @@
                     <i class="ri-building-2-line"></i> Titulares
                 </span>
             </a>
+            <a href="{{ url_for('agents_list') }}" class="nav-link {% if request.endpoint == 'agents_list' %}active{% endif %}">
+                <span class="link-content">
+                    <i class="ri-briefcase-4-line"></i> Agentes de PI
+                </span>
+            </a>
             <a href="{{ url_for('property_types') }}" class="nav-link {% if request.endpoint == 'property_types' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-list-settings-line"></i> Tipos de PI
                 </span>
             </a>
-            <a href="{{ url_for('index') }}" class="nav-link">
+            
+            <!-- GRUPO: INTELIGÊNCIA & ANÁLISE -->
+            <div class="nav-header" style="margin-top: 2rem;">Inteligência & Análise</div>
+            
+            <a href="{{ url_for('analysis_page') }}" class="nav-link {% if request.endpoint == 'analysis_page' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-bubble-chart-line"></i> Análise Inteligente IA
                 </span>
+            </a>
+            <a href="{{ url_for('purification_page') }}" class="nav-link {% if request.endpoint == 'purification_page' %}active{% endif %}" style="color: #f472b6;">
+                <span class="link-content">
+                    <i class="ri-shield-check-line"></i> Auditoria de Risco
+                </span>
+            </a>
+            <a href="{{ url_for('conflicts') }}" class="nav-link {% if request.endpoint == 'conflicts' %}active{% endif %}" style="color: #ef4444;">
+                <span class="link-content">
+                    <i class="ri-alert-line"></i> Alertas de Conflito
+                </span>
+                <span class="pulse-status" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-left: auto;"></span>
             </a>
             <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-pie-chart-2-line"></i> Relatórios BI
                 </span>
             </a>
-            <a href="{{ url_for('integrations') }}" class="nav-link {% if request.endpoint == 'integrations' %}active{% endif %}">
-                <span class="link-content">
-                    <i class="ri-settings-4-line"></i> Integrações & API
-                </span>
-            </a>
+            
+            <!-- GRUPO: DADOS & INTEGRAÇÃO -->
+            <div class="nav-header" style="margin-top: 2rem;">Dados & Integração</div>
+            
             <a href="{{ url_for('ipi_data') }}" class="nav-link {% if request.endpoint == 'ipi_data' %}active{% endif %}" style="color: #a78bfa;">
                 <span class="link-content">
                     <i class="ri-database-2-line"></i> Base de Dados BPI
@@ -881,11 +902,6 @@
                  <span class="link-content">
                      <i class="ri-upload-cloud-2-line"></i> Importar CSV
                  </span>
-            </a>
-            <a href="{{ url_for('purification_page') }}" class="nav-link {% if request.endpoint == 'purification_page' %}active{% endif %}" style="color: #f472b6;">
-                <span class="link-content">
-                    <i class="ri-shield-check-line"></i> Auditoria de Risco
-                </span>
             </a>
             <a href="/admin/bpi/requerentes" class="nav-link" style="color: #fbbf24;">
                 <span class="link-content">
@@ -899,12 +915,15 @@
                 </span>
                 <span class="badge" style="background:rgba(52, 211, 153, 0.2); color:#34d399; font-size: 0.6rem;">REF</span>
             </a>
-            <a href="{{ url_for('conflicts') }}" class="nav-link {% if request.endpoint == 'conflicts' %}active{% endif %}" style="color: #ef4444;">
+            <a href="{{ url_for('integrations') }}" class="nav-link {% if request.endpoint == 'integrations' %}active{% endif %}">
                 <span class="link-content">
-                    <i class="ri-alert-line"></i> Alertas de Conflito
+                    <i class="ri-settings-4-line"></i> Integrações & API
                 </span>
-                <span class="pulse-status" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-left: auto;"></span>
             </a>
+            
+            <!-- GRUPO: NEGÓCIO -->
+            <div class="nav-header" style="margin-top: 2rem;">Negócio</div>
+            
             <a href="{{ url_for('pricing') }}" class="nav-link {% if request.endpoint == 'pricing' %}active{% endif %}" style="color: #fbbf24;">
                 <span class="link-content">
                     <i class="ri-vip-crown-line"></i> Planos & Assinaturas

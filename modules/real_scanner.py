@@ -536,7 +536,19 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
                 'nivel_risco': resultados['analise_risco']['nivel_risco'],
                 'recomendacao': resultados['analise_risco']['recomendacao']
             },
-            'mensagem_login': 'Faça login para ver todos os detalhes da análise'
+            'mensagem_comercial': {
+                'titulo': '🔒 Análise Completa Disponível',
+                'texto': 'Faça login ou subscreva um dos nossos planos para aceder a:',
+                'beneficios': [
+                    '✓ Detalhes completos de marcas similares encontradas',
+                    '✓ Números de processo e titulares',
+                    '✓ Relatórios jurídicos profissionais em PDF',
+                    '✓ Histórico de todas as suas consultas',
+                    '✓ Alertas automáticos de novos registos'
+                ],
+                'cta_login': 'Fazer Login',
+                'cta_planos': 'Ver Planos e Preços'
+            }
         }
         return resultados_filtrados
     

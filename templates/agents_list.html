@@ -1,0 +1,409 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestão de Agentes de PI | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --table-row-hover: rgba(99, 102, 241, 0.05);
+        --accent-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+    }
+
+    /* Expansão do Layout */
+    .container-wide {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .container-wide {
+            padding: 0 1rem;
+        }
+    }
+
+    .glass-card-header {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .glass-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+    }
+
+    /* Tabela Premium */
+    .m24-table-container {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        overflow-x: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .m24-table-pro {
+        width: 100%;
+        border-collapse: collapse;
+        color: var(--text-standard);
+    }
+
+    .m24-table-pro th {
+        background: var(--bg-elevated);
+        padding: 1.25rem 1.5rem;
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-dim);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .m24-table-pro td {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+        transition: all 0.2s ease;
+    }
+
+    .m24-table-pro tr:hover td {
+        background: var(--table-row-hover);
+    }
+
+    /* Componentes da Célula */
+    .holder-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .holder-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: white;
+        font-family: 'Outfit';
+    }
+
+    .holder-sub {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .nuit-badge {
+        font-family: 'JetBrains Mono';
+        background: var(--bg-base);
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-subtle);
+        color: var(--brand-primary);
+        font-size: 0.85rem;
+    }
+
+    /* Actions Hub (Dropdown) */
+    .actions-hub {
+        position: relative;
+        display: inline-block;
+    }
+
+    .btn-action-trigger {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-action-trigger:hover {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        box-shadow: var(--accent-glow);
+    }
+
+    .actions-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        background: #1e293b;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        width: 260px;
+        display: none;
+        flex-direction: column;
+        z-index: 100;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        overflow: hidden;
+        animation: slideIn 0.2s ease-out;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .actions-menu.active { display: flex; }
+
+    .action-item {
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #e2e8f0;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .action-item:last-child { border-bottom: none; }
+
+    .action-item:hover {
+        background: rgba(139, 92, 246, 0.1);
+        color: var(--brand-primary);
+    }
+
+    .action-item i { font-size: 1.1rem; }
+
+    .action-item span.hint {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        margin-left: auto;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-validated { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .badge-pending { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-agent-pro { background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
+    .badge-free { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+    @media (max-width: 768px) {
+        .m24-table-pro th, .m24-table-pro td {
+            padding: 1rem;
+            min-width: 150px;
+        }
+        .m24-table-pro td:first-child {
+            min-width: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-wide animate-reveal">
+    
+    <!-- Hero Header -->
+    <div class="glass-card-header">
+        <div>
+            <h1 class="hero-title" style="margin-bottom: 0.5rem;">Agentes de Propriedade Industrial</h1>
+            <p class="hero-desc">Gestão profissional de agentes cadastrados e suas carteiras de clientes.</p>
+        </div>
+        <button onclick="alert('Funcionalidade em breve!')" class="btn-m24 btn-m24-primary" style="padding: 1rem 2rem;">
+            <i class="ri-user-add-line"></i> Convidar Agente
+        </button>
+    </div>
+
+    <!-- Estatísticas Rápidas -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="glass-table-container" style="margin-bottom: 0; padding: 1.5rem; border-left: 4px solid var(--brand-primary);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">Total de Agentes</div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: white; font-family: 'Outfit';">{{ agents_data|length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-standard); margin-top: 0.5rem;">Cadastrados na plataforma</div>
+        </div>
+
+        <div class="glass-table-container" style="margin-bottom: 0; padding: 1.5rem; border-left: 4px solid #10b981;">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">Agentes Ativos</div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #10b981; font-family: 'Outfit';">{{ agents_data|selectattr('agent.subscription_plan', 'ne', 'free')|list|length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-standard); margin-top: 0.5rem;">Com plano pago</div>
+        </div>
+
+        <div class="glass-table-container" style="margin-bottom: 0; padding: 1.5rem; border-left: 4px solid #3b82f6;">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">Total de Marcas</div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #3b82f6; font-family: 'Outfit';">{{ agents_data|sum(attribute='brands_count') }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-standard); margin-top: 0.5rem;">Gerenciadas por agentes</div>
+        </div>
+
+        <div class="glass-table-container" style="margin-bottom: 0; padding: 1.5rem; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem;">Oportunidades</div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #f59e0b; font-family: 'Outfit';">{{ agents_data|selectattr('agent.subscription_plan', 'eq', 'free')|list|length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-standard); margin-top: 0.5rem;">Upgrade potencial</div>
+        </div>
+    </div>
+
+    <h3 style="font-family: 'Outfit'; font-weight: 800; margin-bottom: 1.5rem;">Lista Geral de Agentes</h3>
+
+    <!-- Tabela de Gestão -->
+    <div class="m24-table-container">
+        <table class="m24-table-pro">
+            <thead>
+                <tr>
+                    <th>Agente / Informações</th>
+                    <th>Nº Registro</th>
+                    <th>Plano</th>
+                    <th>Carteira</th>
+                    <th>Último Acesso</th>
+                    <th style="text-align: right;">Operações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in agents_data %}
+                <tr>
+                    <td>
+                        <div class="holder-info">
+                            <span class="holder-name">{{ data.agent.name or data.agent.username }}</span>
+                            <span class="holder-sub"><i class="ri-mail-line"></i> {{ data.agent.email or 'N/A' }}</span>
+                            <span class="holder-sub"><i class="ri-user-line"></i> @{{ data.agent.username }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if data.registration_number != 'N/A' %}
+                        <span class="nuit-badge">{{ data.registration_number }}</span>
+                        {% else %}
+                        <div class="status-badge badge-pending">
+                            <i class="ri-time-line"></i> Não Informado
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if data.subscription == 'agent_pro' %}
+                        <div class="status-badge badge-agent-pro">
+                            <i class="ri-vip-crown-fill"></i> Agent Pro
+                        </div>
+                        {% elif data.subscription == 'free' %}
+                        <div class="status-badge badge-free">
+                            <i class="ri-gift-line"></i> Gratuito
+                        </div>
+                        {% else %}
+                        <div class="status-badge" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2);">
+                            <i class="ri-star-line"></i> {{ data.subscription }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                            {{ data.brands_count }} <span style="font-size: 0.7rem; color: var(--text-dim); font-weight: 400;">Marcas</span>
+                        </div>
+                        <div style="width: 60px; height: 3px; background: var(--brand-primary); border-radius: 10px; margin-top: 5px;"></div>
+                    </td>
+                    <td>
+                        {% if data.agent.last_login %}
+                        <div style="font-size: 0.9rem; color: var(--text-standard);">{{ data.agent.last_login.strftime('%d/%m/%Y') }}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-dim);">{{ data.agent.last_login.strftime('%H:%M') }}</div>
+                        {% else %}
+                        <span class="text-muted" style="color: var(--text-dim);">Nunca</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="actions-hub">
+                            <button class="btn-action-trigger" onclick="toggleMenu('menu-{{ data.agent.id }}')">
+                                <i class="ri-more-2-fill"></i>
+                            </button>
+                            
+                            <!-- Menu de Contexto -->
+                            <div class="actions-menu" id="menu-{{ data.agent.id }}">
+                                <div style="padding: 10px 20px; font-size: 0.65rem; font-weight: 900; color: var(--brand-primary); text-transform: uppercase;">Ações do Gestor</div>
+                                
+                                <button class="action-item" onclick="alert('Funcionalidade em breve!')">
+                                    <i class="ri-eye-line"></i> 
+                                    <span>Ver Perfil Completo</span>
+                                </button>
+                                
+                                <button class="action-item" onclick="alert('Funcionalidade em breve!')">
+                                    <i class="ri-team-line"></i>
+                                    <span>Ver Clientes</span>
+                                    <span class="hint">{{ data.brands_count }}</span>
+                                </button>
+                                
+                                <button class="action-item" onclick="alert('Funcionalidade em breve!')">
+                                    <i class="ri-mail-send-line"></i> 
+                                    <span>Enviar Mensagem</span>
+                                    <span class="hint">E-mail</span>
+                                </button>
+
+                                <div style="border-top: 1px solid rgba(255,255,255,0.05); margin: 5px 0;"></div>
+                                
+                                <button class="action-item" onclick="alert('Funcionalidade em breve!')">
+                                    <i class="ri-edit-line"></i>
+                                    <span>Editar Dados</span>
+                                </button>
+                                
+                                <button class="action-item" style="color: #ef4444;" onclick="if(confirm('Desativar este agente?')) alert('Funcionalidade em breve!')">
+                                    <i class="ri-close-circle-line"></i>
+                                    <span>Desativar Agente</span>
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not agents_data %}
+    <div style="text-align: center; padding: 4rem; color: var(--text-dim);">
+        <i class="ri-user-search-line" style="font-size: 4rem; opacity: 0.3;"></i>
+        <p style="margin-top: 1rem; font-size: 1.1rem;">Nenhum agente cadastrado ainda.</p>
+        <button onclick="alert('Funcionalidade em breve!')" class="btn-m24 btn-m24-primary" style="margin-top: 1.5rem;">
+            <i class="ri-user-add-line"></i> Convidar Primeiro Agente
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function toggleMenu(menuId) {
+        // Fechar outros menus
+        document.querySelectorAll('.actions-menu').forEach(menu => {
+            if(menu.id !== menuId) menu.classList.remove('active');
+        });
+        
+        const menu = document.getElementById(menuId);
+        menu.classList.toggle('active');
+        
+        // Impedir que o clique no botão feche o menu imediatamente
+        event.stopPropagation();
+    }
+
+    // Fechar menus ao clicar fora
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.actions-menu').forEach(menu => menu.classList.remove('active'));
+    });
+</script>
+{% endblock %}
