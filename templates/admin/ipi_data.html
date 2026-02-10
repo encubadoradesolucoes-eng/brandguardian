@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="hero-title">Inteligência BPI</h1>
+            <p class="hero-desc">Dados extraídos diretamente do Boletim Oficial do IPI.</p>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+            <div class="d-flex gap-2 flex-wrap flex-grow-1">
+                <a href="{{ url_for('ipi_data', type='logotipo') }}" class="btn-m24 {% if request.args.get('type') == 'logotipo' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}">
+                    <i class="ri-image-line"></i> Logotipos
+                </a>
+                <a href="{{ url_for('ipi_data', type='marca') }}" class="btn-m24 {% if request.args.get('type') == 'marca' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}">
+                    <i class="ri-trademark-line"></i> Marcas
+                </a>
+                <a href="{{ url_for('ipi_data', type='nome_comercial') }}" class="btn-m24 {% if request.args.get('type') == 'nome_comercial' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}">
+                    <i class="ri-store-line"></i> Nomes Com.
+                </a>
+                <a href="{{ url_for('ipi_data', type='patente') }}" class="btn-m24 {% if request.args.get('type') == 'patente' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}">
+                    <i class="ri-lightbulb-line"></i> Patentes
+                </a>
+                <a href="{{ url_for('ipi_data', type='design') }}" class="btn-m24 {% if request.args.get('type') == 'design' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}">
+                    <i class="ri-palette-line"></i> Designs
+                </a>
+                <a href="{{ url_for('ipi_data', status='caducidade') }}" class="btn-m24 {% if request.args.get('status') == 'caducidade' %}btn-m24-danger{% else %}btn-m24-ghost{% endif %}" style="color: #ef4444;">
+                    <i class="ri-alarm-warning-line"></i> Caducados
+                </a>
+                
+                <!-- Novos Status BPI -->
+                <div style="height: 30px; width: 1px; background: var(--border-subtle); margin: 0 5px;"></div>
+                
+                <a href="{{ url_for('ipi_data', status='STATUS_01') }}" class="btn-m24 {% if request.args.get('status') == 'STATUS_01' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}" title="Publicados">
+                    <i class="ri-megaphone-line"></i> Publicados
+                </a>
+                <a href="{{ url_for('ipi_data', status='STATUS_02') }}" class="btn-m24 {% if request.args.get('status') == 'STATUS_02' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}" title="Concedidos">
+                    <i class="ri-checkbox-circle-line"></i> Concedidos
+                </a>
+                <a href="{{ url_for('ipi_data', status='STATUS_03') }}" class="btn-m24 {% if request.args.get('status') == 'STATUS_03' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}" title="Renovados">
+                    <i class="ri-refresh-line"></i> Renovados
+                </a>
+                <a href="{{ url_for('ipi_data', status='STATUS_04') }}" class="btn-m24 {% if request.args.get('status') == 'STATUS_04' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}" title="Recusas Provisórias">
+                    <i class="ri-error-warning-line"></i> Recusas Prov.
+                </a>
+                <a href="{{ url_for('ipi_data', status='STATUS_09') }}" class="btn-m24 {% if request.args.get('status') == 'STATUS_09' %}btn-m24-primary{% else %}btn-m24-ghost{% endif %}" title="Alterados">
+                    <i class="ri-edit-2-line"></i> Alterados
+                </a>
+
+                <a href="{{ url_for('ipi_data') }}" class="btn-m24 btn-m24-ghost">
+                    Todos
+                </a>
+            </div>
+
+            <!-- SEARCH BAR -->
+            <form action="{{ url_for('ipi_data') }}" method="get" class="d-flex gap-2" style="min-width: 300px;">
+                {% if request.args.get('type') %}<input type="hidden" name="type" value="{{ request.args.get('type') }}">{% endif %}
+                {% if request.args.get('status') %}<input type="hidden" name="status" value="{{ request.args.get('status') }}">{% endif %}
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-light"><i class="ri-search-line"></i></span>
+                    <input type="text" name="q" class="form-control bg-dark border-secondary text-light" placeholder="Pesquisar marca, titular ou processo..." value="{{ request.args.get('q', '') }}">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    {% if request.args.get('q') %}
+                        <a href="{{ url_for('ipi_data', type=request.args.get('type'), status=request.args.get('status')) }}" class="btn btn-outline-secondary" title="Limpar busca"><i class="ri-close-line"></i></a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if not records %}
+    <div class="text-center p-5" style="border: 2px dashed var(--border-subtle); border-radius: 20px;">
+        <i class="ri-database-2-line" style="font-size: 3rem; color: var(--text-dim);"></i>
+        <h3 class="mt-3 text-white">Nenhum dado importado</h3>
+        <p class="text-dim">Faça o upload de um PDF do BPI no Dashboard para popular esta base.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn-m24 btn-m24-primary mt-3">Ir para Dashboard</a>
+    </div>
+    {% else %}
+
+    <!-- Grid UNIFICADO para Todos os Tipos -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        {% for rec in records %}
+            <div class="bento-card p-0 overflow-hidden" style="position: relative; transition: transform 0.2s; border: 1px solid var(--border-subtle);">
+                <!-- Cabeçalho Visual: Imagem ou Tipografia -->
+                <div style="height: 160px; background: {% if rec.status == 'caducidade' %}#2d1b1b{% else %}#1a1d21{% endif %}; display: flex; align-items: center; justify-content: center; position: relative;">
+                    
+                    {% if rec.status == 'caducidade' %}
+                        <div style="position: absolute; top: 10px; right: 10px; z-index: 10;">
+                            <span class="badge bg-danger"><i class="ri-alarm-warning-fill"></i> CADUCIDADE</span>
+                        </div>
+                    {% endif %}
+
+                    {% if rec.image_path %}
+                        <img src="{{ url_for('static', filename=rec.image_path) }}" 
+                             style="max-width: 80%; max-height: 80%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));" 
+                             alt="Logo {{ rec.process_number }}">
+                    {% else %}
+                        <!-- Placeholder Tipográfico para Marcas de Texto -->
+                        <div class="text-center">
+                            <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; color: {% if rec.status == 'caducidade' %}#ef4444{% else %}var(--text-main){% endif %}; margin: 0; font-size: 1.5rem; text-transform: uppercase;">
+                                {{ rec.brand_name[:20] }}{% if rec.brand_name|length > 20 %}...{% endif %}
+                            </h2>
+                            <p class="small text-muted mt-2" style="font-family: monospace;">{{ rec.record_type|upper }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Corpo do Card -->
+                <div class="p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-dark-subtle border border-secondary">{{ rec.process_number }}</span>
+                        
+                        {% if rec.status == 'pedido' %}
+                            <span class="badge bg-warning text-dark"><i class="ri-time-line"></i> Pedido</span>
+                        {% elif rec.status == 'concessao' %}
+                            <span class="badge bg-success"><i class="ri-check-double-line"></i> Concessão</span>
+                        {% elif rec.status == 'caducidade' %}
+                            <span class="badge bg-danger">Expirado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ rec.status|upper }}</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="mb-1 text-white text-truncate fw-medium" title="{{ rec.brand_name }}">
+                        {% if rec.brand_name == 'Marca Figurativa (Logo)' %}
+                            <i class="ri-image-2-line text-muted"></i> Marca Figurativa
+                        {% else %}
+                            {{ rec.brand_name }}
+                        {% endif %}
+                    </p>
+                    
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                         <i class="ri-building-4-line text-dim"></i>
+                         <span class="small text-dim text-truncate" style="max-width: 200px;" title="{{ rec.applicant_name }}">
+                             {{ rec.applicant_name }}
+                         </span>
+                    </div>
+
+                    <div style="font-size: 0.75rem; color: #6b7280; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;" class="d-flex justify-content-between">
+                        <span><i class="ri-calendar-line"></i> {{ rec.publication_date }}</span>
+                        <span>BPI {{ rec.bulletin_number }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Antiga Lógica de Tabela REMOVIDA -->
+
+    {% endif %}
+</div>
+{% endblock %}

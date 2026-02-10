@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-MZ">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Entidade | m24 PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --brand-primary: #8b5cf6;
+            --brand-primary-glow: rgba(139, 92, 246, 0.3);
+            --bg-dark: #020617;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --input-bg: rgba(2, 6, 23, 0.5);
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: radial-gradient(circle at bottom left, #1e1b4b 0%, #020617 60%);
+        }
+
+        .signup-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 3rem;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            color: white;
+        }
+        
+        .logo span { color: var(--brand-primary); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group.full { grid-column: span 2; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 4px var(--brand-primary-glow);
+        }
+
+        .btn-signup {
+            width: 100%;
+            padding: 16px;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-signup:hover { 
+            background: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .alerts {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .footer-links {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
+        
+        .footer-links a { color: var(--brand-primary); text-decoration: none; font-weight: 600; }
+        .footer-links a:hover { text-decoration: underline; }
+
+        h2 {
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 2.5rem;
+            font-size: 1.4rem;
+            color: white;
+        }
+
+        .section-tag {
+            grid-column: span 2;
+            font-size: 0.7rem;
+            color: var(--brand-primary);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signup-card">
+        <div class="logo">m24<span>PRO</span></div>
+        <h2>Cadastro de Titular</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alerts">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-grid">
+                <div class="section-tag">Dados da Entidade</div>
+                
+                <div class="form-group full">
+                    <label>Nome do Titular / Empresa</label>
+                    <input type="text" name="name" required placeholder="Ex: Global Solutions, SA" autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label>NUIT / TAX ID</label>
+                    <input type="text" name="nuit" required placeholder="Nº de identificação fiscal">
+                </div>
+
+                <div class="form-group">
+                    <label>E-mail Corporativo</label>
+                    <input type="email" name="email" required placeholder="contato@entidade.co.mz" autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" name="phone" required placeholder="+258 ...">
+                </div>
+
+                <div class="form-group">
+                    <label>País</label>
+                    <input type="text" name="country" value="Moçambique" readonly>
+                </div>
+
+                <div class="section-tag" style="margin-top: 1rem;">Localização</div>
+
+                <div class="form-group">
+                    <label>Cidade</label>
+                    <input type="text" name="city" required placeholder="Ex: Maputo">
+                </div>
+
+                <div class="form-group">
+                    <label>Endereço Físico</label>
+                    <input type="text" name="address" required placeholder="Rua, Av, Bairro...">
+                </div>
+
+                <div class="section-tag" style="margin-top: 1rem;">Segurança</div>
+                
+                <div class="form-group full">
+                    <label>Escolher Senha de Acesso</label>
+                    <input type="password" name="password" required placeholder="No mínimo 6 caracteres" autocomplete="new-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-signup">
+                Finalizar Cadastro Preliminar <i class="ri-arrow-right-line"></i>
+            </button>
+        </form>
+        
+        <div class="footer-links">
+            Possui conta de gestor? <a href="/login">Fazer Login</a>
+        </div>
+    </div>
+
+</body>
+</html>

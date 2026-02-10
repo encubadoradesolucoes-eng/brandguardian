@@ -4,156 +4,146 @@ import os
 from difflib import SequenceMatcher
 import json
 from datetime import datetime
-
+from modules.real_scanner import scan_live_real  # IMPORTA O SCANNER REAL
 
 class BrandAnalyzer:
     def __init__(self):
         self.base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    def calculate_text_similarity(self, text1, text2):
-        """Calcula similaridade textual entre 0 e 1"""
-        return SequenceMatcher(None, text1.lower(), text2.lower()).ratio()
-
-    def calculate_image_similarity(self, image_path1, image_path2):
-        """Calcula similaridade entre imagens usando pHash"""
-        try:
-            if not image_path1 or not image_path2:
-                return 0.0
-
-            full_path1 = os.path.join(self.base_path, 'uploads', image_path1)
-            full_path2 = os.path.join(self.base_path, 'uploads', image_path2)
-
-            if not os.path.exists(full_path1) or not os.path.exists(full_path2):
-                return 0.0
-
-            hash1 = imagehash.phash(Image.open(full_path1))
-            hash2 = imagehash.phash(Image.open(full_path2))
-
-            # Distância normalizada (0 = idêntico, 1 = diferente)
-            distance = hash1 - hash2
-            similarity = max(0.0, 1.0 - (distance / 64.0))
-
-            return similarity
-
-        except Exception as e:
-            print(f"Erro na comparação de imagens: {e}")
-            return 0.0
-
-    def class_overlap(self, classes1, classes2):
-        """Calcula sobreposição de classes de Nice"""
-        if not classes1 or not classes2:
-            return 0.0
-
-        set1 = set(str(classes1).split(','))
-        set2 = set(str(classes2).split(','))
-
-        if not set1 or not set2:
-            return 0.0
-
-        intersection = set1.intersection(set2)
-        union = set1.union(set2)
-
-        return len(intersection) / len(union) if union else 0.0
-
     def analyze_brand(self, brand_id, db_session, BrandModel):
-        """Analisa uma marca contra todas as outras no banco de dados"""
-        # Usar o método direto da sessão para evitar dependência de contexto automático
+        """
+        Analisa uma marca usando o motor REAL (scan_live_real) que verifica:
+        1. BPI (Banco Oficial)
+        2. Web (Domínios)
+        3. Redes Sociais
+        4. Clientes internos (M24)
+        """
+        # Obter a marca alvo da sessão
         target_brand = db_session.get(BrandModel, brand_id)
         if not target_brand:
             return []
 
-        all_brands = db_session.query(BrandModel).filter(BrandModel.id != brand_id).all()
-        similar_brands = []
+        print(f">>> [REAL ANALYZER] Iniciando análise profunda para: {target_brand.name}")
 
-        for brand in all_brands:
-            # 1. Similaridade textual
-            text_sim = self.calculate_text_similarity(target_brand.name, brand.name)
-
-            # 2. Similaridade visual (se tiver logo)
-            visual_sim = 0.0
-            if target_brand.logo_path and brand.logo_path:
-                visual_sim = self.calculate_image_similarity(target_brand.logo_path, brand.logo_path)
-
-            # 3. Sobreposição de classes
-            class_sim = self.class_overlap(target_brand.nice_classes, brand.nice_classes)
-
-            # 4. Cálculo do risco combinado
-            total_risk = (text_sim * 0.4 + visual_sim * 0.4 + class_sim * 0.2)
+        # 1. Executar o Scanner Real (O mesmo usado no Live e na Auditoria)
+        try:
+            # Passamos usuario_logado=True para ter detalhes completos
+            resultados_reais = scan_live_real(target_brand.name, usuario_logado=True)
             
-            # Ajuste de peso
-            if text_sim > 0.8: total_risk = max(total_risk, 0.85)
+            # 2. Interpretar Resultados para atualizar o Modelo da Marca
+            risco_analise = resultados_reais.get('analise_risco', {})
+            
+            # Score atualizado do motor real (0 a 100)
+            novo_score = risco_analise.get('risco_total', 0)
+            novo_nivel = risco_analise.get('nivel_risco', 'BAIXO').lower() # high, medium, low
+            
+            # Normalização de níveis
+            if novo_nivel == 'crítico': novo_nivel = 'high'
+            if novo_nivel == 'médio': novo_nivel = 'medium'
+            if novo_nivel == 'baixo': novo_nivel = 'low'
+            if novo_nivel == 'moderado': novo_nivel = 'medium'
+            if novo_nivel == 'alto': novo_nivel = 'high'
 
-            if total_risk > 0.3:
-                similar_brands.append({
-                    'brand': brand,
-                    'text_similarity': round(text_sim * 100, 1),
-                    'visual_similarity': round(visual_sim * 100, 1),
-                    'class_overlap': round(class_sim * 100, 1),
-                    'total_risk': round(total_risk * 100, 1),
-                    'risk_level': self.get_risk_level(total_risk)
+            # Atualiza a marca no banco
+            target_brand.risk_score = novo_score
+            target_brand.risk_level = novo_nivel
+            target_brand.last_analyzed = datetime.now()
+
+            # Tenta extrair score visual e fonético dos componentes
+            target_brand.phonetic_score = 0
+            confi_bpi = resultados_reais.get('bpi', [])
+            if confi_bpi:
+                # Pega a similaridade do topo
+                target_brand.phonetic_score = confi_bpi[0].get('similaridade', 0)
+            
+            target_brand.visual_score = 0 
+            
+            print(f">>> [REAL ANALYZER] Conclusão para {target_brand.name}: Risco {novo_score} ({novo_nivel})")
+            
+            # Retorna lista de "marcas similares" no formato antigo para compatibilidade com o frontend
+            similar_brands_compat = []
+            
+            # Adiciona domínios ocupados como "conflitos"
+            dominios = resultados_reais.get('dominios', [])
+            for dom in dominios:
+                if dom['status'] == 'OCUPADO':
+                    is_national = '.co.mz' in dom['dominio']
+                    similar_brands_compat.append({
+                        'brand': type('obj', (object,), {
+                            'name': dom['dominio'], 
+                            'id': 0, 
+                            'logo_path': None, 
+                            'nice_classes': 'WEB',
+                            'owner_name': 'Proprietário Web',
+                            'process_number': 'DNS-REGISTRY'
+                        }),
+                        'text_similarity': 100,
+                        'visual_similarity': 0,
+                        'class_overlap': 0,
+                        'total_risk': 90 if is_national else 60,
+                        'risk_level': 'high' if is_national else 'medium',
+                        'source': 'WEB'
+                    })
+
+            # Adiciona conflitos BPI
+            for bpi in confi_bpi:
+                similar_brands_compat.append({
+                    'brand': type('obj', (object,), {
+                        'name': bpi['marca'], 
+                        'id': 0, 
+                        'logo_path': None, 
+                        'nice_classes': str(bpi.get('classe')),
+                        'owner_name': 'Titular BPI',
+                        'process_number': str(bpi.get('processo'))
+                    }),
+                    'text_similarity': bpi['similaridade'],
+                    'visual_similarity': 0,
+                    'class_overlap': 0, 
+                    'total_risk': bpi['similaridade'],
+                    'risk_level': 'high' if bpi['similaridade'] > 70 else 'medium',
+                    'source': 'BPI'
                 })
 
-        # Ordenar por risco
-        similar_brands.sort(key=lambda x: x['total_risk'], reverse=True)
-
-        if similar_brands:
-            max_risk_item = similar_brands[0] # O mais alto ja esta no topo
-            target_brand.risk_score = max_risk_item['total_risk']
-            target_brand.risk_level = max_risk_item['risk_level']
-            target_brand.phonetic_score = max_risk_item['text_similarity']
-            target_brand.visual_score = max_risk_item['visual_similarity']
-        else:
-            target_brand.risk_score = 0
-            target_brand.risk_level = 'low'
-            target_brand.phonetic_score = 0
-            target_brand.visual_score = 0
-
-        target_brand.last_analyzed = datetime.now()
-        db_session.commit()
-        return similar_brands
+            db_session.commit()
+            return similar_brands_compat
+            
+        except Exception as e:
+            print(f"Erro no Real Analyzer: {e}")
+            return []
 
     def quick_analysis(self, brand_name, classes, db_session, BrandModel):
-        """Análise rápida para API pública"""
-        all_brands = db_session.query(BrandModel).all()
-        conflicts = []
-
-        for brand in all_brands:
-            text_sim = self.calculate_text_similarity(brand_name, brand.name)
-            class_sim = self.class_overlap(','.join(map(str, classes)), brand.nice_classes)
-
-            if text_sim > 0.7 or (text_sim > 0.5 and class_sim > 0.5):
+        """
+        Versão rápida usando scan_live_real também.
+        """
+        try:
+            resultados = scan_live_real(brand_name, usuario_logado=False)
+            risco = resultados.get('analise_risco', {})
+            
+            conflicts = []
+            # Adapter para formato antigo
+            for bpi in resultados.get('bpi', [])[:5]:
                 conflicts.append({
-                    'existing_brand': brand.name,
-                    'similarity': round(text_sim * 100, 1),
-                    'classes': brand.nice_classes,
-                    'status': brand.status
+                    'existing_brand': bpi['marca'],
+                    'similarity': bpi['similaridade'],
+                    'classes': str(bpi.get('classe')),
+                    'status': 'Registrado (BPI)'
                 })
-
-        risk = 'high' if any(c['similarity'] > 80 for c in conflicts) else \
-            'medium' if conflicts else 'low'
-
-        return {
-            'brand_name': brand_name,
-            'risk_level': risk,
-            'conflicts_found': len(conflicts),
-            'conflicts': conflicts[:5],  # Limitar a 5
-            'recommendation': self.get_recommendation(risk, conflicts)
-        }
+                
+            return {
+                'brand_name': brand_name,
+                'risk_level': risco.get('nivel_risco', 'BAIXO').lower(),
+                'conflicts_found': len(conflicts),
+                'conflicts': conflicts,
+                'recommendation': risco.get('recomendacao', 'Sem dados suficientes')
+            }
+        except:
+            return {'brand_name': brand_name, 'risk_level': 'low', 'conflicts': []}
 
     def get_risk_level(self, score):
-        """Converte score para nível de risco"""
-        if score >= 0.7:  # 70%
-            return 'high'
-        elif score >= 0.4:  # 40%
-            return 'medium'
-        else:
-            return 'low'
+        if score >= 70: return 'high'
+        if score >= 40: return 'medium'
+        return 'low'
 
     def get_recommendation(self, risk_level, conflicts):
-        """Gera recomendação baseada no risco"""
-        if risk_level == 'high':
-            return "Alto risco de rejeição. Considere alterar o nome ou consultar um especialista."
-        elif risk_level == 'medium':
-            return "Risco moderado. Recomenda-se verificação detalhada antes do registro."
-        else:
-            return "Risco baixo. O nome parece estar disponível para registro."
+        if risk_level == 'high': return "Alto risco detectado."
+        return "Risco baixo."

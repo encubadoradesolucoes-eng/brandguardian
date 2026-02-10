@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}Auditoria de Emails | m24 Pro{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+        <div>
+            <h1 class="hero-title">Auditoria de Emails</h1>
+            <p class="hero-desc">Monitoramento em tempo real do tráfego SMTP do sistema.</p>
+        </div>
+        <a href="/test-email" target="_blank" class="btn-m24 btn-m24-primary">
+            <i class="ri-mail-send-line"></i> Enviar Email de Teste
+        </a>
+    </div>
+
+    <div class="bento-card">
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; color: white; font-size: 0.9rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border-strong); text-align: left;">
+                        <th style="padding: 1.5rem;">Data/Hora</th>
+                        <th style="padding: 1.5rem;">Destinatário</th>
+                        <th style="padding: 1.5rem;">Assunto</th>
+                        <th style="padding: 1.5rem;">Status</th>
+                        <th style="padding: 1.5rem;">Erro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr style="border-bottom: 1px solid var(--border-subtle); background: {{ 'rgba(239, 68, 68, 0.05)' if log.status == 'error' else 'transparent' }}">
+                        <td style="padding: 1.25rem; color: var(--text-dim);">{{ log.timestamp.strftime('%d/%m %H:%M:%S') }}</td>
+                        <td style="padding: 1.25rem;">{{ log.recipient }}</td>
+                        <td style="padding: 1.25rem; font-weight: 600;">{{ log.subject }}</td>
+                        <td style="padding: 1.25rem;">
+                            {% if log.status == 'sent' %}
+                            <span style="color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800;">ENVIADO</span>
+                            {% else %}
+                            <span style="color: var(--danger); background: rgba(239, 68, 68, 0.1); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800;">FALHA</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1.25rem; color: var(--danger); font-size: 0.8rem; font-family: 'JetBrains Mono';">{{ log.error_message or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="padding: 4rem; text-align: center; color: var(--text-dim);">Nenhum log de email encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

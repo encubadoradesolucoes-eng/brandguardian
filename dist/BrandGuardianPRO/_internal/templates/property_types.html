@@ -1,0 +1,235 @@
+{% extends "layout.html" %}
+
+{% block title %}Categorias de DPI | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .types-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 2rem;
+    }
+
+    .type-card {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .type-header {
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .type-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: var(--radius-xl);
+        background: var(--bg-elevated);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: var(--brand-primary);
+        border: 1px solid var(--border-subtle);
+    }
+
+    .type-body {
+        padding: 2rem;
+        flex: 1;
+    }
+
+    .type-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: var(--bg-base);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-subtle);
+    }
+
+    .type-stat-box {
+        text-align: center;
+    }
+
+    .type-stat-val {
+        font-family: 'Outfit';
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-vibrant);
+    }
+
+    .type-stat-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-dim);
+        text-transform: uppercase;
+    }
+
+    .type-footer {
+        padding: 1.5rem 2rem;
+        background: var(--bg-elevated);
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+        <div>
+            <h1 class="hero-title">Categorias de DPI</h1>
+            <p class="hero-desc">Direitos da Propriedade Industrial gerenciados pela plataforma.</p>
+        </div>
+        <button class="btn-m24 btn-m24-primary">
+            <i class="ri-add-line"></i> Novo Tipo
+        </button>
+    </div>
+
+    <div class="types-grid">
+        <!-- Marcas Card -->
+        <div class="bento-card type-card">
+            <div class="type-header">
+                <div class="type-icon" style="color: var(--brand-accent);"><i class="ri-trademark-line"></i></div>
+                <div class="hub-btn"><i class="ri-more-2-fill"></i></div>
+            </div>
+            <div class="type-body">
+                <h2 style="font-family: 'Outfit'; font-size: 1.5rem; color: var(--text-vibrant);">Marcas</h2>
+                <p style="color: var(--text-standard); margin-top: 8px; font-size: 0.95rem;">Sinais visualmente perceptíveis que identifiquem produtos ou serviços.</p>
+                
+                <div class="type-stats">
+                    <div class="type-stat-box">
+                        <div class="type-stat-val">12</div>
+                        <div class="type-stat-label">Registros</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--success);">8</div>
+                        <div class="type-stat-label">Aprovados</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--warning);">4</div>
+                        <div class="type-stat-label">Pendentes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="type-footer">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim);"><i class="ri-time-line"></i> Ativo: 12 Mar 2024</div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="#" class="action-icon"><i class="ri-settings-3-line"></i></a>
+                    <a href="#" class="action-icon"><i class="ri-shield-user-line"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nomes Comerciais Card -->
+        <div class="bento-card type-card">
+            <div class="type-header">
+                <div class="type-icon" style="color: #fca5a5;"><i class="ri-building-4-line"></i></div>
+                <div class="hub-btn"><i class="ri-more-2-fill"></i></div>
+            </div>
+            <div class="type-body">
+                <h2 style="font-family: 'Outfit'; font-size: 1.5rem; color: var(--text-vibrant);">Nomes Comerciais</h2>
+                <p style="color: var(--text-standard); margin-top: 8px; font-size: 0.95rem;">Designação que identifica o exercício de atividade comercial.</p>
+                
+                <div class="type-stats">
+                    <div class="type-stat-box">
+                        <div class="type-stat-val">3</div>
+                        <div class="type-stat-label">Registros</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--success);">1</div>
+                        <div class="type-stat-label">Aprovados</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--warning);">2</div>
+                        <div class="type-stat-label">Pendentes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="type-footer">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim);"><i class="ri-time-line"></i> Ativo: 05 Abr 2024</div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="#" class="action-icon"><i class="ri-settings-3-line"></i></a>
+                    <a href="#" class="action-icon"><i class="ri-shield-user-line"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insignias Card -->
+        <div class="bento-card type-card">
+            <div class="type-header">
+                <div class="type-icon" style="color: #fbbf24;"><i class="ri-store-2-line"></i></div>
+                <div class="hub-btn"><i class="ri-more-2-fill"></i></div>
+            </div>
+            <div class="type-body">
+                <h2 style="font-family: 'Outfit'; font-size: 1.5rem; color: var(--text-vibrant);">Insígnias</h2>
+                <p style="color: var(--text-standard); margin-top: 8px; font-size: 0.95rem;">Sinal distintivo que identifica o estabelecimento comercial.</p>
+                
+                <div class="type-stats">
+                    <div class="type-stat-box">
+                        <div class="type-stat-val">7</div>
+                        <div class="type-stat-label">Registros</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--success);">7</div>
+                        <div class="type-stat-label">Aprovados</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--warning);">0</div>
+                        <div class="type-stat-label">Pendentes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="type-footer">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim);"><i class="ri-time-line"></i> Ativo: 20 Fev 2024</div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="#" class="action-icon"><i class="ri-settings-3-line"></i></a>
+                    <a href="#" class="action-icon"><i class="ri-shield-user-line"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insignia Card -->
+        <div class="bento-card type-card">
+            <div class="type-header">
+                <div class="type-icon" style="color: #4ade80;"><i class="ri-store-2-line"></i></div>
+                <div class="hub-btn"><i class="ri-more-2-fill"></i></div>
+            </div>
+            <div class="type-body">
+                <h2 style="font-family: 'Outfit'; font-size: 1.5rem; color: var(--text-vibrant);">Logotipos</h2>
+                <p style="color: var(--text-standard); margin-top: 8px; font-size: 0.95rem;">Sinais que identifiquem a entidade que presta serviços ou produtos.</p>
+                
+                <div class="type-stats">
+                    <div class="type-stat-box">
+                        <div class="type-stat-val">2</div>
+                        <div class="type-stat-label">Registros</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--success);">2</div>
+                        <div class="type-stat-label">Aprovados</div>
+                    </div>
+                    <div class="type-stat-box">
+                        <div class="type-stat-val" style="color: var(--warning);">0</div>
+                        <div class="type-stat-label">Pendentes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="type-footer">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim);"><i class="ri-time-line"></i> Ativo: 18 Jan 2024</div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="#" class="action-icon"><i class="ri-settings-3-line"></i></a>
+                    <a href="#" class="action-icon"><i class="ri-shield-user-line"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

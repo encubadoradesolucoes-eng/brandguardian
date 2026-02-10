@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block title %}Classificação de Nice | m24 Pro{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="glass-card-header" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%); backdrop-filter: blur(10px); border: 1px solid var(--border-subtle); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="font-family: 'Outfit'; font-weight: 900; color: white; margin: 0; font-size: 2.5rem; letter-spacing: -1px;">
+                Classificação de <span style="color: var(--brand-primary);">Nice</span>
+            </h1>
+            <p style="color: var(--text-dim); margin-top: 5px;">Guia internacional de produtos e serviços para registro de marcas.</p>
+        </div>
+        <div style="background: rgba(139, 92, 246, 0.1); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.2);">
+            <span style="color: var(--brand-primary); font-weight: 800; font-size: 0.8rem;">REFERÊNCIA IPI</span>
+        </div>
+    </div>
+
+    <!-- Busca Dinâmica -->
+    <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.2rem; margin-bottom: 2rem; backdrop-filter: blur(10px);">
+        <form method="GET" style="display: flex; gap: 12px; align-items: center;">
+            <div style="flex-grow: 1; position: relative;">
+                <i class="ri-search-line" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" 
+                       placeholder="Pesquisar por número da classe, título ou palavras-chave (ex: químicos, vestuário, seguros)..." 
+                       style="width: 100%; background: rgba(5, 6, 11, 0.5); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 15px 12px 45px; color: white; font-size: 0.9rem; transition: var(--transition-elite);">
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 12px 25px; border-radius: 12px; background: var(--brand-primary); color: white; border: none; font-weight: 600; cursor: pointer; transition: var(--transition-elite);">
+                Pesquisar
+            </button>
+            {% if request.args.get('search') %}
+            <a href="{{ url_for('nice_classification_page') }}" class="btn-secondary" style="padding: 12px 20px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-standard); text-decoration: none; font-size: 0.9rem; border: 1px solid var(--border-subtle);">
+                Limpar
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem;">
+        {% for cls in classes %}
+        <div class="bento-card" style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 1.5rem; transition: all 0.3s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 45px; height: 45px; background: var(--brand-primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono'; font-weight: 800; font-size: 1.2rem;">
+                        {{ "%02d" % cls.number }}
+                    </div>
+                    <div>
+                        <span class="badge" style="background: {% if cls.type == 'produto' %}rgba(59, 130, 246, 0.1){% else %}rgba(168, 85, 247, 0.1){% endif %}; color: {% if cls.type == 'produto' %}#60a5fa{% else %}#c084fc{% endif %}; border: 1px solid {% if cls.type == 'produto' %}rgba(59, 130, 246, 0.2){% else %}rgba(168, 85, 247, 0.2){% endif %}; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 6px;">
+                            {{ cls.type|upper }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-family: 'Outfit'; font-weight: 700; color: white; font-size: 1.1rem; margin-bottom: 1rem; line-height: 1.4;">
+                {{ cls.title }}
+            </h3>
+
+            {% if cls.description %}
+            <div style="margin-bottom: 1rem; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 10px; border-left: 3px solid var(--brand-primary);">
+                <p style="font-size: 0.85rem; color: var(--text-standard); margin: 0; line-height: 1.5;">
+                    {{ cls.description }}
+                </p>
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                {% if cls.includes %}
+                <div>
+                    <strong style="display: block; font-size: 0.7rem; color: #4ade80; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Inclui:</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">
+                        {{ cls.includes }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if cls.excludes %}
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 5px;">
+                    <strong style="display: block; font-size: 0.7rem; color: #ef4444; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Não Inclui:</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">
+                        {{ cls.excludes }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not classes %}
+    <div style="text-align: center; padding: 100px 20px;">
+        <i class="ri-search-eye-line" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1rem; display: block;"></i>
+        <h3 style="color: white;">Nenhum resultado encontrado</h3>
+        <p style="color: var(--text-dim);">Tente termos mais genéricos ou o número da classe.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

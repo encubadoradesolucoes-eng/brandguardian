@@ -212,10 +212,22 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 2rem; grid-column: span 2;">
+                <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                    <div class="form-group">
+                        <label class="label-m24">Agente Responsável (Consultoria)</label>
+                        <select name="agent_id" class="input-m24" style="border-color: var(--brand-primary);">
+                            <option value="">-- Nenhum Agente Selecionado (Gestão Direta) --</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.id }}">{{ agent.name }} (Reg: {{ agent.agent_registration_number }})</option>
+                            {% endfor %}
+                        </select>
+                        <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 8px;">* O agente selecionado será responsável por gerir este ativo profissionalmente.</p>
+                    </div>
+                    <div class="form-group">
                         <label class="label-m24">Slogan Estratégico</label>
                         <input type="text" name="slogan" class="input-m24" placeholder="A frase que define o seu valor">
                     </div>
+                </div>
             </div>
         </div>
 

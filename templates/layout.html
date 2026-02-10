@@ -554,6 +554,72 @@
             transform: translateY(-2px);
         }
 
+        .glass-table-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-2xl);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: auto;
+        }
+
+        .m24-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px; /* Espaçamento entre linhas para parecer cards */
+            color: var(--text-standard);
+        }
+
+        .m24-table th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            opacity: 0.8;
+        }
+
+        .m24-table td {
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
+        }
+
+        .m24-table tr td:first-child {
+            border-left: 1px solid var(--border-subtle);
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .m24-table tr td:last-child {
+            border-right: 1px solid var(--border-subtle);
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .m24-table tr:hover td {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--brand-primary);
+        }
+
+        .m24-table code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--brand-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .status-new { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
 
@@ -746,11 +812,33 @@
                 </span>
                 <span class="badge" style="background:#ef4444; color:white; font-size: 0.6rem;">LIVE</span>
             </a>
+            
+            <a href="{{ url_for('visual_check_page') }}" class="nav-link {% if request.endpoint == 'visual_check_page' %}active{% endif %}">
+                <span class="link-content">
+                    <i class="ri-eye-2-line"></i> Análise Visual e OCR
+                </span>
+                <span class="badge" style="background:#8b5cf6; color:white; font-size: 0.6rem;">IA</span>
+            </a>
         </div>
 
         <div class="nav-section">
             
-            {% if current_user.role == 'admin' %}
+            {% if current_user.role == 'agent' %}
+            <!-- AGENTE MENU -->
+            <div class="nav-header">Gestão de Agente</div>
+            
+            <a href="{{ url_for('agent_dashboard') }}" class="nav-link {% if request.endpoint == 'agent_dashboard' %}active{% endif %}">
+                <span class="link-content">
+                    <i class="ri-shield-user-line"></i> Meus Ativos
+                </span>
+            </a>
+            <a href="{{ url_for('agent_prospecting') }}" class="nav-link {% if request.endpoint == 'agent_prospecting' %}active{% endif %}">
+                <span class="link-content">
+                    <i class="ri-search-eye-line"></i> Prospectar Novas Marcas
+                </span>
+            </a>
+            
+            {% elif current_user.role == 'admin' %}
             <!-- ADMIN MENU -->
             <div class="nav-header">Administração</div>
             
@@ -783,6 +871,33 @@
                 <span class="link-content">
                     <i class="ri-settings-4-line"></i> Integrações & API
                 </span>
+            </a>
+            <a href="{{ url_for('ipi_data') }}" class="nav-link {% if request.endpoint == 'ipi_data' %}active{% endif %}" style="color: #a78bfa;">
+                <span class="link-content">
+                    <i class="ri-database-2-line"></i> Base de Dados BPI
+                </span>
+            </a>
+            <a href="{{ url_for('import_csv_page') }}" class="nav-link {% if request.endpoint == 'import_csv_page' %}active{% endif %}" style="color: #60a5fa;">
+                 <span class="link-content">
+                     <i class="ri-upload-cloud-2-line"></i> Importar CSV
+                 </span>
+            </a>
+            <a href="{{ url_for('purification_page') }}" class="nav-link {% if request.endpoint == 'purification_page' %}active{% endif %}" style="color: #f472b6;">
+                <span class="link-content">
+                    <i class="ri-shield-check-line"></i> Auditoria de Risco
+                </span>
+            </a>
+            <a href="/admin/bpi/requerentes" class="nav-link" style="color: #fbbf24;">
+                <span class="link-content">
+                    <i class="ri-user-search-line"></i> Requerentes BPI (Leads)
+                </span>
+                <span class="badge" style="background:#f472b6; color:white; font-size: 0.6rem;">NEW</span>
+            </a>
+            <a href="{{ url_for('nice_classification_page') }}" class="nav-link" style="color: #34d399;">
+                <span class="link-content">
+                    <i class="ri-list-check-2"></i> Classificação de Nice
+                </span>
+                <span class="badge" style="background:rgba(52, 211, 153, 0.2); color:#34d399; font-size: 0.6rem;">REF</span>
             </a>
             <a href="{{ url_for('conflicts') }}" class="nav-link {% if request.endpoint == 'conflicts' %}active{% endif %}" style="color: #ef4444;">
                 <span class="link-content">

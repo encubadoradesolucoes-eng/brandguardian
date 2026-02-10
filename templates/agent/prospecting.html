@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="index-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+        <div>
+            <h1 class="hero-title">Mercado de Oportunidades</h1>
+            <p class="hero-desc">Marcas e Entidades que ainda não possuem um Agente de PI associado no m24 PRO.</p>
+        </div>
+    </div>
+
+    <div class="glass-table-container">
+        <table class="m24-table">
+            <thead>
+                <tr>
+                    <th>Marca e Titular</th>
+                    <th>Submetido em</th>
+                    <th>Nível de Risco IA</th>
+                    <th style="text-align: right;">Operação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for op in opportunities %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ri-lightbulb-flash-line" style="color: #fbbf24; font-size: 1.2rem;"></i>
+                            </div>
+                            <div>
+                                <div style="color: white; font-weight: 800; font-size: 1rem;">{{ op.name }}</div>
+                                <div style="font-size: 0.8rem; color: var(--brand-primary);">{{ op.owner_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="color: var(--text-standard); font-size: 0.9rem;">{{ op.submission_date.strftime('%d/%m/%Y') }}</div>
+                        <small class="text-muted">{{ op.submission_date.strftime('%H:%M') }}</small>
+                    </td>
+                    <td>
+                        {% set r_color = '#10b981' %}
+                        {% if op.risk_score > 60 %}{% set r_color = '#ef4444' %}
+                        {% elif op.risk_score > 30 %}{% set r_color = '#f59e0b' %}{% endif %}
+                        
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="font-size: 0.85rem; font-weight: 800; color: {{ r_color }};">
+                                {{ op.risk_score|int }}% - {{ 'CRÍTICO' if op.risk_score > 60 else ('ALERTA' if op.risk_score > 30 else 'BAIXO') }}
+                            </div>
+                            <div class="risk-meter" style="width: 100px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <div class="risk-fill" style="width: {{ op.risk_score }}%; height: 100%; background: {{ r_color }}; border-radius: 10px;"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <form action="{{ url_for('agent_claim_brand', brand_id=op.id) }}" method="POST">
+                            <button type="submit" class="btn-m24 btn-m24-primary" style="padding: 10px 20px; font-size: 0.85rem;">
+                                <i class="ri-hand-coin-line"></i> Assumir Gestão
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 4rem;">
+                        <div style="opacity: 0.2; margin-bottom: 1rem;"><i class="ri-radar-line" style="font-size: 3rem;"></i></div>
+                        <div style="color: var(--text-dim);">Nenhuma oportunidade disponível no momento.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

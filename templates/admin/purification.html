@@ -1,0 +1,164 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="ri-shield-check-line text-success"></i> Sistema de Purificação de Marcas</h4>
+                <span class="badge bg-secondary">Módulo Beta</span>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning border-start border-warnings border-5">
+                    <h5><i class="ri-alert-line"></i> Atenção</h5>
+                    <p class="mb-0">Este processo analisa <b>todas as marcas</b> cadastradas no M24 contra <b>todas as fontes de dados</b> (Interna, BPI e Web). Isso pode levar alguns minutos.</p>
+                </div>
+
+                <div class="text-center py-4" id="introArea">
+                    <button onclick="startPurification()" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow">
+                        <i class="ri-play-circle-line" style="font-size: 1.5rem; vertical-align: middle;"></i> 
+                        INICIAR AUDITORIA DE RISCO
+                    </button>
+                    <p class="text-muted mt-2">Cruzamento: M24 vs IPI vs Web</p>
+                </div>
+
+                <div id="processArea" style="display:none;">
+                    <h5 class="text-center mb-3">Processando... <span id="progressText">0%</span></h5>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="logs" class="bg-light p-3 border rounded font-monospace small text-secondary" style="height: 150px; overflow-y: auto;">
+                        > Sistema pronto...
+                    </div>
+                </div>
+
+                <!-- Tabela de Resultados -->
+                <div id="resultsArea" style="display:none;" class="mt-5">
+                    <h4 class="mb-3">Relatório de Conflitos Detectados</h4>
+                    <div class="glass-table-container">
+                        <table class="m24-table">
+                            <thead>
+                                <tr>
+                                    <th>Marca Analisada</th>
+                                    <th>Titular/Lead</th>
+                                    <th>Fonte</th>
+                                    <th>Detalhes</th>
+                                    <th>Risco</th>
+                                    <th style="text-align: right;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody">
+                                <!-- JS vai preencher -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                         <button class="btn btn-outline-secondary" onclick="window.print()"><i class="ri-printer-line"></i> Imprimir Relatório</button>
+                         <button class="btn btn-success" onclick="location.reload()"><i class="ri-refresh-line"></i> Nova Análise</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function startPurification() {
+    document.getElementById('introArea').style.display = 'none';
+    document.getElementById('processArea').style.display = 'block';
+    
+    addLog('Iniciando motor de purificação...');
+    
+    // Iniciar Job
+    try {
+        const response = await fetch('/api/purification/start', { method: 'POST' });
+        const data = await response.json();
+        
+        if(data.status === 'started') {
+            trackProgress();
+        } else {
+            addLog('Erro ao iniciar: ' + data.details);
+            alert('Erro: ' + data.details);
+        }
+    } catch (e) {
+        addLog('Erro de conexão: ' + e);
+    }
+}
+
+async function trackProgress() {
+    const interval = setInterval(async () => {
+        try {
+            const res = await fetch('/api/purification/status');
+            const status = await res.json();
+            
+            // Atualizar UI
+            const pct = Math.round(status.progress);
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').innerText = pct + '%';
+            
+            if(status.current_brand) {
+                addLog(`Analisando marca: ${status.current_brand}...`);
+            }
+            
+            if(status.complete) {
+                clearInterval(interval);
+                document.getElementById('progressBar').classList.remove('progress-bar-animated');
+                addLog('Processo concluído!');
+                showResults(status.conflicts);
+            }
+            
+        } catch(e) {
+            console.error(e);
+        }
+    }, 1000);
+}
+
+function showResults(conflicts) {
+    document.getElementById('resultsArea').style.display = 'block';
+    const tbody = document.getElementById('resultsTableBody');
+    tbody.innerHTML = '';
+    
+    if(conflicts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><h5 class="text-success"><i class="ri-checkbox-circle-fill"></i> Nenhum risco detectado!</h5></td></tr>';
+        return;
+    }
+    
+    conflicts.forEach(c => {
+        let badgeClass = 'bg-secondary';
+        
+        const brandName = c.brand || 'Desconhecida';
+        const applicant = c.applicant || 'N/A';
+        const source = c.source || 'Geral';
+        const sourceUpper = source.toUpperCase();
+        const issue = c.issue || 'Sem detalhes';
+        
+        if(sourceUpper.includes('BPI') || sourceUpper.includes('IPI')) { badgeClass = 'status-danger'; } 
+        if(sourceUpper.includes('WEB') || sourceUpper.includes('SOCIAL')) { badgeClass = 'status-pending'; }
+        
+        const tr = `
+            <tr>
+                <td class="fw-bold" style="color:white;">${brandName}</td>
+                <td><small>${applicant}</small></td>
+                <td><span class="badge ${badgeClass}">${source}</span></td>
+                <td>${issue}</td>
+                <td><span class="fw-bold text-danger">ALTO</span></td>
+                <td style="text-align: right;">
+                    <button class="btn btn-sm btn-m24-primary" onclick="alert('Funcionalidade em desenvolvimento')">
+                        <i class="ri-eye-line"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += tr;
+    });
+}
+
+function addLog(msg) {
+    const logs = document.getElementById('logs');
+    logs.innerHTML += `<div>> ${msg}</div>`;
+    logs.scrollTop = logs.scrollHeight;
+}
+</script>
+{% endblock %}

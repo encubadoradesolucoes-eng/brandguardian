@@ -172,10 +172,37 @@
 
         <form method="POST">
             <div class="form-grid">
+                <div class="section-tag">Tipo de Conta</div>
+                
+                <div class="form-group full">
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <label style="flex: 1; border: 1px solid var(--border); padding: 15px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin: 0;" id="client-label">
+                            <input type="radio" name="role" value="client" checked style="width: auto;" onclick="toggleAgentFields(false)">
+                            <div>
+                                <div style="color: white; font-size: 0.9rem;">Titular / Cliente</div>
+                                <div style="font-size: 0.7rem; text-transform: none; font-weight: 400;">Quero gerir minhas marcas</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; border: 1px solid var(--border); padding: 15px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin: 0;" id="agent-label">
+                            <input type="radio" name="role" value="agent" style="width: auto;" onclick="toggleAgentFields(true)">
+                            <div>
+                                <div style="color: white; font-size: 0.9rem;">Agente de PI</div>
+                                <div style="font-size: 0.7rem; text-transform: none; font-weight: 400;">Quero gerir ativos de terceiros</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="agent-fields" class="form-group full" style="display: none;">
+                    <label>Nº de Registro de Agente Oficial (INPI)</label>
+                    <input type="text" name="agent_reg" placeholder="Ex: AO-2024-X">
+                    <input type="hidden" name="plan" value="{{ request.args.get('plan', 'agent_pro') }}">
+                </div>
+
                 <div class="section-tag">Dados da Entidade</div>
                 
                 <div class="form-group full">
-                    <label>Nome do Titular / Empresa</label>
+                    <label id="name-label">Nome do Titular / Empresa</label>
                     <input type="text" name="name" required placeholder="Ex: Global Solutions, SA" autofocus>
                 </div>
 
@@ -224,10 +251,27 @@
             </button>
         </form>
         
-        <div class="footer-links">
-            Possui conta de gestor? <a href="/login">Fazer Login</a>
-        </div>
-    </div>
-
+        <script>
+        function toggleAgentFields(isAgent) {
+            const agentFields = document.getElementById('agent-fields');
+            const nameLabel = document.getElementById('name-label');
+            
+            if (isAgent) {
+                agentFields.style.display = 'block';
+                nameLabel.innerText = "Nome do Agente / Firma Profissional";
+            } else {
+                agentFields.style.display = 'none';
+                nameLabel.innerText = "Nome do Titular / Empresa";
+            }
+        }
+        // Auto-detectar papel pela URL
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('role') === 'agent') {
+                document.querySelector('input[name="role"][value="agent"]').checked = true;
+                toggleAgentFields(true);
+            }
+        });
+    </script>
 </body>
 </html>

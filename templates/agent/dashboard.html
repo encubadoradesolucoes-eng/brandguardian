@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="index-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+        <div>
+            <h1 class="hero-title">Painel do Agente Oficial</h1>
+            <p class="hero-desc">Gestão centralizada de ativos de Propriedade Industrial sob sua responsabilidade.</p>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+            <a href="{{ url_for('agent_prospecting') }}" class="btn-m24 btn-m24-primary">
+                <i class="ri-search-eye-line"></i> <span class="hide-mobile">Prospectar Novas Marcas</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Agent Stats -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="glass-table-container" style="padding: 1.5rem; margin-bottom: 0;">
+            <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">Ativos sob Gestão</div>
+            <div style="font-size: 2.5rem; font-weight: 800; color: white;">{{ stats.total }}</div>
+            <div style="color: #10b981; font-size: 0.8rem; margin-top: 5px;"><i class="ri-arrow-up-line"></i> Marcas verificadas</div>
+        </div>
+        <div class="glass-table-container" style="padding: 1.5rem; margin-bottom: 0;">
+            <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">Conflitos Críticos</div>
+            <div style="font-size: 2.5rem; font-weight: 800; color: #ef4444;">{{ stats.conflicts }}</div>
+            <div style="color: #ef4444; font-size: 0.8rem; margin-top: 5px;"><i class="ri-error-warning-line"></i> Ação jurídica necessária</div>
+        </div>
+        <div class="glass-table-container" style="padding: 1.5rem; margin-bottom: 0;">
+            <div style="color: var(--text-dim); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">Pendências Admin</div>
+            <div style="font-size: 2.5rem; font-weight: 800; color: #f59e0b;">{{ stats.pending }}</div>
+            <div style="color: #f59e0b; font-size: 0.8rem; margin-top: 5px;"><i class="ri-time-line"></i> Aguardando veredito</div>
+        </div>
+    </div>
+
+    <h3 class="mb-4" style="font-family: 'Outfit'; font-weight: 800;">Meus Ativos Monitorados</h3>
+
+    <div class="glass-table-container">
+        <table class="m24-table">
+            <thead>
+                <tr>
+                    <th>Marca e Identificação</th>
+                    <th>Titular / Cliente</th>
+                    <th>Status M24</th>
+                    <th>Risco Ativo</th>
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for brand in brands %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                {% if brand.logo_path %}
+                                <img src="{{ url_for('get_persistence_path', relative_path='uploads/' + brand.logo_path) }}" style="width: 80%; height: 80%; object-fit: contain;">
+                                {% else %}
+                                <i class="ri-shield-user-line" style="color: var(--brand-primary); font-size: 1.2rem;"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div style="color: white; font-weight: 800; font-size: 1rem;">{{ brand.name }}</div>
+                                <code style="font-size: 0.7rem;">{{ brand.process_number or 'MONITORADA' }}</code>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="color: var(--text-vibrant); font-weight: 600;">{{ brand.owner_name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">{{ brand.owner_email }}</div>
+                    </td>
+                    <td>
+                        {% if brand.status == 'approved' %}
+                        <span class="status-pill success">Protegido</span>
+                        {% elif brand.status == 'waiting_admin' %}
+                        <span class="status-pill warning">Em Revisão</span>
+                        {% else %}
+                        <span class="status-pill danger">{{ brand.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="risk-meter" style="width: 80px; height: 6px;">
+                                <div class="risk-fill" style="width: {{ brand.risk_score }}%; background: {% if brand.risk_score > 60 %}#ef4444{% elif brand.risk_score > 30 %}#f59e0b{% else %}#10b981{% endif %};"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: 800; color: {% if brand.risk_score > 60 %}#ef4444{% elif brand.risk_score > 30 %}#f59e0b{% else %}#10b981{% endif %};">
+                                {{ brand.risk_score|int }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="action-group">
+                            <a href="{{ url_for('brand_detail', id=brand.id) }}" class="action-icon" title="Abrir Dossiê Completo">
+                                <i class="ri-folder-open-line"></i>
+                            </a>
+                            <a href="#" class="action-icon" style="color: #34d399;" title="Notificar Titular">
+                                <i class="ri-whatsapp-line"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 4rem;">
+                        <div style="opacity: 0.3; margin-bottom: 1rem;"><i class="ri-shield-star-line" style="font-size: 3rem;"></i></div>
+                        <div style="color: var(--text-dim);">Você ainda não possui marcas sob sua responsabilidade.</div>
+                        <a href="{{ url_for('agent_prospecting') }}" class="btn-m24 btn-m24-ghost" style="margin-top: 1rem;">Prospectar Mercado</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .status-pill.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .status-pill.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .status-pill.danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .risk-meter {
+        background: rgba(255,255,255,0.05);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .risk-fill {
+        height: 100%;
+        transition: width 1s ease-out;
+    }
+</style>
+{% endblock %}

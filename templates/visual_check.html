@@ -1,0 +1,414 @@
+{% extends "layout.html" %}
+
+{% block title %}Análise Visual | BrandGuardian PRO{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-zone {
+        border: 2px dashed var(--border-subtle);
+        border-radius: var(--radius-xl);
+        padding: 4rem 2rem;
+        text-align: center;
+        background: var(--bg-surface);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+        border-color: var(--brand-primary);
+        background: rgba(0, 240, 255, 0.05);
+        transform: translateY(-2px);
+    }
+
+    #preview-container {
+        display: none;
+        margin-top: 2rem;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .preview-image {
+        max-height: 300px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--glow-soft);
+        border: 1px solid var(--border-subtle);
+    }
+
+    .analysis-results {
+        display: none;
+        margin-top: 3rem;
+    }
+
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .color-swatch {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 10px;
+        border: 2px solid rgba(255,255,255,0.1);
+        position: relative;
+    }
+    
+    .color-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+
+    .hash-box {
+        background: var(--bg-body);
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        color: var(--brand-secondary);
+        word-break: break-all;
+        border: 1px solid var(--border-subtle);
+    }
+
+    .conflict-card {
+        background: rgba(255, 50, 50, 0.05);
+        border: 1px solid var(--danger);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .score-badge {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--danger);
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        border-radius: var(--radius-xl);
+        z-index: 10;
+        flex-direction: column;
+    }
+    
+    .scanner-line {
+        width: 100%;
+        height: 2px;
+        background: var(--brand-primary);
+        box-shadow: 0 0 10px var(--brand-primary);
+        position: absolute;
+        top: 0;
+        animation: scan 2s infinite linear;
+    }
+    
+    @keyframes scan {
+        0% { top: 0%; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 0 auto;">
+    
+    <!-- HEADER -->
+    <div style="text-align: center; margin-bottom: 4rem;">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            Motor de Análise Visual
+        </h1>
+        <p style="color: var(--text-dim); font-size: 1.2rem; max-width: 600px; margin: 0 auto;">
+            Nossa IA analisa a estrutura visual, paleta de cores e "impressão digital" do seu logotipo, comparando-o contra milhares de marcas registradas no BPI.
+        </p>
+    </div>
+
+    <!-- UPLOAD ZONE -->
+    <div class="glass-card" style="padding: 3rem;">
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-zone" id="dropZone">
+                <div class="loading-overlay" id="loader">
+                    <div class="scanner-line"></div>
+                    <div style="color: var(--brand-primary); margin-top: 1rem; font-weight: 700;">PROCESSANDO IMAGEM...</div>
+                    <div style="color: var(--text-dim); font-size: 0.8rem;">Gerando Hashes Perceptuais & Extraindo Paleta</div>
+                </div>
+                
+                <input type="file" id="fileInput" name="imagem" accept="image/*" style="display: none;">
+                
+                <div id="uploadPrompt">
+                    <i class="ri-eye-2-line" style="font-size: 4rem; color: var(--brand-primary); margin-bottom: 1rem; display: block;"></i>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Arraste seu Logotipo aqui</h3>
+                    <p style="color: var(--text-dim); margin-bottom: 2rem;">Suporta PNG, JPG, WEBP (Max 10MB)</p>
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <i class="ri-upload-cloud-line"></i> Selecionar Arquivo
+                    </button>
+                    
+                    <div style="margin-top: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                        <input type="text" name="marca" placeholder="Nome da Marca (Opcional, para contexto)" 
+                               style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); width: 100%; padding: 1rem; border-radius: var(--radius-md); color: #fff;">
+                    </div>
+                </div>
+
+                <div id="preview-container">
+                    <img id="preview" class="preview-image" src="" alt="Preview">
+                    <div style="margin-top: 1rem;">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="ri-search-eye-line"></i> Iniciar Varredura Visual
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="resetUpload()" style="margin-left: 1rem;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div id="resultsArea" class="analysis-results">
+        
+        <!-- RESUMO -->
+        <div class="glass-card" style="margin-bottom: 2rem; border-left: 4px solid var(--brand-secondary);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="section-title">Diagnóstico Visual</h2>
+                    <p id="recommendationText" style="font-size: 1.1rem; color: var(--text-vibrant);"></p>
+                </div>
+                <div id="riskBadge" style="text-align: center; padding: 1rem 2rem; background: rgba(255,255,255,0.05); border-radius: var(--radius-lg);">
+                    <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Risco Estimado</div>
+                    <div id="riskLevel" style="font-size: 2rem; font-weight: 900;">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-grid">
+            <!-- DETALHES TÉCNICOS -->
+            <div class="glass-card">
+                <h3 class="section-title"><i class="ri-fingerprint-line"></i> DNA da Marca</h3>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: var(--text-dim); font-size: 0.8rem;">HASH PERCEPTUAL (pHash)</label>
+                    <div id="phashDisplay" class="hash-box">--</div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: var(--text-dim); font-size: 0.8rem;">HASH ESTRUTURAL (dHash)</label>
+                    <div id="dhashDisplay" class="hash-box">--</div>
+                </div>
+                
+                <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-vibrant);">Paleta Cromática Dominante</h4>
+                <div id="colorPalette">
+                    <!-- Cores inseridas via JS -->
+                </div>
+            </div>
+
+            <!-- CONFLITOS -->
+            <div class="glass-card">
+                <h3 class="section-title"><i class="ri-alert-line"></i> Conflitos Detectados</h3>
+                <div id="conflictsList">
+                    <p style="color: var(--text-dim); text-align: center; padding: 2rem;">Aguardando análise...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview');
+    const form = document.getElementById('uploadForm');
+    const loader = document.getElementById('loader');
+    const resultsArea = document.getElementById('resultsArea');
+
+    // Drag and Drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, envie apenas imagens.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            uploadPrompt.style.display = 'none';
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+        form.reset();
+        previewImage.src = '';
+        previewContainer.style.display = 'none';
+        uploadPrompt.style.display = 'block';
+        resultsArea.style.display = 'none';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        loader.style.display = 'flex';
+        resultsArea.style.display = 'none'; // Esconde resultados antigos
+        
+        console.log('🔍 Enviando imagem para verificação...');
+        
+        try {
+            const response = await fetch('/api/verificacao-imagem-real', {
+                method: 'POST',
+                body: formData
+            });
+            
+            console.log('📡 Resposta recebida:', response.status);
+            const data = await response.json();
+            console.log('📊 Dados:', data);
+            
+            if (data.status === 'sucesso') {
+                console.log('✅ Análise concluída!');
+                console.log('   - Conflitos:', data.resultados.conflitos_visuais?.length || 0);
+                console.log('   - Resumo:', data.resultados.resumo);
+                displayResults(data.resultados);
+            } else {
+                console.error('❌ Erro na análise:', data.error);
+                alert('Erro: ' + data.error);
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro de conexão:', error);
+            alert('Erro de conexão: ' + error);
+        } finally {
+            loader.style.display = 'none';
+        }
+    });
+
+    function displayResults(res) {
+        console.log('🎨 Renderizando resultados...');
+        console.log('   - Objeto completo:', JSON.stringify(res, null, 2));
+        console.log('   - Hashes:', res.hashes);
+        console.log('   - Conflitos visuais (array):', res.conflitos_visuais);
+        console.log('   - Número de conflitos:', res.conflitos_visuais ? res.conflitos_visuais.length : 0);
+        console.log('   - Resumo:', res.resumo);
+        
+        resultsArea.style.display = 'block';
+        
+        // Hashes
+        document.getElementById('phashDisplay').textContent = res.hashes.phash;
+        document.getElementById('dhashDisplay').textContent = res.hashes.dhash;
+        
+        // Cores
+        const paletteContainer = document.getElementById('colorPalette');
+        paletteContainer.innerHTML = '';
+        
+        const analiseCores = res.analises.find(a => a.tipo === 'ANÁLISE DE CORES');
+        if (analiseCores && analiseCores.cores_dominantes) {
+            analiseCores.cores_dominantes.forEach(cor => {
+                const div = document.createElement('div');
+                div.className = 'color-info';
+                div.innerHTML = `
+                    <span class="color-swatch" style="background-color: ${cor.cor_hex}"></span>
+                    <span>${cor.cor_hex} <span style="color: var(--text-dim); font-size: 0.8em">(${((cor.frequencia/10000)*100).toFixed(1)}%)</span></span>
+                `;
+                paletteContainer.appendChild(div);
+            });
+        }
+        
+        // Conflitos
+        const conflictsList = document.getElementById('conflictsList');
+        conflictsList.innerHTML = '';
+        
+        console.log('📋 Processando conflitos...');
+        console.log('   - Conflitos existe?', !!res.conflitos_visuais);
+        console.log('   - É array?', Array.isArray(res.conflitos_visuais));
+        console.log('   - Length:', res.conflitos_visuais ? res.conflitos_visuais.length : 'N/A');
+        
+        if (res.conflitos_visuais && res.conflitos_visuais.length > 0) {
+            console.log('✅ Renderizando', res.conflitos_visuais.length, 'conflitos');
+            res.conflitos_visuais.forEach((conf, index) => {
+                console.log(`   - Conflito ${index + 1}:`, conf);
+                const card = document.createElement('div');
+                card.className = 'conflict-card';
+                card.innerHTML = `
+                    <div class="score-badge">${conf.similaridade_media}%</div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-vibrant);">${conf.marca_bpi}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Processo: ${conf.processo_bpi}</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem;">${conf.acao}</div>
+                    </div>
+                `;
+                conflictsList.appendChild(card);
+            });
+        } else {
+            console.log('❌ Nenhum conflito para renderizar');
+            conflictsList.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="ri-checkbox-circle-line" style="font-size: 3rem; color: var(--success);"></i>
+                    <p style="margin-top: 1rem; color: var(--success);">Nenhum conflito visual detectado no banco local.</p>
+                </div>
+            `;
+        }
+        
+        // Resumo
+        const resumo = res.resumo;
+        document.getElementById('recommendationText').textContent = resumo.recomendacao;
+        document.getElementById('riskLevel').textContent = resumo.nivel_risco_visual;
+        
+        if (resumo.nivel_risco_visual === 'ALTO') {
+            document.getElementById('riskLevel').style.color = 'var(--danger)';
+        } else if (resumo.nivel_risco_visual === 'BAIXO' || resumo.nivel_risco_visual === 'MÍNIMO') {
+            document.getElementById('riskLevel').style.color = 'var(--success)';
+        } else {
+            document.getElementById('riskLevel').style.color = 'var(--warning)'; // Amarelo
+        }
+        
+        // Scroll suave até os resultados
+        resultsArea.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

@@ -1,44 +1,43 @@
 @echo off
-title BrandGuardian Launcher
-color 0A
+TITLE m24 BrandGuardian - SAFE LAUNCHER
+echo ==========================================
+echo   INICIANDO M24 PROTECTED MODE
+echo ==========================================
 
-echo ==================================================
-echo   BRAND GUARDIAN PRO - SYSTEM LAUNCHER
-echo ==================================================
+:: 1. Limpeza Forçada
 echo.
-
-echo [0/2] Limpando processos antigos...
-:: Mata processos Node e Python antigos para liberar portas 3002 e 7000
-taskkill /F /IM node.exe /T >nul 2>&1
+echo [1/3] Limpando processos travados...
 taskkill /F /IM python.exe /T >nul 2>&1
-echo Limpeza concluida.
+taskkill /F /IM node.exe /T >nul 2>&1
 
+:: 2. Iniciar WhatsApp (em nova janela)
 echo.
-echo [1/2] Verificando Motor WhatsApp...
-echo Iniciando servico Node.js na porta 3002 em nova janela...
+echo [2/3] Iniciando Motor WhatsApp...
 cd whatsapp-engine
-if not exist node_modules (
-    echo [!] Instalando dependencias do Node... esta primeira vez pode demorar...
-    call npm install
-)
-start "BrandGuardian WhatsApp Engine" cmd /k "npm start"
+start "WhatsApp Engine" cmd /k "npm start"
 cd ..
 
+:: 3. Iniciar Python (App Principal)
 echo.
-echo [2/2] Aguardando Motor WhatsApp iniciar (5s)...
+echo [3/3] Iniciando Servidor Web...
+echo Aguardando 5 segundos para o WhatsApp subir...
 timeout /t 5 >nul
 
-echo.
-echo [3/2] Iniciando Aplicacao Web (Python Flask)...
-echo.
+:: Tenta ativar venv (sem variaveis complexas para nao dar erro)
+if exist venv\Scripts\activate.bat call venv\Scripts\activate.bat
+if exist .venv\Scripts\activate.bat call .venv\Scripts\activate.bat
 
-if not exist .venv (
-    echo [ERRO] Ambiente virtual .venv nao encontrado!
-    pause
-    exit
+:: Roda o aplicativo
+echo.
+echo --- RODANDO APLICATIVO ---
+if exist venv\Scripts\python.exe (
+	venv\Scripts\python.exe app.py
+) else if exist .venv\Scripts\python.exe (
+	.venv\Scripts\python.exe app.py
+) else (
+	python app.py
 )
 
-call .venv\Scripts\activate
-python app.py
-
+echo.
+echo Se o servidor parou, veja o erro acima.
 pause

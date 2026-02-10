@@ -1,0 +1,111 @@
+{
+  "termo": "CARTRAK",
+  "timestamp": "2026-02-10T05:43:51.570779",
+  "metodos_utilizados": [
+    "DNS lookup via socket (100% confiável)",
+    "Consulta SQL direta ao BPI local (Full Scan)",
+    "Verificação redes sociais (limitado por APIs)"
+  ],
+  "dominios": [
+    {
+      "dominio": "cartrak.co.mz",
+      "status": "DISPONÍVEL",
+      "confianca": 100,
+      "metodo": "DNS lookup"
+    },
+    {
+      "dominio": "cartrak.com",
+      "status": "DISPONÍVEL",
+      "confianca": 100,
+      "metodo": "DNS lookup"
+    },
+    {
+      "dominio": "cartrak.org",
+      "status": "DISPONÍVEL",
+      "confianca": 100,
+      "metodo": "DNS lookup"
+    },
+    {
+      "dominio": "cartrak.net",
+      "status": "DISPONÍVEL",
+      "confianca": 100,
+      "metodo": "DNS lookup"
+    },
+    {
+      "dominio": "cartrak.info",
+      "status": "DISPONÍVEL",
+      "confianca": 100,
+      "metodo": "DNS lookup"
+    }
+  ],
+  "bpi": [
+    {
+      "marca": "Cartrack",
+      "processo": "4755035",
+      "similaridade": 93,
+      "classe": "35",
+      "status": "concessao",
+      "data": "2023-06-01"
+    }
+  ],
+  "redes_sociais": [
+    {
+      "plataforma": "Instagram",
+      "status": "OCUPADO",
+      "confianca": 70,
+      "url": "https://www.instagram.com/cartrak/",
+      "metodo": "Análise HTTP + heurísticas"
+    },
+    {
+      "plataforma": "Facebook",
+      "status": "OCUPADO",
+      "confianca": 75,
+      "url": "https://www.facebook.com/cartrak/",
+      "metodo": "Análise HTTP + heurísticas"
+    },
+    {
+      "plataforma": "Linkedin",
+      "status": "DISPONIVEL",
+      "confianca": 85,
+      "url": "https://www.linkedin.com/company/cartrak/",
+      "metodo": "Análise HTTP + heurísticas"
+    }
+  ],
+  "analise_textual": [
+    {
+      "tipo": "RISCO BPI",
+      "nivel": 80,
+      "descricao": "Marca similar encontrada no BPI (93% similar)"
+    },
+    {
+      "tipo": "PRESENÇA INSTAGRAM",
+      "nivel": 20,
+      "descricao": "Perfil encontrado no Instagram (confiança: 70%)"
+    },
+    {
+      "tipo": "PRESENÇA FACEBOOK",
+      "nivel": 20,
+      "descricao": "Perfil encontrado no Facebook (confiança: 75%)"
+    }
+  ],
+  "limites": [
+    "Redes sociais: verificação limitada (~70% confiável)"
+  ],
+  "analise_risco": {
+    "risco_total": 100,
+    "nivel_risco": "CRÍTICO",
+    "fatores": [
+      {
+        "fator": "Marca IDÊNTICA encontrada no BPI (93%)",
+        "peso": 80,
+        "quantidade": 1
+      },
+      {
+        "fator": "Presença em Redes Sociais detectada",
+        "peso": 20,
+        "quantidade": 2
+      }
+    ],
+    "recomendacao": "🔴 ALTO RISCO: Não recomendado. Conflitos significativos detectados em múltiplas dimensões."
+  }
+}

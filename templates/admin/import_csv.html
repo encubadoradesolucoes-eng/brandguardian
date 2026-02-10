@@ -1,0 +1,201 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h4 class="mb-0"><i class="ri-file-excel-2-line text-success"></i> Importador CSV Inteligente</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="ri-information-line"></i> 
+                    Faça upload dos seus ficheiros CSV. O sistema detectará automaticamente as colunas correspondentes (Processo, Marca, Classe, etc.) mesmo que os nomes sejam diferentes.
+                </div>
+
+                <form id="csvImportForm" enctype="multipart/form-data">
+                    
+                    <!-- Passo 1: Fonte -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Fonte de Dados</label>
+                        <input type="text" name="source_name" class="form-control" placeholder="Ex: BPI-170, OMPI-2023..." required>
+                        <div class="form-text">Esta etiqueta será aplicada a todos os registros importados.</div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Ficheiro de Marcas/Concessões -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Ficheiro de Marcas/Concessões (CSV)</label>
+                            <input type="file" name="brands_file" id="brandsFile" class="form-control" accept=".csv" required>
+                        </div>
+
+                        <!-- Ficheiro de Requerentes (Opcional) -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Ficheiro de Requerentes (CSV)</label>
+                            <input type="file" name="applicants_file" id="applicantsFile" class="form-control" accept=".csv">
+                            <div class="form-text">Opcional. Se as marcas já tiverem o nome do requerente, não é necessário.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="button" onclick="analyzeFiles()" class="btn btn-primary">
+                            <i class="ri-magic-line"></i> Analisar Estrutura & Mapear Colunas
+                        </button>
+                    </div>
+
+                    <!-- Área de Análise (Invisível até analisar) -->
+                    <div id="analysisResult" style="display:none;" class="mt-4 border-top pt-3">
+                        <h5 class="text-secondary">🧠 Mapeamento Inteligente Detectado:</h5>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>Marcas/Processos</h6>
+                                <table class="table table-sm table-bordered" id="brandsMappingTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Campo do Sistema</th>
+                                            <th>Coluna Detectada no CSV</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6" id="applicantsMappingDiv">
+                                <h6>Requerentes</h6>
+                                <table class="table table-sm table-bordered" id="applicantsMappingTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Campo do Sistema</th>
+                                            <th>Coluna Detectada no CSV</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-2">
+                            <i class="ri-check-double-line"></i> Revise o mapeamento acima. Se estiver correto, confirme a importação.
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="ri-save-line"></i> Confirmar Importação
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+                
+                <div id="importLog" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function analyzeFiles() {
+    const form = document.getElementById('csvImportForm');
+    const formData = new FormData(form);
+
+    // Enviar para rota de análise (não a de importação final)
+    // Vamos criar uma rota específica para 'preview'
+    
+    const btn = document.querySelector('button[onclick="analyzeFiles()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analisando...';
+
+    try {
+        const response = await fetch('/admin/import-csv/analyze', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            document.getElementById('analysisResult').style.display = 'block';
+            
+            // Preencher Tabela de Marcas
+            fillMappingTable('brandsMappingTable', data.mappings.brands);
+            
+            // Preencher Tabela de Requerentes (se houver)
+            if (data.mappings.applicants) {
+                fillMappingTable('applicantsMappingTable', data.mappings.applicants);
+            } else {
+                document.getElementById('applicantsMappingDiv').style.opacity = '0.5';
+            }
+        } else {
+            alert('Erro na análise: ' + data.details);
+        }
+    } catch (e) {
+        alert('Erro de conexão: ' + e);
+    }
+    
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ri-magic-line"></i> Analisar Estrutura & Mapear Colunas';
+}
+
+function fillMappingTable(tableId, mapping) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    tbody.innerHTML = '';
+    
+    for (const [sysField, csvCol] of Object.entries(mapping)) {
+        let statusHtml = csvCol ? '<span class="badge bg-success">Encontrado</span>' : '<span class="badge bg-danger">Ausente</span>';
+        let colName = csvCol || '<em class="text-muted">Não detectado</em>';
+        
+        // Traduzir campos do sistema para legível
+        let displayField = sysField;
+        if(sysField === 'process_number') displayField = 'Número do Processo';
+        if(sysField === 'brand_name') displayField = 'Nome da Marca';
+        if(sysField === 'nice_class') displayField = 'Classe Nice';
+        if(sysField === 'applicant_id') displayField = 'ID Requerente (Link)';
+        if(sysField === 'id') displayField = 'ID Único';
+        if(sysField === 'name') displayField = 'Nome Requerente';
+        
+        const tr = `<tr>
+            <td>${displayField}</td>
+            <td class="fw-bold">${colName}</td>
+            <td>${statusHtml}</td>
+        </tr>`;
+        tbody.innerHTML += tr;
+    }
+}
+
+// Handler do Submit Final
+document.getElementById('csvImportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if(!confirm('Tem certeza que deseja importar estes dados?')) return;
+    
+    const formData = new FormData(this);
+    const logDiv = document.getElementById('importLog');
+    
+    logDiv.innerHTML = '<div class="alert alert-info">Processando importação... Aguarde.</div>';
+    
+    try {
+        const response = await fetch('/admin/import-csv/execute', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if(data.status === 'success') {
+            logDiv.innerHTML = `<div class="alert alert-success">
+                <h4><i class="ri-check-line"></i> Sucesso!</h4>
+                <p>${data.message}</p>
+                <p>Total Importado: <b>${data.count}</b> registros.</p>
+                <a href="/admin/ipi-data" class="btn btn-outline-success btn-sm">Ver Dados</a>
+            </div>`;
+            document.getElementById('csvImportForm').reset();
+            document.getElementById('analysisResult').style.display = 'none';
+        } else {
+             logDiv.innerHTML = `<div class="alert alert-danger">Erro: ${data.details}</div>`;
+        }
+    } catch (e) {
+         logDiv.innerHTML = `<div class="alert alert-danger">Erro Crítico: ${e}</div>`;
+    }
+});
+</script>
+{% endblock %}

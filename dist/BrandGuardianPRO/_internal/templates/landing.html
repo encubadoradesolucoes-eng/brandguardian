@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-MZ">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>m24 Pro | Segurança Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* Darkest Navy */
+            color: white;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Nav estilo Mabulu */
+        nav {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: white;
+            text-decoration: none;
+            letter-spacing: -1px;
+        }
+        
+        .logo span { color: #8b5cf6; }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover { color: white; }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            min-height: 700px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: linear-gradient(to right, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0.6) 100%), url('/static/hero-guardian.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1300px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .hero-container {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .hero-content { 
+            max-width: 700px; 
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tagine {
+            display: inline-block;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+            color: #38bdf8;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 5rem;
+            line-height: 1.05;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            color: white;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 3.5rem;
+            max-width: 600px;
+            font-weight: 300;
+        }
+
+        /* Botões */
+        .btn-group { display: flex; gap: 1.5rem; }
+
+        .btn {
+            padding: 1.2rem 3rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.4);
+            border: 1px solid #6366f1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -10px rgba(99, 102, 241, 0.6);
+            background: #4f46e5;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Pricing Section - Elegant & Dark */
+        .pricing-section {
+            padding: 100px 0;
+            position: relative;
+            background: #020617; /* Matches body */
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+        
+        .section-tag {
+            color: #8b5cf6;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .section-desc {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 0 5%;
+        }
+        
+        .pricing-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 40px 30px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .pricing-card.featured {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(99, 102, 241, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        
+        .pricing-card.featured::before {
+            content: 'MAIS ESCOLHIDO';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        
+        .plan-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 5px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .plan-price span {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        
+        .plan-period {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        
+        .features-list {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+        
+        .features-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+        
+        .features-list li i {
+            color: #10b981;
+            font-size: 1.1rem;
+        }
+        
+        .features-list li.dimmed {
+            color: #64748b;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .features-list li.dimmed i {
+            color: #64748b;
+        }
+        
+        .card-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .card-btn.outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .card-btn.outline:hover {
+            border-color: white;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .card-btn.filled {
+            background: #6366f1;
+            color: white;
+            border: 1px solid #6366f1;
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        }
+        
+        .card-btn.filled:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">m24<span>PRO</span></a>
+        <div class="nav-links">
+            <a href="#pricing">Planos</a>
+            <a href="/dashboard">Painel</a>
+            <a href="/dossie">Carteira</a>
+            <a href="/scan-live" style="color: #38bdf8;">Varredura LIVE</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="tagine">PROTEÇÃO DE ELITE</div>
+                <h1>Liderança e<br>Segurança<br>Digital</h1>
+                <p>O parceiro estratégico para empresas que não aceitam riscos. Monitoramento de alta performance para ativos de propriedade industrial.</p>
+                
+                <div class="btn-group">
+                    <a href="/dashboard" class="btn btn-primary">
+                        Aceder ao Painel
+                    </a>
+                    <a href="/scan-live" class="btn btn-secondary">
+                        <i class="ri-radar-line"></i> Check LIVE
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Investimento Estratégico</span>
+                <h2 class="section-title">Planos Flexíveis</h2>
+                <p class="section-desc">Escolha a potência de proteção ideal para o seu portfólio. Escalabilidade total conforme suas marcas crescem.</p>
+            </div>
+            
+            <div class="pricing-grid">
+                <!-- Free Plan -->
+                <div class="pricing-card">
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-price">0 <span>MT</span></div>
+                    <div class="plan-period">Para sempre</div>
+                    
+                    <ul class="features-list">
+                        <li><i class="ri-check-line"></i> 5 Marcas Monitoradas</li>
+                        <li><i class="ri-check-line"></i> Alertas por Email</li>
+                        <li class="dimmed"><i class="ri-close-line"></i> Alertas por WhatsApp</li>
+                        <li class="dimmed"><i class="ri-close-line"></i> Monitoramento BPI/IPI</li>
+                        <li class="dimmed"><i class="ri-close-line"></i> Relatórios PDF</li>
+                    </ul>
+                    
+                    <a href="/register" class="card-btn outline">Começar Grátis</a>
+                </div>
+                
+                <!-- Professional Plan -->
+                <div class="pricing-card featured">
+                    <div class="plan-name">Professional</div>
+                    <div class="plan-price">8.000 <span>MT</span></div>
+                    <div class="plan-period">por mês</div>
+                    
+                    <ul class="features-list">
+                        <li><i class="ri-check-line"></i> 25 Marcas Monitoradas</li>
+                        <li><i class="ri-check-line"></i> Alertas por Email + WhatsApp</li>
+                        <li><i class="ri-check-line"></i> Monitoramento BPI Oficial</li>
+                        <li><i class="ri-check-line"></i> Detecção de Conflitos IA</li>
+                        <li><i class="ri-check-line"></i> Relatórios PDF Completos</li>
+                    </ul>
+                    
+                    <a href="/pricing" class="card-btn filled">Assinar Agora</a>
+                </div>
+                
+                <!-- Business Plan -->
+                <div class="pricing-card">
+                    <div class="plan-name">Business</div>
+                    <div class="plan-price">18.000 <span>MT</span></div>
+                    <div class="plan-period">por mês</div>
+                    
+                    <ul class="features-list">
+                        <li><i class="ri-check-line"></i> 100 Marcas Monitoradas</li>
+                        <li><i class="ri-check-line"></i> Tudo do Professional</li>
+                        <li><i class="ri-check-line"></i> Acesso API de Integração</li>
+                        <li><i class="ri-check-line"></i> Suporte Prioritário 24/7</li>
+                        <li><i class="ri-check-line"></i> Gestor de Conta Dedicado</li>
+                    </ul>
+                    
+                    <a href="/pricing" class="card-btn outline">Falar com Vendas</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

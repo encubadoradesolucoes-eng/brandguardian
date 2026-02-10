@@ -1,0 +1,253 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Potenciais Entidades (BPI)</h2>
+            <p class="text-muted">Lista de requerentes identificados nos boletins oficiais.</p>
+        </div>
+        <div class="actions">
+            <button class="btn btn-outline-primary me-2"><i class="fas fa-download"></i> Exportar Leads</button>
+        </div>
+    </div>
+
+    <!-- Abas de Status (Solicitado) -->
+    <div style="margin-bottom: 2rem;">
+        <div class="tabs-container" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: thin;">
+            {% set tabs = [
+                ('STATUS_01', 'Publicado', stats.STATUS_01),
+                ('STATUS_02', 'Concedido', stats.STATUS_02),
+                ('STATUS_03', 'Renovado', stats.STATUS_03),
+                ('STATUS_04', 'Recusa Prov', stats.STATUS_04),
+                ('STATUS_05', 'Renunciado', stats.STATUS_05),
+                ('STATUS_06', 'Recusa Def', stats.STATUS_06),
+                ('STATUS_07', 'Caducidade', stats.STATUS_07),
+                ('STATUS_08', 'Caduco Def', stats.STATUS_08),
+                ('STATUS_09', 'Alterado', stats.STATUS_09)
+            ] %}
+            
+            <a href="?tab=all" class="tab-item {% if active_tab == 'all' %}active{% endif %}">
+                Todos <span class="tab-badge">{{ stats.total }}</span>
+            </a>
+            
+            {% for id, label, count in tabs %}
+            <a href="?tab={{ id }}" class="tab-item {% if active_tab == id %}active{% endif %}">
+                {{ label }} <span class="tab-badge">{{ count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Busca Dinâmica (Novo) -->
+    <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.2rem; margin-bottom: 2rem; backdrop-filter: blur(10px);">
+        <form method="GET" style="display: flex; gap: 12px; align-items: center;">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+            <div style="flex-grow: 1; position: relative;">
+                <i class="ri-search-line" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" 
+                       placeholder="Pesquisar por nome do requerente, marca ou número do processo..." 
+                       style="width: 100%; background: rgba(5, 6, 11, 0.5); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 15px 12px 45px; color: white; font-size: 0.9rem; transition: var(--transition-elite);">
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 12px 25px; border-radius: 12px; background: var(--brand-primary); color: white; border: none; font-weight: 600; cursor: pointer; transition: var(--transition-elite);">
+                Pesquisar
+            </button>
+            {% if request.args.get('search') %}
+            <a href="?tab={{ active_tab }}" class="btn-secondary" style="padding: 12px 20px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-standard); text-decoration: none; font-size: 0.9rem; border: 1px solid var(--border-subtle);">
+                Limpar
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <style>
+        .tabs-container::-バランス-webkit-scrollbar { height: 4px; }
+        .tabs-container::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 10px; }
+        
+        .tab-item {
+            padding: 12px 20px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-dim);
+            text-decoration: none;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+        
+        .tab-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: white;
+            border-color: var(--brand-primary);
+        }
+        
+        .tab-item.active {
+            background: var(--brand-primary);
+            color: white;
+            border-color: var(--brand-primary);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.2);
+        }
+        
+        .tab-badge {
+            background: rgba(0,0,0,0.2);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            color: white;
+        }
+        
+        .tab-item.active .tab-badge {
+            background: white;
+            color: var(--brand-primary);
+        }
+    </style>
+
+    <div class="glass-table-container">
+        <table class="m24-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">{% if active_tab == 'STATUS_09' %}Nº Processo{% else %}ID{% endif %}</th>
+                    {% if active_tab == 'STATUS_09' %}
+                    <th>Tipo de Alteração</th>
+                    <th>Status BPI</th>
+                    {% elif active_tab == 'STATUS_01' %}
+                    <th>Marca</th>
+                    <th>Classe</th>
+                    <th>Prazo Oposição</th>
+                    <th>Status</th>
+                    {% elif active_tab == 'STATUS_02' %}
+                    <th>Marca</th>
+                    <th>Concessão</th>
+                    <th>Vigência</th>
+                    <th>Status</th>
+                    {% elif active_tab == 'STATUS_03' %}
+                    <th>Marca</th>
+                    <th>Data Renovação</th>
+                    <th>Próxima Renovação</th>
+                    <th>Status</th>
+                    {% elif active_tab == 'STATUS_04' %}
+                    <th>Marca / Motivo</th>
+                    <th>Prazo Recurso</th>
+                    <th>Próxima Ação</th>
+                    {% elif active_tab == 'STATUS_05' %}
+                    <th>Marca</th>
+                    <th>Data Renúncia</th>
+                    <th>Status</th>
+                    {% elif active_tab == 'STATUS_06' %}
+                    <th>Motivo de Recusa</th>
+                    <th>Data Recusa Def</th>
+                    <th>Status</th>
+                    {% elif active_tab == 'STATUS_07' %}
+                    <th>Marca / Aviso</th>
+                    <th>Vencimento</th>
+                    <th>Taxa Tripla</th>
+                    <th>Ação</th>
+                    {% elif active_tab == 'STATUS_08' %}
+                    <th>Marca</th>
+                    <th>Caducidade</th>
+                    <th>Observação</th>
+                    {% else %}
+                    <th style="width: 100px;">Sufixo</th>
+                    <th>Página</th>
+                    <th>Categoria</th>
+                    <th>País</th>
+                    <th>Status</th>
+                    {% endif %}
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applicants %}
+                <tr>
+                    <td><code style="color: var(--brand-primary);">{{ app.req_id }}</code></td>
+                    <td>
+                        <div class="fw-bold" style="color: white;">
+                            {% if active_tab in ['STATUS_01', 'STATUS_03', 'STATUS_04', 'STATUS_05', 'STATUS_06', 'STATUS_07', 'STATUS_08', 'STATUS_09'] %}
+                                {{ app.brand_name or app.name }}
+                            {% else %}
+                                {{ app.name }}
+                            {% endif %}
+                        </div>
+                        {% if active_tab == 'STATUS_09' and app.alteration_details %}
+                            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; max-width: 400px;">
+                                <i class="ri-information-line"></i> {{ app.alteration_details }}
+                            </div>
+                        {% endif %}
+                        {% if active_tab == 'STATUS_04' and app.refusal_reason %}
+                            <div style="font-size: 0.75rem; color: #fb7185; margin-top: 4px;">
+                                <i class="ri-error-warning-line"></i> {{ app.refusal_reason }}
+                            </div>
+                        {% endif %}
+                        {% if active_tab in ['STATUS_01', 'STATUS_03', 'STATUS_07'] %}
+                            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">
+                                <i class="ri-user-line"></i> {{ app.name }}
+                            </div>
+                        {% endif %}
+                    </td>
+                    
+                    {% if active_tab == 'STATUS_09' %}
+                    <td><span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2);">{{ app.alteration_type }}</span></td>
+                    <td><span class="badge" style="background: rgba(139, 92, 246, 0.2); color: var(--brand-primary); border: 1px solid var(--brand-primary);">{{ app.status }}</span></td>
+                    {% elif active_tab == 'STATUS_01' %}
+                    <td><span class="text-white">{{ app.brand_name or '-' }}</span></td>
+                    <td><span class="badge bg-dark text-white">{{ app.nice_class or '-' }}</span></td>
+                    <td><span class="text-danger fw-bold"><i class="ri-history-line"></i> {{ app.opposition_deadline or '-' }}</span></td>
+                    <td><span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;">PUBLICADO</span></td>
+                    {% elif active_tab == 'STATUS_03' %}
+                    <td><span class="text-white">{{ app.brand_name or '-' }}</span></td>
+                    <td><span class="text-dim">{{ app.renewal_date or '-' }}</span></td>
+                    <td><span class="text-info fw-bold"><i class="ri-calendar-event-line"></i> {{ app.next_renewal_date or '-' }}</span></td>
+                    <td><span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6;">RENOVADO</span></td>
+                    {% elif active_tab == 'STATUS_04' %}
+                    <td><span class="text-warning fw-bold"><i class="ri-timer-2-line"></i> {{ app.appeal_deadline or '-' }}</span></td>
+                    <td><span class="badge bg-warning text-dark">{{ app.next_action or 'Recorrer' }}</span></td>
+                    {% elif active_tab == 'STATUS_05' %}
+                    <td><span class="text-white">{{ app.renunciation_date or '-' }}</span></td>
+                    <td><span class="badge bg-secondary">RENUNCIADO</span></td>
+                    {% elif active_tab == 'STATUS_06' %}
+                    <td><span class="text-dim">{{ app.observations or '-' }}</span></td>
+                    <td><span class="text-white">{{ app.final_refusal_date or '-' }}</span></td>
+                    <td><span class="badge bg-danger">RECUSA DEF</span></td>
+                    {% elif active_tab == 'STATUS_07' %}
+                    <td><span class="text-danger fw-bold">{{ app.expiry_date or '-' }}</span></td>
+                    <td><span class="badge {% if app.triple_fee == 'Sim' %}bg-danger{% else %}bg-warning{% endif %}">{{ app.triple_fee or 'Não' }}</span></td>
+                    <td><span class="btn btn-xs btn-outline-danger" style="font-size: 0.65rem; padding: 2px 5px;">{{ app.next_action or 'RENOVAR' }}</span></td>
+                    {% elif active_tab == 'STATUS_08' %}
+                    <td><span class="text-white">{{ app.definite_expiry_date or '-' }}</span></td>
+                    <td><small class="text-dim">{{ app.observations or 'Caducidade definitiva' }}</small></td>
+                    {% else %}
+                    <td><span class="badge bg-light text-dark border">{{ app.suffix or '-' }}</span></td>
+                    <td><span class="text-primary fw-bold">{{ app.page or '-' }}</span></td>
+                    <td>{{ app.category or '-' }}</td>
+                    <td>{{ app.country or '-' }}</td>
+                    <td>
+                        <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: var(--brand-primary); border: 1px solid var(--brand-primary);">
+                            {{ app.status }}
+                        </span>
+                    </td>
+                    {% endif %}
+                    
+                    <td style="text-align: right;">
+                        <button class="btn btn-sm btn-m24-ghost" title="Ver Detalhes">
+                            <i class="ri-eye-line"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if active_tab == 'STATUS_09' %}5{% else %}8{% endif %}" class="text-center py-5">
+                        <i class="ri-inbox-line" style="font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 1rem;"></i>
+                        Nenhum registro encontrado para este status.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

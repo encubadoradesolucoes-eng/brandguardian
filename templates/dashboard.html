@@ -166,12 +166,47 @@
     }
 
     .alert-card {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent);
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         border-radius: var(--radius-2xl);
         padding: 1.5rem;
         margin-bottom: 1rem;
+        transition: var(--transition-elite);
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
     }
+
+    .alert-card:hover { border-color: var(--brand-primary); }
+
+    .alert-type-badge {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+
+    .bg-critical { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+    .bg-medium { background: var(--warning); box-shadow: 0 0 10px var(--warning); }
+    .bg-info { background: var(--brand-primary); box-shadow: 0 0 10px var(--brand-primary); }
+
+    .alert-content { flex: 1; }
+    .alert-title { font-weight: 800; color: var(--text-vibrant); font-size: 0.95rem; margin-bottom: 0.25rem; }
+    .alert-text { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+    .alert-time { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; }
+
+    .doc-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        background: rgba(255,255,255,0.03);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s;
+    }
+    .doc-item:hover { background: rgba(255,255,255,0.06); }
 
     .alert-header {
         display: flex;
@@ -312,40 +347,52 @@ function runGlobalScan(btn) {
     <i class="ri-shield-star-line"></i> Ferramentas Administrativas
 </h3>
 
-<div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
+<div class="stats-row" style="grid-template-columns: repeat(4, 1fr);">
     <!-- Card Integrações -->
     <a href="{{ url_for('integrations') }}" style="text-decoration: none;">
-        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #25D366; background: linear-gradient(135deg, rgba(37, 211, 102, 0.05), transparent);">
+        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #25D366; background: linear-gradient(135deg, rgba(37, 211, 102, 0.05), transparent); padding: 1.5rem;">
             <div class="stat-label" style="color: #25D366;">Gateway de Notificações</div>
-            <div style="font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 5px;">
-                <i class="ri-whatsapp-fill" style="vertical-align: middle; margin-right: 5px;"></i> Configurar WhatsApp
+            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 5px;">
+                <i class="ri-whatsapp-fill" style="vertical-align: middle; margin-right: 5px;"></i> WhatsApp
             </div>
-            <div style="font-size: 0.85rem; color: #94a3b8;">Gerenciar conexões QR e APIs</div>
-            <i class="ri-settings-4-line" style="position: absolute; right: 20px; bottom: 20px; font-size: 3rem; opacity: 0.1; color: #25D366;"></i>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Gerenciar conexões QR e APIs</p>
+            <i class="ri-settings-4-line" style="position: absolute; right: 10px; bottom: 10px; font-size: 2.5rem; opacity: 0.1; color: #25D366;"></i>
         </div>
     </a>
 
-    <!-- Card Relatórios -->
-    <a href="{{ url_for('reports') }}" style="text-decoration: none;">
-        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #6366f1;">
-            <div class="stat-label" style="color: #6366f1;">Business Intelligence</div>
-            <div style="font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 5px;">
-                <i class="ri-pie-chart-2-fill" style="vertical-align: middle; margin-right: 5px;"></i> Relatórios Avançados
+    <!-- Card Leads BPI (NEW) -->
+    <a href="/admin/bpi/requerentes" style="text-decoration: none;">
+        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #fbbf24; background: linear-gradient(135deg, rgba(251, 191, 36, 0.05), transparent); padding: 1.5rem;">
+            <div class="stat-label" style="color: #fbbf24;">Inteligência Leads BPI</div>
+            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 5px;">
+                <i class="ri-user-search-fill" style="vertical-align: middle; margin-right: 5px;"></i> Requerentes BPI
             </div>
-            <div style="font-size: 0.85rem; color: #94a3b8;">Análise de Risco e KPIs Globais</div>
-             <i class="ri-file-chart-line" style="position: absolute; right: 20px; bottom: 20px; font-size: 3rem; opacity: 0.1; color: #6366f1;"></i>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Novas oportunidades e prospects</p>
+            <i class="ri-flashlight-line" style="position: absolute; right: 10px; bottom: 10px; font-size: 2.5rem; opacity: 0.1; color: #fbbf24;"></i>
+        </div>
+    </a>
+
+    <!-- Card Nice Classification (NEW) -->
+    <a href="{{ url_for('nice_classification_page') }}" style="text-decoration: none;">
+        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #34d399; background: linear-gradient(135deg, rgba(52, 211, 153, 0.05), transparent); padding: 1.5rem;">
+            <div class="stat-label" style="color: #34d399;">Vademecum Nice</div>
+            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 5px;">
+                <i class="ri-list-check-2" style="vertical-align: middle; margin-right: 5px;"></i> Classificação Nice
+            </div>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">Consulta de classes e descrições</p>
+            <i class="ri-book-read-line" style="position: absolute; right: 10px; bottom: 10px; font-size: 2.5rem; opacity: 0.1; color: #34d399;"></i>
         </div>
     </a>
 
     <!-- Card Entidades -->
     <a href="{{ url_for('entities') }}" style="text-decoration: none;">
-        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #f59e0b;">
-            <div class="stat-label" style="color: #f59e0b;">Gestão de Clientes</div>
-            <div style="font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 5px;">
+        <div class="stat-card" style="position: relative; overflow: hidden; border-color: #f472b6; background: linear-gradient(135deg, rgba(244, 114, 182, 0.05), transparent); padding: 1.5rem;">
+            <div class="stat-label" style="color: #f472b6;">Gestão de Clientes</div>
+            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 5px;">
                 <i class="ri-building-4-fill" style="vertical-align: middle; margin-right: 5px;"></i> Base de Titulares
             </div>
-            <div style="font-size: 0.85rem; color: #94a3b8;">{{ stats.total_entities or '12' }} Clientes Registrados</div>
-            <i class="ri-shield-user-line" style="position: absolute; right: 20px; bottom: 20px; font-size: 3rem; opacity: 0.1; color: #f59e0b;"></i>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">{{ stats.total_entities or '12' }} Registrados</p>
+            <i class="ri-shield-user-line" style="position: absolute; right: 10px; bottom: 10px; font-size: 2.5rem; opacity: 0.1; color: #f472b6;"></i>
         </div>
     </a>
 </div>
@@ -353,14 +400,44 @@ function runGlobalScan(btn) {
 
 <!-- Main Content Grid -->
 <div class="main-grid">
-    <!-- Recent Activity -->
-    <div class="activity-card">
-        <div class="card-header">
-            <h2 class="card-title">Atividade Recente</h2>
-            <a href="/dossie" style="color: var(--brand-primary); font-weight: 700; font-size: 0.9rem; text-decoration: none;">
-                Ver todos <i class="ri-arrow-right-line"></i>
-            </a>
+    <!-- Recent Activity & Alerts -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- ALERT CENTER (ALT-04) -->
+        <div class="activity-card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="ri-notification-3-line"></i> Centro de Alertas</h2>
+                <span class="badge badge-soft-primary">{{ alerts|length }} Novos</span>
+            </div>
+            
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                {% if alerts %}
+                    {% for alert in alerts %}
+                    <div class="alert-card">
+                        <div class="alert-type-badge bg-{{ alert.type|lower }}"></div>
+                        <div class="alert-content">
+                            <div class="alert-title">{{ alert.title }}</div>
+                            <div class="alert-text">{{ alert.message }}</div>
+                            <div class="alert-time">{{ alert.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 3rem 0;">
+                        <i class="ri-notification-off-line" style="font-size: 3rem; color: var(--border-subtle);"></i>
+                        <p style="color: var(--text-dim); margin-top: 1rem;">Sem novos alertas no momento.</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
+
+        <div class="activity-card">
+            <div class="card-header">
+                <h2 class="card-title">Atividade Recente</h2>
+                <a href="/dossie" style="color: var(--brand-primary); font-weight: 700; font-size: 0.9rem; text-decoration: none;">
+                    Ver todos <i class="ri-arrow-right-line"></i>
+                </a>
+            </div>
 
         <div>
             {% for mark in recent %}
@@ -398,6 +475,35 @@ function runGlobalScan(btn) {
             </div>
         </div>
 
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <div class="activity-card" style="margin-bottom: 1.5rem; border-color: #8b5cf6;">
+            <div class="card-header">
+                <h2 class="card-title" style="color: #a78bfa;">
+                    <i class="ri-upload-cloud-2-line"></i> Importar BPI (IPI)
+                </h2>
+            </div>
+            <div style="padding: 10px;">
+                <form action="{{ url_for('upload_bpi') }}" method="POST" enctype="multipart/form-data">
+                    <div style="border: 2px dashed #8b5cf6; border-radius: 12px; padding: 20px; text-align: center; background: rgba(139, 92, 246, 0.05); cursor: pointer; transition: all 0.3s;" 
+                         onclick="document.getElementById('bpi_file').click()"
+                         onmouseover="this.style.background='rgba(139, 92, 246, 0.1)'"
+                         onmouseout="this.style.background='rgba(139, 92, 246, 0.05)'">
+                        <i class="ri-file-pdf-line" style="font-size: 2rem; color: #a78bfa;"></i>
+                        <p style="margin: 10px 0; font-size: 0.85rem; color: var(--text-dim);">
+                            Clique para selecionar o PDF do Boletim Oficial
+                        </p>
+                        <input type="file" id="bpi_file" name="bpi_file" accept=".pdf" style="display: none;" onchange="this.form.submit()">
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.75rem; color: var(--text-dim); text-align: center;">
+                        <i class="ri-information-line"></i> Processamento em Background
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
         {% if recommendations %}
         <div class="activity-card" style="margin-bottom: 1.5rem; border-color: var(--brand-primary); background: rgba(99, 102, 241, 0.05);">
             <div class="card-header">
@@ -414,6 +520,29 @@ function runGlobalScan(btn) {
             </div>
         </div>
         {% endif %}
+
+        <!-- OFFICIAL DOCUMENTS (MAR-02) -->
+        <div class="activity-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h2 class="card-title"><i class="ri-file-shield-2-line"></i> Documentos Oficiais</h2>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                {% if documents %}
+                    {% for doc in documents %}
+                    <div class="doc-item">
+                        <i class="ri-file-pdf-fill" style="font-size: 1.5rem; color: var(--danger);"></i>
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-vibrant);">{{ doc.title }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-dim);">{{ doc.doc_type|upper }} • {{ doc.uploaded_at.strftime('%d/%m/%Y') }}</div>
+                        </div>
+                        <a href="{{ doc.file_path }}" target="_blank" style="color: var(--brand-primary);"><i class="ri-download-2-line"></i></a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: var(--text-dim); padding: 1rem; font-size: 0.85rem;">Nenhum documento anexado.</p>
+                {% endif %}
+            </div>
+        </div>
 
         <div class="activity-card">
             <div class="card-header">

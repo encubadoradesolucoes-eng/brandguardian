@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Conflito de Marca</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .brand-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .brand-info h2 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+        .conflict-list {
+            margin-top: 20px;
+        }
+        .conflict-item {
+            border-left: 4px solid #ff6b6b;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff5f5;
+            border-radius: 4px;
+        }
+        .conflict-item h3 {
+            margin: 0 0 10px 0;
+            color: #c0392b;
+            font-size: 18px;
+        }
+        .conflict-detail {
+            margin: 5px 0;
+            color: #555;
+        }
+        .similarity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .similarity-high {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        .similarity-medium {
+            background-color: #ffa502;
+            color: white;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">⚠️</div>
+            <h1>Alerta de Conflito Detectado</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Monitoramento Automático RPI/INPI</p>
+        </div>
+        
+        <div class="content">
+            <div class="brand-info">
+                <h2>{{ brand.name }}</h2>
+                <p style="margin: 5px 0; color: #666;">
+                    <strong>Processo:</strong> {{ brand.process_number or 'Em registro' }}<br>
+                    <strong>Classes:</strong> {{ brand.nice_classes }}
+                </p>
+            </div>
+            
+            <p style="color: #555; line-height: 1.6;">
+                Detectamos <strong>{{ total }} novo(s) pedido(s) de marca</strong> que podem conflitar 
+                com sua marca registrada. Recomendamos análise imediata para avaliar possíveis ações legais.
+            </p>
+            
+            <div class="conflict-list">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">Marcas Potencialmente Conflitantes:</h3>
+                
+                {% for conflict in conflicts %}
+                <div class="conflict-item">
+                    <h3>{{ conflict.conflicting_mark }}</h3>
+                    <div class="conflict-detail">
+                        <strong>Processo INPI:</strong> {{ conflict.conflicting_number }}
+                    </div>
+                    <div class="conflict-detail">
+                        <strong>Similaridade:</strong> 
+                        <span class="similarity-badge {% if conflict.similarity_score > 80 %}similarity-high{% else %}similarity-medium{% endif %}">
+                            {{ conflict.similarity_score }}%
+                        </span>
+                    </div>
+                    <div class="conflict-detail">
+                        <strong>Tipo de Conflito:</strong> {{ conflict.conflict_type|title }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <p style="color: #555; margin-top: 20px; padding: 15px; background-color: #e8f4f8; border-radius: 8px;">
+                <strong>💡 Próximos Passos:</strong><br>
+                1. Revise os conflitos detectados no painel<br>
+                2. Consulte seu advogado especializado em PI<br>
+                3. Considere apresentar oposição se aplicável
+            </p>
+            
+            <center>
+                <a href="http://localhost:7000/dashboard" class="cta-button">
+                    Ver Detalhes no Painel →
+                </a>
+            </center>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 0 0 10px 0;">
+                <strong>M24 Brand Guardian PRO</strong><br>
+                Proteção Inteligente de Marcas 24/7
+            </p>
+            <p style="margin: 0; opacity: 0.8;">
+                Este é um alerta automático do sistema de monitoramento RPI.<br>
+                <a href="http://localhost:7000/settings">Gerenciar Preferências</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

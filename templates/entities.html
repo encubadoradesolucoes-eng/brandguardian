@@ -268,6 +268,58 @@
         </button>
     </div>
 
+    <!-- AGENTES SECTION (Solicitado) -->
+    <h3 style="font-family: 'Outfit'; font-weight: 800; margin-bottom: 1.5rem; color: var(--brand-primary);">
+        <i class="ri-shield-star-line"></i> Agentes de Proteção de PI Parceiros
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        {% for agent in agents %}
+        <div class="glass-table-container" style="margin-bottom: 0; padding: 1.5rem; border-left: 4px solid var(--brand-primary);">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 50px; height: 50px; background: var(--brand-primary-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--brand-primary);">
+                    <i class="ri-user-star-line" style="font-size: 1.5rem;"></i>
+                </div>
+                <div>
+                    <div style="color: white; font-weight: 800; font-size: 1.1rem;">{{ agent.name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim);">Reg: {{ agent.agent_registration_number or 'Pendente' }}</div>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-standard);">
+                <i class="ri-mail-line"></i> {{ agent.email }}
+            </div>
+            <button class="btn-m24 btn-m24-ghost" style="width: 100%; margin-top: 1rem; font-size: 0.8rem; justify-content: center;">
+                Contratar Consultoria
+            </button>
+        </div>
+        {% else %}
+        <div class="glass-table-container" style="grid-column: span 3; text-align: center; padding: 2rem;">
+            <p class="text-muted">Nenhum agente profissional cadastrado até o momento.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3 style="font-family: 'Outfit'; font-weight: 800; margin-bottom: 1.5rem;">Lista Geral de Entidades</h3>
+
+    <!-- Filtro de Busca Profissional -->
+    <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 1.5rem; margin-bottom: 2rem; backdrop-filter: blur(10px);">
+        <form method="GET" style="display: flex; gap: 15px; align-items: center;">
+            <div style="flex-grow: 1; position: relative;">
+                <i class="ri-search-2-line" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--brand-primary); font-size: 1.2rem;"></i>
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" 
+                       placeholder="Pesquisar por nome, NUIT, email ou telefone do titular..." 
+                       style="width: 100%; background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 20px 14px 50px; color: white; font-size: 0.95rem; transition: var(--transition-elite);">
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 14px 30px; border-radius: 12px; background: var(--brand-primary); color: white; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: var(--transition-elite);">
+                <i class="ri-filter-3-line"></i> Filtrar
+            </button>
+            {% if request.args.get('search') %}
+            <a href="{{ url_for('entities') }}" class="btn-secondary" style="padding: 14px 20px; border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-standard); text-decoration: none; font-size: 0.9rem; border: 1px solid var(--border-subtle);">
+                Limpar
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
     <!-- Tabela de Gestão -->
     <div class="m24-table-container">
         <table class="m24-table-pro">

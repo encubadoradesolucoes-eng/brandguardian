@@ -1,0 +1,32 @@
+req_id,req_nome,req_tipo,req_pais,req_identificado_em
+REQ001,Engie Energy Access Moçambique, Lda,Empresa,Moçambique,2022
+REQ002,TRANSCOM - Sociedade de Formação, Consultoria e Auditoria em Transportes e Comunicações, SA,Empresa,Moçambique,2023
+REQ003,Neyson's Empire, Lda,Empresa,Moçambique,2023
+REQ004,Cartrack, Lda,Empresa,Moçambique,2023
+REQ005,Max Indústria Moageira-Sociedade Unipessoal, Lda,Empresa,Moçambique,2023
+REQ006,MSTAR S.A,Empresa,Moçambique,2023
+REQ007,Chaveiro da Cidade,Estabelecimento,Moçambique,2023
+REQ008,Feeding The Change Sociedade Unipessoal, Limitada,Empresa,Moçambique,2023
+REQ009,Fundação Sprowt - Leading and Growing Together,Organização,Moçambique,2023
+REQ010,Milagre Moz, Limitada,Empresa,Moçambique,2023
+REQ011,Nkomazi Combustíveis e Lubrificantes, Limitada,Empresa,Moçambique,2023
+REQ012,Amaramba Capital Dealer-Sociedade Financeira de Corretagem, S.A,Empresa,Moçambique,2023
+REQ013,Shenzhen Transchan Technology Limited,Empresa,China,2023
+REQ014,Classics, Limitada,Empresa,Moçambique,2023
+REQ015,Golden Gate Electrónicos EI,Empresa,Moçambique,2023
+REQ016,Mega-Distribuição de Moçambique, SA,Empresa,Moçambique,2023
+REQ017,Safe Travel, Limitada,Empresa,Moçambique,2023
+REQ018,Yiwu Ok Electric Appliance Co., Ltd.,Empresa,China,2023
+REQ019,Água Pura de Marracuene, Lda,Empresa,Moçambique,2023
+REQ020,Arcor S.A.I.C.,Empresa,Argentina,2023
+REQ021,Moz The Best, Lda,Empresa,Moçambique,2023
+REQ022,ACE Health Care, Limitada,Empresa,Moçambique,2023
+REQ023,Dani's Produtos Alimentares,Empresa,Moçambique,2023
+REQ024,MPS-Mozambique Procurement Services - Sociedade Unipessoal, Lda,Empresa,Moçambique,2023
+REQ025,Flex Investimentos, Limitada,Empresa,Moçambique,2023
+REQ026,Unibasma, Lda,Empresa,Moçambique,2023
+REQ027,África Empreendimentos- Sociedade Unipessoal, Lda,Empresa,Moçambique,2023
+REQ028,Community Carbon - Sociedade Unipessoal, Lda,Empresa,Moçambique,2023
+REQ029,Indústria King - Sociedade Unipessoal, Limitada,Empresa,Moçambique,2023
+REQ030,Sime Darby Oils South Africa (Pty) Ltd,Empresa,África do Sul,2023
+REQ031,Mozambique Beneficial Games, Lda,Empresa,Moçambique,2023

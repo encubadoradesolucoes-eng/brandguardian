@@ -65,7 +65,7 @@ wppconnect.create({
         '--js-flags="--max-old-space-size=150"'
     ],
     puppeteerOptions: {
-        protocolTimeout: 180000,
+        protocolTimeout: 999999,
         userDataDir: path.join(__dirname, 'tokens/puppeteer_cache'),
         args: [
             '--no-sandbox',
@@ -79,7 +79,7 @@ wppconnect.create({
     },
     disableWelcome: true,
     autoClose: 0,
-    protocolTimeout: 180000
+    protocolTimeout: 999999
 })
     .then((wpp) => {
         client = wpp;
