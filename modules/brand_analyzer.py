@@ -17,6 +17,8 @@ class BrandAnalyzer:
         2. Web (Domínios)
         3. Redes Sociais
         4. Clientes internos (M24)
+        
+        RETORNA EVIDÊNCIAS REAIS para justificar o score de risco.
         """
         # Obter a marca alvo da sessão
         target_brand = db_session.get(BrandModel, brand_id)
@@ -61,6 +63,7 @@ class BrandAnalyzer:
             print(f">>> [REAL ANALYZER] Conclusão para {target_brand.name}: Risco {novo_score} ({novo_nivel})")
             
             # Retorna lista de "marcas similares" no formato antigo para compatibilidade com o frontend
+            # AGORA COM DADOS REAIS E EVIDÊNCIAS
             similar_brands_compat = []
             
             # Adiciona domínios ocupados como "conflitos"
@@ -68,6 +71,10 @@ class BrandAnalyzer:
             for dom in dominios:
                 if dom['status'] == 'OCUPADO':
                     is_national = '.co.mz' in dom['dominio']
+                    
+                    # Calcular similaridade textual real
+                    text_sim = self._calculate_text_similarity(target_brand.name, dom['dominio'].replace('.co.mz', '').replace('.com', ''))
+                    
                     similar_brands_compat.append({
                         'brand': type('obj', (object,), {
                             'name': dom['dominio'], 
@@ -77,39 +84,84 @@ class BrandAnalyzer:
                             'owner_name': 'Proprietário Web',
                             'process_number': 'DNS-REGISTRY'
                         }),
-                        'text_similarity': 100,
+                        'text_similarity': text_sim,
                         'visual_similarity': 0,
                         'class_overlap': 0,
-                        'total_risk': 90 if is_national else 60,
+                        'total_risk': max(text_sim, 90 if is_national else 60),
                         'risk_level': 'high' if is_national else 'medium',
-                        'source': 'WEB'
+                        'source': 'WEB',
+                        'evidence': {
+                            'phonetic_match': f"Domínio {dom['dominio']} está OCUPADO",
+                            'visual_match': 'N/A (domínio web)',
+                            'class_match': 'Presença digital conflitante'
+                        }
                     })
 
-            # Adiciona conflitos BPI
+            # Adiciona conflitos BPI COM EVIDÊNCIAS REAIS
             for bpi in confi_bpi:
+                # Calcular similaridade textual detalhada
+                text_sim = bpi['similaridade']
+                
+                # Calcular overlap de classe Nice
+                target_classes = set(str(target_brand.nice_classes).split(',')) if target_brand.nice_classes else set()
+                bpi_classes = set(str(bpi.get('classe', '')).split(','))
+                class_overlap = len(target_classes & bpi_classes) / max(len(target_classes | bpi_classes), 1) * 100 if target_classes or bpi_classes else 0
+                
+                # Determinar nível de risco baseado em múltiplos fatores
+                risk_factors = []
+                if text_sim > 80:
+                    risk_factors.append(f"Similaridade textual CRÍTICA: {text_sim}%")
+                elif text_sim > 60:
+                    risk_factors.append(f"Similaridade textual ALTA: {text_sim}%")
+                else:
+                    risk_factors.append(f"Similaridade textual moderada: {text_sim}%")
+                
+                if class_overlap > 50:
+                    risk_factors.append(f"Overlap de classe Nice: {class_overlap:.0f}%")
+                
+                # Calcular risco total ponderado
+                total_risk = (text_sim * 0.7) + (class_overlap * 0.3)
+                
                 similar_brands_compat.append({
                     'brand': type('obj', (object,), {
                         'name': bpi['marca'], 
                         'id': 0, 
                         'logo_path': None, 
                         'nice_classes': str(bpi.get('classe')),
-                        'owner_name': 'Titular BPI',
+                        'owner_name': bpi.get('titular', 'Titular BPI'),
                         'process_number': str(bpi.get('processo'))
                     }),
-                    'text_similarity': bpi['similaridade'],
-                    'visual_similarity': 0,
-                    'class_overlap': 0, 
-                    'total_risk': bpi['similaridade'],
-                    'risk_level': 'high' if bpi['similaridade'] > 70 else 'medium',
-                    'source': 'BPI'
+                    'text_similarity': text_sim,
+                    'visual_similarity': 0,  # TODO: Implementar comparação visual de logos
+                    'class_overlap': class_overlap, 
+                    'total_risk': total_risk,
+                    'risk_level': 'high' if total_risk > 70 else ('medium' if total_risk > 40 else 'low'),
+                    'source': 'BPI',
+                    'evidence': {
+                        'phonetic_match': f"Marca '{bpi['marca']}' tem {text_sim}% de similaridade fonética",
+                        'visual_match': 'Análise visual não disponível',
+                        'class_match': f"Classes Nice: {bpi.get('classe')} (overlap: {class_overlap:.0f}%)",
+                        'risk_factors': ' | '.join(risk_factors)
+                    }
                 })
+
+            # Ordenar por risco total (maior primeiro)
+            similar_brands_compat.sort(key=lambda x: x['total_risk'], reverse=True)
 
             db_session.commit()
             return similar_brands_compat
             
         except Exception as e:
             print(f"Erro no Real Analyzer: {e}")
+            import traceback
+            traceback.print_exc()
             return []
+    
+    def _calculate_text_similarity(self, text1, text2):
+        """Calcula similaridade textual usando SequenceMatcher"""
+        text1 = text1.lower().strip()
+        text2 = text2.lower().strip()
+        return round(SequenceMatcher(None, text1, text2).ratio() * 100, 1)
 
     def quick_analysis(self, brand_name, classes, db_session, BrandModel):
         """

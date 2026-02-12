@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt" data-theme="dark">
+<html lang="pt" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,27 +15,29 @@
     
     <style>
         :root {
-            /* Designer Palette: The "Midnight & Orchid" Theme */
-            --bg-base: #05060b;
-            --bg-surface: #0c0e17;
-            --bg-elevated: #161925;
-            --border-subtle: rgba(255, 255, 255, 0.05);
-            --border-strong: rgba(255, 255, 255, 0.12);
+            /* Professional Light Theme - Default */
+            --bg-base: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-elevated: #ffffff;
+            --border-subtle: rgba(15, 23, 42, 0.08);
+            --border-strong: rgba(15, 23, 42, 0.15);
             
-            --brand-primary: #8b5cf6; /* Violet */
-            --brand-primary-glow: rgba(139, 92, 246, 0.4);
-            --brand-secondary: #ec4899; /* Pink */
-            --brand-accent: #3b82f6; /* Blue */
+            --brand-primary: #6366f1; /* Indigo - mais profissional */
+            --brand-primary-glow: rgba(99, 102, 241, 0.15);
+            --brand-secondary: #8b5cf6; /* Violet */
+            --brand-accent: #0ea5e9; /* Sky Blue */
             
-            --text-vibrant: #ffffff;
-            --text-standard: #94a3b8;
+            --text-vibrant: #0f172a;
+            --text-standard: #334155;
             --text-dim: #64748b;
             
             --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
             --warning: #f59e0b;
             --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
             
-            --glass-white: rgba(255, 255, 255, 0.02);
+            --glass-white: rgba(255, 255, 255, 0.8);
             --glass-blur: blur(20px);
             
             --radius-3xl: 32px;
@@ -47,16 +49,16 @@
             --transition-elite: all 0.5s var(--cubic-standard);
         }
 
-        [data-theme="light"] {
-            --bg-base: #f1f5f9;
-            --bg-surface: #ffffff;
-            --bg-elevated: #ffffff;
-            --border-subtle: rgba(0, 0, 0, 0.04);
-            --border-strong: rgba(0, 0, 0, 0.08);
-            --text-vibrant: #0f172a;
-            --text-standard: #475569;
+        [data-theme="dark"] {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-elevated: #334155;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+            --text-vibrant: #ffffff;
+            --text-standard: #cbd5e1;
             --text-dim: #94a3b8;
-            --brand-primary-glow: rgba(139, 92, 246, 0.15);
+            --brand-primary-glow: rgba(99, 102, 241, 0.3);
         }
 
         * {

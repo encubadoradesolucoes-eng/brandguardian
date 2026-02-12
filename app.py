@@ -1,19 +1,24 @@
 import os
 import sys
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory
-from modules.extensions import db
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from datetime import datetime, timedelta
 import json
 import requests
 import subprocess
 import threading
 import socket
-import secrets # Para gerar senhas automáticas
+import secrets
 import difflib
 import uuid
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente do .env
+load_dotenv()
+
+from modules.extensions import db
 from modules.real_scanner import (
     scan_live_real, 
     purification_real, 
@@ -22,13 +27,11 @@ from modules.real_scanner import (
 
 # Suporte para Executável (PyInstaller)
 def get_resource_path(relative_path):
-    # DOCSTRING_REMOVED Retorna o caminho do recurso (templates, static) no bundle ou local.# DOCSTRING_REMOVED 
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
 
 def get_persistence_path(relative_path):
-    # DOCSTRING_REMOVED Retorna o caminho para persistência (db, uploads) next to the .exe.# DOCSTRING_REMOVED 
     if hasattr(sys, '_MEIPASS'):
         return os.path.abspath(os.path.join(os.path.dirname(sys.executable), relative_path))
     return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
@@ -36,19 +39,14 @@ def get_persistence_path(relative_path):
 app = Flask(__name__, 
             template_folder=get_resource_path('templates'),
             static_folder=get_resource_path('static'))
-app.config['SECRET_KEY'] = 'm24_super_secure_key_2026'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret_key')
 
 # Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Suporte para PostgreSQL (Produção) ou SQLite (Local)
-# Suporte para PostgreSQL (Produção) ou SQLite (Local)
-database_url = os.environ.get('DATABASE_URL')
-if database_url and database_url.startswith("postgres://"):
-    pass  # Adicione lógica de configuração do banco aqui, se necessário
-# ========== ROTA DE SCAN DIRETO (NO MESMO CONTEXTO DA LISTAGEM) ========== 
+# ========== ROTA DE SCAN DIRETO ========== 
 @app.route('/scan-marca', methods=['GET', 'POST'])
 @login_required
 def scan_marca_page():
@@ -57,53 +55,8 @@ def scan_marca_page():
     if request.method == 'POST':
         termo = request.form.get('termo', '').strip()
         if termo:
-            # Executa o scan no mesmo contexto do app
             resultado = scan_live_real(termo, usuario_logado=True)
     return render_template('scan_marca.html', resultado=resultado, termo=termo)
-import os
-import sys
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory
-from modules.extensions import db
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from datetime import datetime, timedelta
-import json
-import requests
-import subprocess
-import threading
-import socket
-import secrets # Para gerar senhas automáticas
-import difflib
-import uuid
-from modules.real_scanner import (
-    scan_live_real, 
-    purification_real, 
-    verificacao_imagem_real
-)
-
-# Suporte para Executável (PyInstaller)
-def get_resource_path(relative_path):
-    # DOCSTRING_REMOVED Retorna o caminho do recurso (templates, static) no bundle ou local.# DOCSTRING_REMOVED 
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
-
-def get_persistence_path(relative_path):
-    # DOCSTRING_REMOVED Retorna o caminho para persistência (db, uploads) next to the .exe.# DOCSTRING_REMOVED 
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.abspath(os.path.join(os.path.dirname(sys.executable), relative_path))
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
-
-app = Flask(__name__, 
-            template_folder=get_resource_path('templates'),
-            static_folder=get_resource_path('static'))
-app.config['SECRET_KEY'] = 'm24_super_secure_key_2026'
-
-# Login Manager
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 
 # Suporte para PostgreSQL (Produção) ou SQLite (Local)
 database_url = os.environ.get('DATABASE_URL')
@@ -1228,6 +1181,45 @@ def api_analyze():
 
     return jsonify(results)
 
+
+@app.route('/api/brand/<int:brand_id>/conflicts')
+@login_required
+def get_brand_conflicts(brand_id):
+    """API para retornar evidências detalhadas de conflito (com re-scan)"""
+    brand = Brand.query.get_or_404(brand_id)
+    
+    # Executar análise real para obter os dados detalhados
+    # Nota: Isso pode ser lento, idealmente cachearíamos o resultado JSON no banco
+    # Mas para garantir dados frescos e cumprir o requisito de 'evidências', rodamos agora.
+    analyzer = BrandAnalyzer()
+    
+    try:
+        # analyze_brand já retorna a lista detalhada com 'evidence'
+        conflicts = analyzer.analyze_brand(brand.id, db.session, Brand)
+        
+        # Converter para formato serializável
+        serializable_conflicts = []
+        for c in conflicts:
+            # O objeto 'brand' retornado pelo analyzer é um objeto fake/proxy, precisamos extrair os dados
+            c_data = {
+                'brand': {
+                    'name': c['brand'].name,
+                    'owner_name': getattr(c['brand'], 'owner_name', 'N/D'),
+                    'process_number': getattr(c['brand'], 'process_number', 'N/D')
+                },
+                'total_risk': c['total_risk'],
+                'text_similarity': c['text_similarity'],
+                'visual_similarity': c['visual_similarity'],
+                'class_overlap': c['class_overlap'],
+                'evidence': c.get('evidence', {})
+            }
+            serializable_conflicts.append(c_data)
+            
+        return jsonify({'status': 'success', 'conflicts': serializable_conflicts})
+        
+    except Exception as e:
+        print(f"Erro API Conflicts: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/brand/<int:brand_id>')
 def brand_detail(brand_id):

@@ -206,7 +206,7 @@
                     </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
                     <div style="background: var(--bg-base); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle);">
                         <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim);">FONÉTICO</div>
                         <div style="font-size: 1rem; font-weight: 700; color: var(--text-vibrant);">{{ item.text_similarity }}%</div>
@@ -217,9 +217,40 @@
                     </div>
                     <div style="background: var(--bg-base); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle);">
                         <div style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim);">CLASSE NICE</div>
-                        <div style="font-size: 1rem; font-weight: 700; color: var(--text-vibrant);">{{ item.class_overlap }}%</div>
+                        <div style="font-size: 1rem; font-weight: 700; color: var(--text-vibrant);">{{ item.class_overlap|round(0)|int }}%</div>
                     </div>
                 </div>
+                
+                {% if item.evidence %}
+                <!-- EVIDÊNCIAS DETALHADAS -->
+                <div style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+                    <div style="font-size: 0.7rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="ri-file-list-3-line"></i> Evidências do Cálculo de Risco
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 0.85rem; color: var(--text-standard); display: flex; align-items: start; gap: 8px;">
+                            <i class="ri-sound-module-line" style="color: var(--brand-primary); margin-top: 2px;"></i>
+                            <span><strong>Fonético:</strong> {{ item.evidence.phonetic_match }}</span>
+                        </div>
+                        {% if item.evidence.visual_match and item.evidence.visual_match != 'N/A (domínio web)' and item.evidence.visual_match != 'Análise visual não disponível' %}
+                        <div style="font-size: 0.85rem; color: var(--text-standard); display: flex; align-items: start; gap: 8px;">
+                            <i class="ri-image-line" style="color: #60a5fa; margin-top: 2px;"></i>
+                            <span><strong>Visual:</strong> {{ item.evidence.visual_match }}</span>
+                        </div>
+                        {% endif %}
+                        <div style="font-size: 0.85rem; color: var(--text-standard); display: flex; align-items: start; gap: 8px;">
+                            <i class="ri-list-check-2" style="color: #34d399; margin-top: 2px;"></i>
+                            <span><strong>Classe:</strong> {{ item.evidence.class_match }}</span>
+                        </div>
+                        {% if item.evidence.risk_factors %}
+                        <div style="font-size: 0.85rem; color: #fbbf24; display: flex; align-items: start; gap: 8px; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <i class="ri-alert-line" style="margin-top: 2px;"></i>
+                            <span><strong>Fatores de Risco:</strong> {{ item.evidence.risk_factors }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <a href="{{ url_for('brand_detail', brand_id=item.brand.id) }}" class="btn-m24-ghost" style="padding: 10px;"><i class="ri-eye-line"></i></a>
