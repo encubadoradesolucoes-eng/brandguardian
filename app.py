@@ -70,10 +70,10 @@ database_url = os.environ.get('DATABASE_URL')
 # CRITICAL: Render não suporta IPv6, Supabase direto só tem IPv6
 # Solução: Forçar uso do Supavisor (pooler) que tem IPv4
 if database_url and 'supabase.co' in database_url:
-    # Substituir endpoint direto pelo pooler
+    # Substituir endpoint direto pelo pooler (porta 6543 = Transaction mode)
     database_url = database_url.replace(
         'db.austbyfpjimfjrtuvujx.supabase.co:5432',
-        'aws-0-eu-west-1.pooler.supabase.com:5432'
+        'aws-0-eu-west-1.pooler.supabase.com:6543'
     )
     print(f">>> Usando Supabase Pooler (IPv4)")
 
