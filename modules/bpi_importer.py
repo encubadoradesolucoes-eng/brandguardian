@@ -201,6 +201,16 @@ class BPIImporter:
              try:
                 db.session.commit()
                 self.stats['records_created'] += 1
+                
+                # Se for PEDIDO, disparar check de conflito contra m24 e concedidos
+                if rec.status == 'pedido':
+                    try:
+                        from modules.brand_analyzer import BrandAnalyzer
+                        from app import Brand, Alert
+                        analyzer = BrandAnalyzer()
+                        analyzer.check_new_ipi_conflicts(rec.id, db.session, IpiRecord, Brand, Alert)
+                    except Exception as ae:
+                        print(f"[ERRO ALERTA] Falha ao analisar conflitos para novo pedido: {ae}")
              except:
                 db.session.rollback()
 
@@ -625,6 +635,16 @@ class BPIImporter:
             try:
                 db.session.commit()
                 self.stats['records_created'] += 1
+                
+                # Se for PEDIDO, disparar check de conflito contra m24 e concedidos
+                if rec.status == 'pedido':
+                    try:
+                        from modules.brand_analyzer import BrandAnalyzer
+                        from app import Brand, Alert
+                        analyzer = BrandAnalyzer()
+                        analyzer.check_new_ipi_conflicts(rec.id, db.session, IpiRecord, Brand, Alert)
+                    except Exception as ae:
+                        print(f"[ERRO ALERTA] Falha ao analisar conflitos para novo pedido: {ae}")
             except:
                 db.session.rollback()
 

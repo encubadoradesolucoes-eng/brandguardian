@@ -226,6 +226,60 @@ class BrandAnalyzer:
         except:
             return {'brand_name': brand_name, 'risk_level': 'low', 'conflicts': []}
 
+    def check_new_ipi_conflicts(self, ipi_id, db_session, IpiModel, BrandModel, AlertModel):
+        """
+        Verifica se um novo pedido (IPI) conflita com registros CONCEDIDOS (BPI) 
+        ou marcas de clientes (M24).
+        """
+        from modules.real_scanner import scan_live_real
+        from app import User # Para alertas
+        
+        ipi = db_session.get(IpiModel, ipi_id)
+        if not ipi or ipi.status != 'pedido':
+            return
+            
+        print(f">>> [CONFLICT WATCHER] Analisando novo pedido: {ipi.brand_name}")
+        
+        # 1. Buscar conflitos no BPI (Concedidos)
+        resultados = scan_live_real(ipi.brand_name, usuario_logado=True)
+        conceded_statuses = ['concessao', 'concedido', 'registrado', 'renovacao', 'averbamento']
+        conflicts_bpi = [b for b in resultados.get('bpi', []) if b.get('status') in conceded_statuses and b.get('processo') != ipi.process_number]
+        
+        # 2. Buscar conflitos nas marcas internas (M24)
+        m24_brands = db_session.query(BrandModel).all()
+        for m24 in m24_brands:
+            sim = self._calculate_text_similarity(ipi.brand_name, m24.name)
+            
+            # Se houver conflito relevante (>70%)
+            if sim >= 70:
+                # Criar Alerta para o dono da marca M24
+                msg = f"Detectado novo pedido '{ipi.brand_name}' ({ipi.process_number}) que conflita com sua marca '{m24.name}' ({sim}% similaridade)."
+                alert = AlertModel(
+                    user_id=m24.user_id,
+                    brand_id=m24.id,
+                    type='CRITICAL',
+                    title="⚠️ Alerta de Conflito Detectado",
+                    message=msg
+                )
+                db_session.add(alert)
+                print(f"   [!] Alerta criado para Usuário {m24.user_id} sobre conflito com M24")
+
+        # 3. Se houver muitos conflitos no BPI, avisar Admin
+        if conflicts_bpi:
+            # Pega todos os admins
+            admins = db_session.query(User).filter(User.role == 'admin').all()
+            for admin in admins:
+                msg = f"Novo pedido '{ipi.brand_name}' ({ipi.process_number}) conflita com {len(conflicts_bpi)} marcas já concedidas no BPI."
+                alert = AlertModel(
+                    user_id=admin.id,
+                    type='MEDIUM',
+                    title="🔍 Novo Pedido Conflitante no BPI",
+                    message=msg
+                )
+                db_session.add(alert)
+
+        db_session.commit()
+
     def get_risk_level(self, score):
         if score >= 70: return 'high'
         if score >= 40: return 'medium'
