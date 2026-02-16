@@ -67,18 +67,16 @@ def health_check():
 # Suporte para PostgreSQL (Produção) ou SQLite (Local)
 database_url = os.environ.get('DATABASE_URL')
 
-# CRITICAL: Render não suporta IPv6, Supabase direto só tem IPv6
-# Solução: Forçar uso do Supavisor (pooler) que tem IPv4
-if database_url and 'supabase.co' in database_url:
-    # Substituir endpoint direto pelo pooler (porta 6543 = Transaction mode)
-    database_url = database_url.replace(
-        'db.austbyfpjimfjrtuvujx.supabase.co:5432',
-        'aws-0-eu-west-1.pooler.supabase.com:6543'
-    )
-    print(f">>> Usando Supabase Pooler (IPv4)")
-
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+# CRITICAL: Supabase requer SSL
+if database_url and 'supabase.co' in database_url:
+    if '?' not in database_url:
+        database_url += '?sslmode=require'
+    elif 'sslmode' not in database_url:
+        database_url += '&sslmode=require'
+    print(">>> Supabase SSL habilitado")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url or ('sqlite:///' + os.path.join(get_persistence_path('database'), 'brands.db'))
 app.config['UPLOAD_FOLDER'] = get_persistence_path('uploads')
