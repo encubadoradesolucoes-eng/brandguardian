@@ -1862,22 +1862,27 @@ def scan_live_api():
         try:
             import difflib
             
-            # Buscar TUDO para analisar similaridade em memória (base pequena permite isso e é mais inteligente)
-            all_bpi = IpiRecord.query.all()
+            # Otimização Crítica: NÃO carregar tudo (Query.all()) pois causa OOM (Out Of Memory)
+            # Buscamos apenas os 500 candidatos mais prováveis via SQL
             bpi_matches = []
             
-            for r in all_bpi:
-                # Calcular similaridade visual/fonética (0.0 a 1.0)
+            # Busca por prefixo ou similaridade parcial no DB
+            candidates = IpiRecord.query.filter(
+                (IpiRecord.brand_name.ilike(f'%{term}%'))
+            ).limit(500).all()
+            
+            for r in candidates:
+                if not r.brand_name: continue
                 db_name = r.brand_name.lower().strip()
                 similarity = difflib.SequenceMatcher(None, term, db_name).ratio()
                 
-                # Regra: Se contém o termo OU similaridade > 60% (Flexível para pegar Utecc vs Utec)
+                # Regra: Se contém o termo OU similaridade > 60%
                 if term in db_name or db_name in term or similarity > 0.6:
                     bpi_matches.append(r)
 
             results['counts']['bpi'] = len(bpi_matches)
             
-            # Limite de segurança e ordenação por relevância
+            # Ordenar por similaridade (aproximação simples) e limitar
             bpi_recs = bpi_matches[:20] 
             
             if is_auth:

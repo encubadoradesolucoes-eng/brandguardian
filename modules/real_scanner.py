@@ -250,8 +250,11 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
                 term_meta = jellyfish.double_metaphone(termo_original)
                 term_meta_codes = [c for c in term_meta if c]
 
-                # Varredura adicional (limitada) para nomes com codificação fonética igual
-                registros_para_meta = IpiRecord.query.limit(10000).all()
+                # Otimização Crítica: NÃO carregar 10.000 registros (Query.all()) 
+                # Buscamos apenas marcas que começam com a mesma letra ou prefixo para reduzir memória
+                prefix = termo_original[0].upper() if termo_original else ""
+                registros_para_meta = IpiRecord.query.filter(IpiRecord.brand_name.ilike(f'{prefix}%')).limit(1000).all()
+                
                 for registro in registros_para_meta:
                     try:
                         if not registro.brand_name:
@@ -283,7 +286,6 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
                     except Exception:
                         continue
             except Exception:
-                # Se jellyfish falhar por algum motivo, não interrompe o fluxo principal
                 pass
 
             # Ordena por similaridade (maior primeiro)
@@ -604,8 +606,9 @@ def purification_real() -> Dict[str, Any]:
         marcas_clientes = Brand.query.all()
         total_clientes = len(marcas_clientes)
         
-        # Busca registros BPI (limita para performance)
-        registros_bpi = IpiRecord.query.limit(10000).all()
+        # Busca registros BPI (LIMITADO para evitar OOM no Render)
+        # Em produção, a auditoria deve focar nos registros mais recentes ou relevantes
+        registros_bpi = IpiRecord.query.order_by(IpiRecord.imported_at.desc()).limit(2000).all()
         total_bpi = len(registros_bpi)
         
         resultados['estatisticas']['marcas_clientes'] = total_clientes
