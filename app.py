@@ -91,15 +91,13 @@ if database_url and 'supabase.co' in database_url:
     except Exception as e:
         print(f">>> Erro ao resolver IPv4: {e}, tentando conexão direta...")
 
-# CRITICAL: Supabase requer SSL e IPv4
-if database_url and ('supabase.co' in database_url or 'sslmode' not in database_url):
+# CRITICAL: Supabase requer SSL
+if database_url and 'supabase.co' in database_url:
     if '?' not in database_url:
-        database_url += '?sslmode=require&family=4'
+        database_url += '?sslmode=require'
     elif 'sslmode' not in database_url:
-        database_url += '&sslmode=require&family=4'
-    elif 'family' not in database_url:
-        database_url += '&family=4'
-    print(">>> Supabase SSL + IPv4 habilitado")
+        database_url += '&sslmode=require'
+    print(">>> Supabase SSL habilitado")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url or ('sqlite:///' + os.path.join(get_persistence_path('database'), 'brands.db'))
 app.config['UPLOAD_FOLDER'] = get_persistence_path('uploads')
