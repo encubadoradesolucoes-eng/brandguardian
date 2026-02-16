@@ -4,7 +4,7 @@
     "description": "WhatsApp Engine for BrandGuardian",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js"
+        "start": "node --max-old-space-size=256 server.js"
     },
     "dependencies": {
         "@wppconnect-team/wppconnect": "^1.28.0",

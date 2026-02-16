@@ -23,6 +23,20 @@ fs.writeFileSync(STATUS_FILE, 'DISCONNECTED');
 
 console.log('>>> Iniciando BrandGuardian WPP Engine...');
 
+// Monitorar memória
+function logMemory() {
+    const memUsage = process.memoryUsage();
+    console.log('📊 Memória WhatsApp Engine:', {
+        rss: `${Math.round(memUsage.rss / 1024 / 1024)} MB`,
+        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)} MB`,
+        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)} MB`
+    });
+}
+
+// Log inicial e a cada 30 segundos
+logMemory();
+setInterval(logMemory, 30000);
+
 wppconnect.create({
     session: 'brandguardian-session',
     catchQR: (base64Qr) => {
@@ -62,6 +76,7 @@ wppconnect.create({
         '--disable-extensions',
         '--disable-default-apps',
         '--disable-software-rasterizer',
+        '--memory-pressure-off',
         '--js-flags="--max-old-space-size=150"'
     ],
     puppeteerOptions: {
