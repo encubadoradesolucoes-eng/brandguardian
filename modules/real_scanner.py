@@ -148,34 +148,59 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
             print(f"[BPI SEARCH] Iniciando busca para: {termo_original}")
             similares_encontrados = []
             
-            # 1. Busca Exata e "Contém" via SQL (Muito mais rápido e varre tudo)
-            # Procura por marcas que contêm o termo pesquisado
-            busca_sql = IpiRecord.query.filter(
-                or_(
-                    IpiRecord.brand_name.ilike(f'%{termo_original}%'),
-                    IpiRecord.brand_name.ilike(f'%{termo_limpo}%')
-                )
-            ).limit(50).all()
+            # 1. Busca Robusta via SQL (Varrer Supabase com critério ampliado)
+            # Buscamos o termo original, limpo e as variações fonéticas mais comuns direto no SQL
+            filtros_sql = [
+                IpiRecord.brand_name.ilike(f'%{termo_original}%'),
+                IpiRecord.brand_name.ilike(f'%{termo_limpo}%')
+            ]
             
-            print(f"[BPI SEARCH] Busca SQL retornou {len(busca_sql)} registros")
+            # Adicionar variações de prefixo comuns (CH/SH/X, C/K/Q) para garantir candidatos
+            prefixo = termo_limpo.upper()[:2]
+            if prefixo in ['CH', 'SH']:
+                filtros_sql.append(IpiRecord.brand_name.ilike('CH%'))
+                filtros_sql.append(IpiRecord.brand_name.ilike('SH%'))
+                filtros_sql.append(IpiRecord.brand_name.ilike('X%'))
+            elif prefixo[0] in ['C', 'K', 'Q']:
+                filtros_sql.append(IpiRecord.brand_name.ilike('C%'))
+                filtros_sql.append(IpiRecord.brand_name.ilike('K%'))
+                filtros_sql.append(IpiRecord.brand_name.ilike('Q%'))
+
+            busca_sql = IpiRecord.query.filter(or_(*filtros_sql)).limit(100).all()
+            
+            print(f"[BPI SEARCH] Busca SQL direta retornou {len(busca_sql)} candidatos")
             
             for registro in busca_sql:
                 if registro.brand_name:
                     nome_bpi = str(registro.brand_name).strip()
-                    # Calcula similaridade real para o score
-                    similaridade = SequenceMatcher(
-                        None,
-                        termo_original.lower(),
-                        nome_bpi.lower()
-                    ).ratio()
-                    similares_encontrados.append({
-                        'marca': nome_bpi,
-                        'processo': registro.process_number or 'N/A',
-                        'similaridade': round(similaridade * 100),
-                        'classe': registro.nice_class or 'N/A',
-                        'status': registro.status or 'N/A',
-                        'data': registro.publication_date.isoformat() if registro.publication_date else 'N/A'
-                    })
+                    # Similaridade básica
+                    similarity = SequenceMatcher(None, termo_original.lower(), nome_bpi.lower()).ratio()
+                    
+                    # Similaridade fonética via Metaphone (muito mais robusto para PT)
+                    try:
+                        p1 = jellyfish.metaphone(termo_original)
+                        p2 = jellyfish.metaphone(nome_bpi)
+                        fonetica = (p1 == p2 and len(p1) > 1)
+                    except:
+                        fonetica = False
+
+                    if similarity > 0.7 or fonetica or termo_original.lower() in nome_bpi.lower():
+                        # TRATAMENTO ROBUSTO DE DATA PARA EVITAR CRASH (SUPABASE RETORNA STR)
+                        data_str = 'N/A'
+                        if registro.publication_date:
+                            if hasattr(registro.publication_date, 'isoformat'):
+                                data_str = registro.publication_date.isoformat()
+                            else:
+                                data_str = str(registro.publication_date)
+
+                        similares_encontrados.append({
+                            'marca': nome_bpi,
+                            'processo': registro.process_number or 'N/A',
+                            'similaridade': round(similarity * 100),
+                            'classe': registro.nice_class or 'N/A',
+                            'status': registro.status or 'N/A',
+                            'data': data_str
+                        })
 
             # 2. Busca Híbrida com Inteligência Fonética (RESOLVE 'CHOCOLATA' vs 'SHOCOLATA')
             # Gera variações fonéticas comuns para o início da palavra
