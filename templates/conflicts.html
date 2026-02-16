@@ -277,10 +277,10 @@
                 <div class="stat-icon danger">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Conflitos Ativos</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">{{ pending_conflicts }}</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Conflitos Pendentes</p>
                 <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
-                    <i class="fas fa-shield-alt me-1"></i>Suas marcas estão seguras
+                    <i class="fas fa-shield-alt me-1"></i>Ação imediata necessária
                 </p>
             </div>
         </div>
@@ -290,10 +290,10 @@
                 <div class="stat-icon warning">
                     <i class="fas fa-eye"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Em Análise</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">{{ reviewed_conflicts }}</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Em Análise / Revisados</p>
                 <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
-                    <i class="fas fa-search me-1"></i>Aguardando revisão
+                    <i class="fas fa-search me-1"></i>Já visualizados por si
                 </p>
             </div>
         </div>
@@ -303,10 +303,10 @@
                 <div class="stat-icon success">
                     <i class="fas fa-check-circle"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Resolvidos</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">{{ dismissed_conflicts }}</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Resolvidos / Ignorados</p>
                 <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
-                    <i class="fas fa-history me-1"></i>Histórico limpo
+                    <i class="fas fa-history me-1"></i>Arquivados
                 </p>
             </div>
         </div>
@@ -316,10 +316,10 @@
                 <div class="stat-icon info">
                     <i class="fas fa-file-alt"></i>
                 </div>
-                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">0</h3>
-                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">BPIs Processados</p>
+                <h3 class="mb-1" style="font-size: 36px; font-weight: 800; color: #1f2937;">{{ total_rpis }}</h3>
+                <p class="mb-0" style="color: #6b7280; font-weight: 600; font-size: 15px;">Boletins Analisados</p>
                 <p class="mb-0 mt-2" style="font-size: 12px; color: #9ca3af;">
-                    <i class="fas fa-calendar-check me-1"></i>Última: Nunca
+                    <i class="fas fa-calendar-check me-1"></i>Base de Inteligência
                 </p>
             </div>
         </div>
@@ -411,40 +411,51 @@
         </div>
     </div>
 
-    <!-- Timeline of Monitoring -->
+    <!-- Timeline of Monitoring / Conflict List -->
     <div class="monitoring-card">
         <h4 style="font-weight: 700; color: #1f2937; margin-bottom: 25px;">
             <i class="fas fa-history me-2" style="color: #667eea;"></i>
-            Histórico de Monitoramento
+            Conflitos Detectados recentemente
         </h4>
         
-        <div class="timeline-card">
-            <div class="d-flex align-items-center">
-                <div class="timeline-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #2563eb;">
-                    <i class="fas fa-clock"></i>
+        {% for conflict in conflicts %}
+        <div class="timeline-card" style="border-left-color: {% if conflict.similarity_score > 80 %}#ef4444{% elif conflict.similarity_score > 50 %}#f59e0b{% else %}#10b981{% endif %};">
+            <div class="d-flex align-items-start">
+                <div class="timeline-icon" style="background: rgba(0,0,0,0.05); color: #1f2937;">
+                    <i class="fas fa-exclamation-circle"></i>
                 </div>
-                <div>
-                    <h6 style="font-weight: 700; color: #1f2937; margin-bottom: 5px;">Sistema Aguardando Primeira Execução</h6>
-                    <p style="color: #6b7280; margin-bottom: 0; font-size: 14px;">
-                        O monitoramento automático será executado semanalmente após cada publicação do Boletim IPI. Você receberá um email de confirmação quando o primeiro scan for concluído.
+                <div style="flex: 1;">
+                    <div class="d-flex justify-content-between">
+                        <h6 style="font-weight: 700; color: #1f2937; margin-bottom: 5px;">{{ conflict.brand.name }} vs {{ conflict.conflicting_mark_name }}</h6>
+                        <span class="badge {% if conflict.status == 'pending' %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.6rem;">{{ conflict.status|upper }}</span>
+                    </div>
+                    <p style="color: #6b7280; margin-bottom: 10px; font-size: 14px;">
+                        Detecção por similaridade: <span style="color: #111827; font-weight: 700;">{{ (conflict.similarity_score or 0)|int }}%</span>
+                        {% if conflict.rpi_record %}
+                        <br><small>Identificado no Boletim Nº {{ conflict.rpi_record.rpi_number }}</small>
+                        {% endif %}
                     </p>
+                    <div style="font-size: 0.75rem; color: #9ca3af; display: flex; gap: 15px;">
+                        <span><i class="ri-history-line me-1"></i> Detectado em: {{ conflict.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </div>
                 </div>
             </div>
         </div>
-        
+        {% else %}
         <div class="timeline-card">
             <div class="d-flex align-items-center">
                 <div class="timeline-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #059669;">
                     <i class="fas fa-check"></i>
                 </div>
                 <div>
-                    <h6 style="font-weight: 700; color: #1f2937; margin-bottom: 5px;">Sistema Configurado com Sucesso</h6>
+                    <h6 style="font-weight: 700; color: #1f2937; margin-bottom: 5px;">Tudo Seguro</h6>
                     <p style="color: #6b7280; margin-bottom: 0; font-size: 14px;">
-                        Scheduler ativado • Jobs agendados • Notificações configuradas
+                        Nenhum conflito crítico detectado nos últimos BPIs processados.
                     </p>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
 
     <!-- Actions -->

@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}Marketplace de PI | m24 Guardian{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+        <div>
+            <h1 class="hero-title">Marketplace de <span style="color: var(--brand-primary);">PI</span></h1>
+            <p class="hero-desc">Compra, venda e licenciamento de ativos intelectuais validados.</p>
+        </div>
+        <button class="btn-m24 btn-m24-primary">
+            <i class="ri-add-line"></i> Listar Meu Ativo
+        </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">
+        {% for item in listings %}
+        <div class="bento-card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                <div style="background: var(--brand-primary-glow); color: var(--brand-primary); padding: 5px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">
+                    {{ item.type }}
+                </div>
+                <div style="color: var(--success); font-weight: 800; font-size: 0.9rem;">
+                    <i class="ri-checkbox-circle-line"></i> {{ item.status }}
+                </div>
+            </div>
+
+            <h3 style="color: white; font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem; font-family: 'Outfit';">{{ item.name }}</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem;">Propriedade de <strong>{{ item.owner }}</strong>. Marca com alto potencial de crescimento no setor.</p>
+
+            <div style="background: var(--bg-base); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Preço Estimado</div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: white;">{{ item.price }}</div>
+                </div>
+                <i class="ri-shopping-bag-3-line" style="font-size: 2rem; color: var(--brand-primary); opacity: 0.3;"></i>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-m24 btn-m24-primary" style="flex: 1; justify-content: center;">
+                    Fazer Proposta
+                </button>
+                <button class="btn-m24 btn-m24-ghost" title="Ver Detalhes">
+                    <i class="ri-external-link-line"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Banner de Comissão -->
+    <div class="bento-card" style="margin-top: 4rem; background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent); border-style: dashed; text-align: center;">
+        <h4 style="color: white; font-weight: 800;">Quer vender sua marca ou patente?</h4>
+        <p style="color: var(--text-standard); margin: 10px 0 20px 0;">O m24 facilita a transação segura entre as partes. Taxa de apenas 5% por venda concluída.</p>
+        <a href="{{ url_for('support') }}" class="btn-m24 btn-m24-ghost">Falar com Consultor de Negócios</a>
+    </div>
+</div>
+{% endblock %}

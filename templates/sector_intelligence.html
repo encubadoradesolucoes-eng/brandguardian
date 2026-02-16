@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+
+{% block title %}Inteligência de Setor PI | m24 Guardian{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="margin-bottom: 3rem;">
+        <h1 class="hero-title">Inteligência de <span style="color: var(--brand-primary);">Setor</span></h1>
+        <p class="hero-desc">Análise de saturação, tendências de deferimento e tempo médio de decisão por classe de Nice.</p>
+    </div>
+
+    <div style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); display: grid; gap: 2rem;">
+        {% for s in stats %}
+        <div class="bento-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div class="nice-badge" style="font-size: 1.2rem; padding: 10px 15px;">Classe {{ s.class }}</div>
+                <div style="color: {% if s.trend == 'up' %}var(--success){% elif s.trend == 'down' %}var(--danger){% else %}var(--warning){% endif %}; font-size: 1.5rem;">
+                    <i class="ri-arrow-{% if s.trend == 'up' %}up{% elif s.trend == 'down' %}down{% else %}right{% endif %}-line"></i>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Taxa de Deferimento</div>
+                <div style="display: flex; align-items: flex-end; gap: 10px;">
+                    <span style="font-size: 3rem; font-weight: 900; color: white;">{{ s.approval_rate }}%</span>
+                    <span style="color: var(--text-dim); margin-bottom: 10px; font-size: 0.9rem;">p/ processo</span>
+                </div>
+                <div class="risk-meter" style="height: 6px; margin-top: 5px;">
+                    <div class="risk-fill" style="width: {{ s.approval_rate }}%; background: {% if s.approval_rate > 70 %}var(--success){% elif s.approval_rate > 40 %}var(--warning){% else %}var(--danger){% endif %};"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-dim);">Tempo Médio Decisão</div>
+                    <div style="font-weight: 800; color: white;">{{ s.avg_time }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.7rem; color: var(--text-dim);">Saturação do Setor</div>
+                    <div style="font-weight: 800; color: {% if s.approval_rate < 50 %}var(--danger){% else %}var(--success){% endif %};">
+                        {% if s.approval_rate < 50 %}Crítica{% else %}Normal{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Insight de Mercado -->
+    <div class="bento-card" style="margin-top: 4rem; background: rgba(139, 92, 241, 0.05); border: 2px dashed var(--brand-primary-glow);">
+        <div style="display: flex; gap: 2rem; align-items: center;">
+            <i class="ri-bar-chart-grouped-line" style="font-size: 4rem; color: var(--brand-primary);"></i>
+            <div>
+                <h4 style="color: white; font-size: 1.2rem; margin-bottom: 0.5rem;">Indicador de Atividade Econômica</h4>
+                <p style="color: var(--text-standard);">O volume de renovações na Classe 35 (Serviços) cresceu 15% este mês, indicando resiliência do setor comercial em Moçambique. Use estes dados para aconselhar seus clientes sobre onde investir em novos registros.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

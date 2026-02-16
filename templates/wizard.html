@@ -1,0 +1,325 @@
+{% extends "layout.html" %}
+
+{% block title %}Wizard de Registro TurboTax | m24 Guardian{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+        position: relative;
+    }
+
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border-subtle);
+        z-index: 1;
+    }
+
+    .step-dot {
+        width: 40px;
+        height: 40px;
+        background: var(--bg-base);
+        border: 2px solid var(--border-subtle);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        z-index: 2;
+        transition: all 0.3s;
+        color: var(--text-dim);
+    }
+
+    .step-dot.active {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: white;
+        box-shadow: 0 0 20px var(--brand-primary-glow);
+    }
+
+    .step-dot.completed {
+        background: var(--success);
+        border-color: var(--success);
+        color: white;
+    }
+
+    .wizard-step {
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .wizard-step.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .q-card {
+        background: var(--bg-base);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .q-card:hover {
+        border-color: var(--brand-primary);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .q-card.selected {
+        border-color: var(--brand-primary);
+        background: rgba(99, 102, 241, 0.1);
+        box-shadow: 0 0 0 2px var(--brand-primary);
+    }
+
+    .nice-badge {
+        background: var(--brand-primary);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 class="hero-title" style="font-size: 2.5rem;">Registro TurboTax <span style="color: var(--brand-primary);">PME</span></h1>
+        <p class="hero-desc">O caminho mais rápido e inteligente para proteger sua marca em Moçambique.</p>
+    </div>
+
+    <div class="wizard-container">
+        <!-- Progress Bar -->
+        <div class="step-indicator">
+            <div class="step-dot active" id="dot-1">1</div>
+            <div class="step-dot" id="dot-2">2</div>
+            <div class="step-dot" id="dot-3">3</div>
+            <div class="step-dot" id="dot-4">4</div>
+        </div>
+
+        <form id="wizardForm" method="POST" enctype="multipart/form-data">
+            <!-- Passo 1: A Marca -->
+            <div class="wizard-step active" id="step-1">
+                <h3 style="margin-bottom: 1.5rem; color: white;">1. Que marca deseja proteger?</h3>
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700;">Nome da Marca</label>
+                    <input type="text" name="name" class="global-search" style="width: 100%;" placeholder="Ex: Pastelaria Delícia" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700;">Logotipo (Opcional)</label>
+                    <div style="border: 2px dashed var(--border-subtle); padding: 2rem; border-radius: 16px; text-align: center;">
+                        <input type="file" name="logo" id="logoUpload" style="display: none;">
+                        <label for="logoUpload" style="cursor: pointer; color: var(--brand-primary); font-weight: 800;">
+                            <i class="ri-upload-cloud-2-line" style="font-size: 2rem; display: block;"></i>
+                            Clique para carregar imagem
+                        </label>
+                    </div>
+                </div>
+                <div style="margin-top: 3rem; display: flex; justify-content: flex-end;">
+                    <button type="button" onclick="nextStep(2)" class="btn-m24 btn-m24-primary">Próximo Passo <i class="ri-arrow-right-line"></i></button>
+                </div>
+            </div>
+
+            <!-- Passo 2: O que você faz? (Auto-Classification) -->
+            <div class="wizard-step" id="step-2">
+                <h3 style="margin-bottom: 1.5rem; color: white;">2. O que a sua empresa faz?</h3>
+                <p style="margin-bottom: 2rem; color: var(--text-dim);">Descreva seus produtos ou serviços. Nossa IA irá sugerir as classes de Nice ideais.</p>
+                
+                <textarea id="businessDescription" class="global-search" style="width: 100%; height: 120px; padding: 1rem; border-radius: 16px;" placeholder="Ex: Fazemos bolos por encomenda, pães artesanais e temos uma cafeteria no local."></textarea>
+                
+                <button type="button" onclick="autoClassify()" class="btn-m24 btn-m24-ghost" style="margin-top: 1rem; width: 100%; justify-content: center;" id="btnClassify">
+                    <i class="ri-magic-line"></i> Analisar com IA TurboTax
+                </button>
+
+                <div id="classificationResults" style="margin-top: 2rem;">
+                    <!-- Sugestões aparecerão aqui -->
+                </div>
+
+                <input type="hidden" name="nice_classes" id="selectedClasses">
+
+                <div style="margin-top: 3rem; display: flex; justify-content: space-between;">
+                    <button type="button" onclick="prevStep(1)" class="btn-m24 btn-m24-ghost"><i class="ri-arrow-left-line"></i> Voltar</button>
+                    <button type="button" onclick="nextStep(3)" class="btn-m24 btn-m24-primary">Próximo Passo <i class="ri-arrow-right-line"></i></button>
+                </div>
+            </div>
+
+            <!-- Passo 3: Dados do Titular -->
+            <div class="wizard-step" id="step-3">
+                <h3 style="margin-bottom: 1.5rem; color: white;">3. Quem é o proprietário?</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 700;">Nome Completo / Razão Social</label>
+                        <input type="text" name="owner_name" class="global-search" style="width: 100%;" value="{{ current_user.name or '' }}" required>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 700;">NUIT</label>
+                        <input type="text" name="owner_nuit" class="global-search" style="width: 100%;" placeholder="123456789" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700;">Email de Contacto</label>
+                    <input type="email" name="owner_email" class="global-search" style="width: 100%;" value="{{ current_user.email }}" required>
+                </div>
+                
+                <div style="margin-top: 3rem; display: flex; justify-content: space-between;">
+                    <button type="button" onclick="prevStep(2)" class="btn-m24 btn-m24-ghost"><i class="ri-arrow-left-line"></i> Voltar</button>
+                    <button type="button" onclick="nextStep(4)" class="btn-m24 btn-m24-primary">Revisar e Finalizar <i class="ri-check-line"></i></button>
+                </div>
+            </div>
+
+            <!-- Passo 4: Pagamento e Documentação -->
+            <div class="wizard-step" id="step-4">
+                <h3 style="margin-bottom: 1.5rem; color: white;">4. Quase pronto!</h3>
+                <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--success); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 800; color: white;">Relatório de Viabilidade Gerado</div>
+                            <div style="font-size: 0.85rem; color: var(--text-standard);">Analisamos 150.000 registros e sua marca tem 92% de chance de aprovação.</div>
+                        </div>
+                        <i class="ri-checkbox-circle-fill" style="color: var(--success); font-size: 2rem;"></i>
+                    </div>
+                </div>
+
+                <div class="q-card selected">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 1.1rem; color: white;">Taxa de Submissão TurboTax</div>
+                            <div style="font-size: 0.85rem;">Inclui geração de DAR, formulários preenchidos e guia de submissão.</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 900; color: var(--brand-primary);">1.500 MT</div>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.8rem; color: var(--text-dim); text-align: center; margin-top: 2rem;">
+                    Ao finalizar, o sistema irá exportar o dossiê completo pronto para o INPI ou submeter via canal prioritário m24.
+                </p>
+
+                <div style="margin-top: 3rem; display: flex; justify-content: space-between;">
+                    <button type="button" onclick="prevStep(3)" class="btn-m24 btn-m24-ghost"><i class="ri-arrow-left-line"></i> Voltar</button>
+                    <button type="submit" class="btn-m24 btn-m24-primary" style="background: linear-gradient(135deg, #22c55e, #10b981);">Pagar e Gerar Documentação <i class="ri-file-download-line"></i></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentStep = 1;
+    const selectedNiceClasses = new Set();
+
+    function nextStep(step) {
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        document.getElementById(`dot-${currentStep}`).classList.add('completed');
+        
+        currentStep = step;
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        document.getElementById(`dot-${currentStep}`).classList.add('active');
+    }
+
+    function prevStep(step) {
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        document.getElementById(`dot-${currentStep}`).classList.remove('active');
+        
+        currentStep = step;
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        document.getElementById(`dot-${currentStep}`).classList.remove('completed');
+    }
+
+    async function autoClassify() {
+        const desc = document.getElementById('businessDescription').value;
+        if (!desc) return showToast("Descreva o seu negócio primeiro.", "warning");
+
+        const btn = document.getElementById('btnClassify');
+        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Analisando Mercado...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/wizard/classify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: desc })
+            });
+            const data = await response.json();
+            
+            const container = document.getElementById('classificationResults');
+            container.innerHTML = '';
+
+            data.suggestions.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'q-card';
+                card.innerHTML = `
+                    <div style="display: flex; gap: 1rem;">
+                        <span class="nice-badge">Classe ${s.number}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; color: white;">${s.title}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">${s.description}</div>
+                        </div>
+                        <i class="ri-add-circle-line" style="font-size: 1.5rem; color: var(--brand-primary);"></i>
+                    </div>
+                `;
+                card.onclick = () => toggleClass(card, s.number);
+                container.appendChild(card);
+            });
+
+            showToast("Sugestões geradas com sucesso!", "success");
+
+        } catch (e) {
+            showToast("Erro ao classificar. Tente novamente.", "danger");
+        } finally {
+            btn.innerHTML = '<i class="ri-magic-line"></i> Analisar com IA TurboTax';
+            btn.disabled = false;
+        }
+    }
+
+    function toggleClass(el, num) {
+        if (selectedNiceClasses.has(num)) {
+            selectedNiceClasses.delete(num);
+            el.classList.remove('selected');
+        } else {
+            selectedNiceClasses.add(num);
+            el.classList.add('selected');
+        }
+        document.getElementById('selectedClasses').value = Array.from(selectedNiceClasses).join(',');
+    }
+
+    // Logo Preview
+    document.getElementById('logoUpload').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            showToast("Logo carregado!", "success");
+        }
+    });
+
+    document.getElementById('wizardForm').onsubmit = function() {
+        if (selectedNiceClasses.size === 0) {
+            showToast("Selecione pelo menos uma Classe de Nice.", "warning");
+            return false;
+        }
+    };
+</script>
+{% endblock %}

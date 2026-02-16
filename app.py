@@ -297,6 +297,7 @@ class BrandConflict(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     brand = db.relationship('Brand', backref='conflicts')
+    rpi_record = db.relationship('RPIMonitoring', backref='conflicts')
 
 class Payment(db.Model):
     # DOCSTRING_REMOVED Transações de pagamento de assinaturas# DOCSTRING_REMOVED 
@@ -1604,7 +1605,7 @@ def conflicts():
                            pending_conflicts=pending,
                            reviewed_conflicts=reviewed,
                            dismissed_conflicts=dismissed,
-                           total_rpis=total_rpis)
+                           total_rpis=total_rpis if total_rpis else 0)
 
 @app.route('/api/conflicts/<int:conflict_id>/review', methods=['POST'])
 @login_required
@@ -3446,32 +3447,159 @@ document.getElementById('conf').innerHTML=cv.length?cv.map((c,i)=>`<div style="b
 </script></body></html>'''
     return render_template_string(html)
 
-@app.route('/api/purification-resultados')
+@app.route('/wizard', methods=['GET', 'POST'])
 @login_required
-def api_purification_resultados():
-    """Consulta último relatório de auditoria"""
-    if current_user.role != 'admin':
-        return jsonify({'error': 'Acesso negado'}), 403
+def wizard():
+    if request.method == 'POST':
+        # Dados da Marca vindos do TurboTax
+        name = request.form.get('name')
+        nice_classes = request.form.get('nice_classes', '')
+        owner_name = request.form.get('owner_name')
+        owner_nuit = request.form.get('owner_nuit')
+        
+        # Simulação de criação de Entidade/Titular
+        entity = Entity.query.filter_by(nuit=owner_nuit).first()
+        if not entity:
+            entity = Entity(
+                name=owner_name,
+                nuit=owner_nuit,
+                type='pme',
+                user_id=current_user.id
+            )
+            db.session.add(entity)
+            db.session.commit()
+
+        # Criar a Marca
+        new_brand = Brand(
+            name=name,
+            nice_classes=nice_classes,
+            status='under_study',
+            risk_level='low',
+            risk_score=15.0, # TurboTax geralmente filtra riscos antes
+            user_id=current_user.id,
+            entity_id=entity.id
+        )
+        
+        # Logo Upload (Se houver)
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and allowed_file(file.filename):
+                image_data = file.read()
+                new_brand.image_data = image_data
+        
+        db.session.add(new_brand)
+        db.session.commit()
+        
+        flash(f'Parabéns! O dossiê da marca {name} foi gerado e submetido para análise prioritária.', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('wizard.html')
+
+@app.route('/api/wizard/classify', methods=['POST'])
+@login_required
+def api_wizard_classify():
+    data = request.json
+    desc = data.get('description', '').lower()
     
-    try:
-        # Busca config
-        config = SystemConfig.query.get('ultima_purificacao')
-        if not config or not config.value:
-             return jsonify({'status': 'nenhum_resultado'})
-             
-        dados = json.loads(config.value)
-        arquivo = dados.get('arquivo')
-        caminho = os.path.join(app.config['UPLOAD_FOLDER'], arquivo)
+    # Mock IA Classification based on keywords in description
+    suggestions = []
+    if any(k in desc for k in ['bolo', 'pão', 'doce', 'pastel', 'padaria']):
+        suggestions.append({'number': 30, 'title': 'Padaria & Confeitaria', 'description': 'Pães, bolos, pastelaria e massas.'})
+    if any(k in desc for k in ['café', 'restaurante', 'comida', 'bar', 'serviço']):
+        suggestions.append({'number': 43, 'title': 'Serviços de Alimentação', 'description': 'Restaurantes, bares e catering.'})
+    if any(k in desc for k in ['roupa', 'vestuário', 'moda', 'sapatos']):
+        suggestions.append({'number': 25, 'title': 'Vestuário e Calçado', 'description': 'Roupas, sapatos e chapelaria.'})
+    if any(k in desc for k in ['soft', 'app', 'tecnologia', 'site', 'computador']):
+        suggestions.append({'number': 9, 'title': 'Software e Tecnologia', 'description': 'Aparelhos eletrónicos e software.'})
+    if any(k in desc for k in ['educação', 'escola', 'ensino', 'curso']):
+        suggestions.append({'number': 41, 'title': 'Educação e Formação', 'description': 'Serviços de ensino e entretenimento.'})
+    if any(k in desc for k in ['advogado', 'consultoria', 'gestão', 'venda']):
+        suggestions.append({'number': 35, 'title': 'Gestão e Comércio', 'description': 'Marketing, consultoria empresarial e vendas.'})
+    if any(k in desc for k in ['médico', 'saúde', 'clínica', 'hospital']):
+        suggestions.append({'number': 44, 'title': 'Serviços de Saúde', 'description': 'Cuidados médicos e de higiene.'})
+    
+    # Fallback
+    if not suggestions:
+        suggestions.append({'number': 35, 'title': 'Gestão de Negócios e Comércio', 'description': 'Serviços de venda, marketing e administração.'})
         
-        if os.path.exists(caminho):
-            with open(caminho, 'r', encoding='utf-8') as f:
-                resultados = json.load(f)
-            return jsonify({'status': 'disponivel', 'resultados': resultados})
-            
-        return jsonify({'status': 'erro', 'mensagem': 'Arquivo de relatório não encontrado'})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'suggestions': suggestions})
+
+@app.route('/marketplace')
+@login_required
+def marketplace():
+    # Marcas disponíveis para venda (simulado)
+    listings = [
+        {'id': 1, 'name': 'MozaPay', 'type': 'Fintech / App', 'price': '850.000 MT', 'status': 'Aprovado BPI', 'owner': 'M. Silva'},
+        {'id': 2, 'name': 'Zimbane Tech', 'type': 'Software Agency', 'price': '1.200.000 MT', 'status': 'Vigiada', 'owner': 'TechHub Lda'},
+        {'id': 3, 'name': 'Frutos do Sol', 'type': 'Agro-Business', 'price': '450.000 MT', 'status': 'Renovada', 'owner': 'Cooperativa X'},
+        {'id': 4, 'name': 'EduFlow', 'type': 'EdTech', 'price': '300.000 MT', 'status': 'Registrado', 'owner': 'E. Gune'},
+    ]
+    return render_template('marketplace.html', listings=listings)
+
+@app.route('/valuation')
+@login_required
+def valuation():
+    # Se for admin, carrega todas as marcas (clientes), senão apenas as próprias
+    if current_user.role == 'admin':
+        brands = Brand.query.all()
+    else:
+        brands = Brand.query.filter_by(user_id=current_user.id).all()
+    return render_template('valuation.html', user_brands=brands)
+
+@app.route('/api/valuation/calculate', methods=['POST'])
+@login_required
+def api_valuation_calculate():
+    data = request.json
+    revenue = float(data.get('revenue', 0))
+    region = data.get('region', 'Nacional')
+    recognition = data.get('recognition', 'baixa') # baixa, media, alta
+    risk = float(data.get('risk', 20)) # risk_score
+    
+    # Simple Valuation Logic (Multiple of EBITDA-like + Brand Equity adjustments)
+    base_value = revenue * 0.20 # 20% of annual revenue as baseline for brand value
+    equity_multiplier = 1.0
+    
+    if region == 'Internacional': equity_multiplier += 0.8
+    if recognition == 'alta': equity_multiplier += 1.2
+    elif recognition == 'media': equity_multiplier += 0.5
+    
+    # Risk deduction (higher risk = lower value)
+    risk_factor = (100 - risk) / 100
+    
+    final_value = (base_value * equity_multiplier) * risk_factor
+    
+    return jsonify({
+        'estimated_value': f"{final_value:,.2f} MT",
+        'factors': {
+            'revenue_contribution': f"{base_value:,.2f} MT",
+            'equity_multiplier': equity_multiplier,
+            'risk_adjustment': f"- {(1-risk_factor)*100:.1f}%"
+        }
+    })
+
+@app.route('/opportunity-radar')
+@login_required
+def opportunity_radar():
+    # Arbitragem: Marcas em estados "imperfeitos" que geram oportunidade
+    # 1. Marcas expirando (Lead para renovação ou Re-registro)
+    expiring_soon = IpiRecord.query.filter(IpiRecord.status.in_(['extinta_caducidade', 'caducidade'])).limit(5).all()
+    # 2. Recusas Provisórias (Ouro escondido: Defesa jurídica)
+    provisional_refusals = IpiRecord.query.filter(IpiRecord.status == 'recusa_provisoria').limit(5).all()
+    
+    return render_template('opportunity_radar.html', 
+                           expiring=expiring_soon, 
+                           refusals=provisional_refusals)
+
+@app.route('/sector-intelligence')
+@login_required
+def sector_intelligence():
+    # Estatísticas de deferimento por classe (Indicador de saturação/risco)
+    stats = [
+        {'class': 35, 'approval_rate': 82, 'trend': 'up', 'avg_time': '8 meses'},
+        {'class': 9, 'approval_rate': 45, 'trend': 'down', 'avg_time': '14 meses'}, # Alta saturação tech
+        {'class': 43, 'approval_rate': 68, 'trend': 'stable', 'avg_time': '10 meses'},
+    ]
+    return render_template('sector_intelligence.html', stats=stats)
 
 if __name__ == '__main__':
     # ATENÇÃO: Este bloco SÓ executa em desenvolvimento local (python app.py)

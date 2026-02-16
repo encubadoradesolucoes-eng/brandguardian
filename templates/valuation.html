@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+
+{% block title %}Avaliação Financeira de Marca | m24 Guardian{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="margin-bottom: 3rem;">
+        <h1 class="hero-title">Avaliação <span style="color: var(--brand-primary);">Financeira</span></h1>
+        <p class="hero-desc">Estime o valor de mercado do seu ativo intelectual usando métricas reais.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; align-items: start;">
+        <!-- Formulário de Input -->
+        <div class="bento-card">
+            <h3 style="color: white; margin-bottom: 2rem;">Dados da Marca</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">Selecione sua Marca</label>
+                <select id="brandSelect" class="global-search" style="width: 100%;">
+                    <option value="0">Nova Marca / Não Listada</option>
+                    {% for brand in user_brands %}
+                    <option value="{{ brand.risk_score }}">{{ brand.name }} (Risco: {{ brand.risk_score|int }}%)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">Receita Anual Atribuível (MT)</label>
+                <input type="number" id="revenue" class="global-search" style="width: 100%;" placeholder="Ex: 5000000" required>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">Presença de Mercado</label>
+                <select id="region" class="global-search" style="width: 100%;">
+                    <option value="Local">Local (Cidade/Província)</option>
+                    <option value="Nacional">Nacional (Todo Moçambique)</option>
+                    <option value="Internacional">Internacional (Multinacional)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">Grau de Reconhecimento</label>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-m24 btn-m24-ghost rec-btn" data-val="baixa" style="flex:1;">Baixo</button>
+                    <button type="button" class="btn-m24 btn-m24-ghost rec-btn active-rec" data-val="media" style="flex:1; border-color: var(--brand-primary);">Médio</button>
+                    <button type="button" class="btn-m24 btn-m24-ghost rec-btn" data-val="alta" style="flex:1;">Alto</button>
+                </div>
+            </div>
+
+            <button onclick="calculateValuation()" class="btn-m24 btn-m24-primary" style="width: 100%; justify-content: center;">
+                <i class="ri-calculator-line"></i> Calcular Valuation
+            </button>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultCard" class="bento-card" style="opacity: 0.5;">
+            <div id="placeholderResult" style="text-align: center; padding: 4rem 0;">
+                <i class="ri-funds-line" style="font-size: 4rem; color: var(--text-dim); opacity: 0.2;"></i>
+                <p style="color: var(--text-dim); margin-top: 1rem;">Preencha os dados para ver a estimativa.</p>
+            </div>
+
+            <div id="actualResult" style="display: none;">
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <div style="font-size: 0.9rem; color: var(--brand-primary); font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">Valor Estimado da Marca</div>
+                    <div id="finalValue" style="font-size: 4rem; font-weight: 900; color: white; font-family: 'Outfit'; margin: 10px 0;">0.00 MT</div>
+                    <p style="color: var(--text-standard);">Esta estimativa utiliza o método de <strong>Royalty Relief</strong> e fluxos de caixa descontados.</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 3rem;">
+                    <div style="background: var(--bg-base); padding: 1.5rem; border-radius: 16px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase;">Contribuição Receita</div>
+                        <div id="statRev" style="font-weight: 800; color: white; margin-top: 5px;">-</div>
+                    </div>
+                    <div style="background: var(--bg-base); padding: 1.5rem; border-radius: 16px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase;">Multiplicador Equity</div>
+                        <div id="statMult" style="font-weight: 800; color: var(--brand-primary); margin-top: 5px;">-</div>
+                    </div>
+                    <div style="background: var(--bg-base); padding: 1.5rem; border-radius: 16px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase;">Ajuste de Risco</div>
+                        <div id="statRisk" style="font-weight: 800; color: var(--danger); margin-top: 5px;">-</div>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 2rem;">
+                    <h4 style="color: white; margin-bottom: 1rem;">O que valoriza sua marca?</h4>
+                    <ul style="color: var(--text-standard); font-size: 0.9rem; padding-left: 20px;">
+                        <li style="margin-bottom: 10px;">Proteção legal em múltiplas classes e países.</li>
+                        <li style="margin-bottom: 10px;">Baixa similaridade fonética com terceiros (Risco Baixo).</li>
+                        <li>Domínios e redes sociais consistentes com o nome da marca.</li>
+                    </ul>
+                </div>
+
+                <button class="btn-m24 btn-m24-ghost" style="width: 100%; justify-content: center; margin-top: 2rem;">
+                    <i class="ri-file-pdf-line"></i> Descarregar Relatório Completo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let recognition = 'media';
+
+    document.querySelectorAll('.rec-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.rec-btn').forEach(b => b.style.borderColor = '');
+            btn.style.borderColor = 'var(--brand-primary)';
+            recognition = btn.dataset.val;
+        };
+    });
+
+    async function calculateValuation() {
+        const revenue = document.getElementById('revenue').value;
+        const region = document.getElementById('region').value;
+        const risk = document.getElementById('brandSelect').value;
+
+        if (!revenue) return showToast("Insira a receita anual.", "warning");
+
+        try {
+            const response = await fetch('/api/valuation/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    revenue: revenue,
+                    region: region,
+                    recognition: recognition,
+                    risk: risk
+                })
+            });
+            const data = await response.json();
+
+            document.getElementById('placeholderResult').style.display = 'none';
+            document.getElementById('actualResult').style.display = 'block';
+            document.getElementById('resultCard').style.opacity = '1';
+
+            document.getElementById('finalValue').textContent = data.estimated_value;
+            document.getElementById('statRev').textContent = data.factors.revenue_contribution;
+            document.getElementById('statMult').textContent = 'x' + data.factors.equity_multiplier.toFixed(1);
+            document.getElementById('statRisk').textContent = data.factors.risk_adjustment;
+
+            showToast("Avaliação calculada com sucesso!", "success");
+
+        } catch (e) {
+            showToast("Erro no cálculo.", "danger");
+        }
+    }
+</script>
+{% endblock %}

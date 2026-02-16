@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+
+{% block title %}Radar de Oportunidades PI | m24 Guardian{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="margin-bottom: 3rem;">
+        <h1 class="hero-title">Radar de <span style="color: var(--brand-primary);">Oportunidades</span></h1>
+        <p class="hero-desc">Transformando estados jurídicos "imperfeitos" em sinais econômicos e arbitragem de mercado.</p>
+    </div>
+
+    <!-- Seção 1: Ouro em Limbo (Caducidade) -->
+    <div class="bento-card" style="margin-bottom: 3rem; border-left: 4px solid var(--warning);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+            <div>
+                <h3 style="color: white; font-size: 1.5rem;"><i class="ri-timer-flash-line" style="color: var(--warning);"></i> Ativos em Limbo (Caducidade)</h3>
+                <p style="color: var(--text-dim);">Marcas que expiraram ou estão prestes a caducar. Oportunidade de re-registro ou serviço de recuperação.</p>
+            </div>
+            <span class="badge" style="background: var(--warning); color: black;">ALPHA ACCESS</span>
+        </div>
+
+        <div class="glass-table-container">
+            <table class="m24-table">
+                <thead>
+                    <tr>
+                        <th>Nº Processo</th>
+                        <th>Marca</th>
+                        <th>Titular Anterior</th>
+                        <th>Oportunidade</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in expiring %}
+                    <tr>
+                        <td><code>{{ item.process_number }}</code></td>
+                        <td style="color: white; font-weight: 700;">{{ item.brand_name }}</td>
+                        <td style="font-size: 0.8rem;">{{ item.applicant_name }}</td>
+                        <td>
+                            <span class="status-pill warning" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                                Re-aquisição Estratégica
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-m24 btn-m24-ghost" style="padding: 5px 12px; font-size: 0.8rem;">Analisar Viabilidade</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-dim);">Detectando novos ativos expirando no BPI...</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Seção 2: Recusas Provisórias (Arbitragem de Defesa) -->
+    <div class="bento-card" style="border-left: 4px solid var(--brand-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+            <div>
+                <h3 style="color: white; font-size: 1.5rem;"><i class="ri-shield-cross-line" style="color: var(--brand-primary);"></i> Defesa Estratégica (Recusas Provisórias)</h3>
+                <p style="color: var(--text-dim);">Marcas com óbices técnicos. Onde outros veem fim, nós vemos oportunidade de recurso e consultoria especializada.</p>
+            </div>
+            <span class="badge" style="background: var(--brand-primary); color: white;">PREMIUM INSIGHT</span>
+        </div>
+
+        <div class="glass-table-container">
+            <table class="m24-table">
+                <thead>
+                    <tr>
+                        <th>Processo</th>
+                        <th>Marca</th>
+                        <th>Motivo Provável</th>
+                        <th>Complexidade</th>
+                        <th>Ação de Defesa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in refusals %}
+                    <tr>
+                        <td><code>{{ item.process_number }}</code></td>
+                        <td style="color: white; font-weight: 700;">{{ item.brand_name }}</td>
+                        <td style="font-size: 0.8rem;">Descritividade / Conflito Art. 12</td>
+                        <td>
+                            <div class="risk-meter" style="width: 80px;"><div class="risk-fill" style="width: 65%; background: var(--warning);"></div></div>
+                        </td>
+                        <td>
+                            <button class="btn-m24 btn-m24-primary" style="padding: 5px 12px; font-size: 0.8rem;">Gerar Minuta de Recurso IA</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-dim);">Nenhuma recusa provisória capturada no lote atual.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Insight de Estrategista -->
+    <div style="margin-top: 4rem; padding: 2rem; background: rgba(99, 102, 241, 0.05); border-radius: 20px; border: 1px solid var(--brand-primary-glow);">
+        <h4 style="color: var(--brand-primary); margin-bottom: 1rem;"><i class="ri-lightbulb-flash-line"></i> Nota do Estrategista m24</h4>
+        <p style="color: var(--text-standard); font-style: italic; line-height: 1.6;">
+            "Informação pública organizada inteligentemente é o ativo mais valioso de PI. Estamos transformando dados jurídicos em sinais econômicos claros. Lembre-se: O lucro não está no registro, está na redução da incerteza e na antecipação de movimentos do mercado."
+        </p>
+    </div>
+</div>
+{% endblock %}
