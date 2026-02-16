@@ -58,6 +58,12 @@ def scan_marca_page():
             resultado = scan_live_real(termo, usuario_logado=True)
     return render_template('scan_marca.html', resultado=resultado, termo=termo)
 
+# ========== HEALTH CHECK (para Render) ==========
+@app.route('/health')
+def health_check():
+    """Endpoint leve para o Render verificar se o serviço está vivo"""
+    return jsonify({'status': 'ok', 'service': 'brandguardian'}), 200
+
 # Suporte para PostgreSQL (Produção) ou SQLite (Local)
 database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith("postgres://"):
@@ -1816,12 +1822,10 @@ def scan_live_page():
 def scan_live_api():
     try:
         import socket
-        import requests
         import time
 
         print("DEBUG: Iniciando Scan Live v2...")
-        time.sleep(1) # Delay UX
-
+        
         data = request.json
         if not data or 'term' not in data:
              return jsonify({'status': 'error', 'message': 'Termo não fornecido'}), 400
@@ -1844,12 +1848,12 @@ def scan_live_api():
             'counts': {'domains': 0, 'social': 0, 'local': 0, 'bpi': 0}
         }
 
-        # 1. Busca Local (M24 Database)
+        # 1. Busca Local (M24 Database) - PROTEÇÃO CRÍTICA
         try:
-            local_recs = Brand.query.filter(Brand.name.ilike(f'%{term}%')).all()
+            local_recs = Brand.query.filter(Brand.name.ilike(f'%{term}%')).limit(50).all()
             results['counts']['local'] = len(local_recs)
             if is_auth:
-                for b in local_recs:
+                for b in local_recs[:10]:  # Máximo 10 resultados
                     results['local'].append({
                         'name': b.name,
                         'status': b.status,
@@ -1857,36 +1861,32 @@ def scan_live_api():
                     })
         except Exception as e:
             print(f"DEBUG: Erro Local: {e}")
+            results['counts']['local'] = 0
 
-        # 2. Busca BPI (IpiRecord Database) - COM INTELECTUALIDADE/SIMILARIDADE
+        # 2. Busca BPI (IpiRecord Database) - ULTRA LIMITADO
         try:
             import difflib
             
-            # Otimização Crítica: NÃO carregar tudo (Query.all()) pois causa OOM (Out Of Memory)
-            # Buscamos apenas os 500 candidatos mais prováveis via SQL
-            bpi_matches = []
-            
-            # Busca por prefixo ou similaridade parcial no DB
+            # Limite CRÍTICO: máximo 100 registros para evitar OOM
             candidates = IpiRecord.query.filter(
-                (IpiRecord.brand_name.ilike(f'%{term}%'))
-            ).limit(500).all()
+                IpiRecord.brand_name.ilike(f'%{term}%')
+            ).limit(100).all()
             
-            for r in candidates:
+            bpi_matches = []
+            for r in candidates[:50]:  # Processar no máximo 50
                 if not r.brand_name: continue
                 db_name = r.brand_name.lower().strip()
                 similarity = difflib.SequenceMatcher(None, term, db_name).ratio()
                 
-                # Regra: Se contém o termo OU similaridade > 60%
                 if term in db_name or db_name in term or similarity > 0.6:
                     bpi_matches.append(r)
+                    if len(bpi_matches) >= 15:  # Parar cedo
+                        break
 
             results['counts']['bpi'] = len(bpi_matches)
             
-            # Ordenar por similaridade (aproximação simples) e limitar
-            bpi_recs = bpi_matches[:20] 
-            
             if is_auth:
-                for r in bpi_recs:
+                for r in bpi_matches[:10]:  # Máximo 10 resultados
                     results['bpi'].append({
                         'process': r.process_number,
                         'brand': r.brand_name,
@@ -1897,55 +1897,30 @@ def scan_live_api():
                     })
         except Exception as e:
              print(f"DEBUG: Erro BPI: {e}")
+             results['counts']['bpi'] = 0
 
-        # 3. Busca Web (Domínios .co.mz / .com)
-        # Nota: Limitado a 5 checks para ser rápido
+        # 3. Busca Web (Domínios .co.mz / .com) - RÁPIDO
         domain_checks = [f"{term}.co.mz", f"{term}.com", f"{term}.mz"]
         
         for domain in domain_checks:
             status = 'available'
             try:
+                socket.setdefaulttimeout(2)  # Timeout de 2 segundos
                 socket.gethostbyname(domain)
                 status = 'occupied'
             except:
-                pass # Disponível (ou erro de DNS tratado como disponível/falha)
+                pass
             
             if status == 'occupied':
                 results['counts']['domains'] += 1
             
-            if is_auth or status == 'available': # Mostra disponíveis como "isca"
+            if is_auth or status == 'available':
                  results['domains'].append({'domain': domain, 'status': status})
 
-        # 4. Busca Social (Status Code Check)
-        networks = [
-            {'name': 'Instagram', 'url': f'https://www.instagram.com/{term}/'},
-            {'name': 'Facebook', 'url': f'https://www.facebook.com/{term}/'}
-        ]
-        
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0'}
-        
-        for net in networks:
-            net_status = 'unknown'
-            try:
-                # Timeout maior e tratamento de erro
-                r = requests.get(net['url'], headers=headers, timeout=5)
-                if r.status_code == 200:
-                    net_status = 'occupied'
-                elif r.status_code == 404:
-                    net_status = 'available'
-                else: 
-                    net_status = f'error ({r.status_code})'
-            except Exception as e:
-                print(f"DEBUG: Erro Social {net['name']}: {e}")
-                net_status = 'error (timeout)'
-            
-            if net_status == 'occupied':
-                results['counts']['social'] += 1
-                
-            if is_auth:
-                results['social'].append({'network': net['name'], 'url': net['url'], 'status': net_status})
-            elif net_status == 'available':
-                 results['social'].append({'network': net['name'], 'url': net['url'], 'status': 'available'})
+        # 4. Busca Social - DESATIVADO TEMPORARIAMENTE (causa timeouts)
+        # As redes sociais bloqueiam requests automatizados, causando 503
+        results['social'] = []
+        results['counts']['social'] = 0
 
         return jsonify(results)
 
@@ -3407,8 +3382,29 @@ def api_purification_resultados():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # ATENÇÃO: Este bloco SÓ executa em desenvolvimento local (python app.py)
+    # O Gunicorn (produção) NÃO executa este bloco, o que é CORRETO.
+    # Tabelas e seeds devem ser criados MANUALMENTE no Supabase via SQL dump.
+    
+    print(">>> Modo DESENVOLVIMENTO detectado")
+    print(">>> Verificando Base de Dados...")
+    
     with app.app_context():
-        db.create_all()
-        seed_users()
+        try:
+            # Apenas cria tabelas se não existirem (SQLite local)
+            db.create_all()
+            print(">>> Tabelas verificadas/criadas")
+            
+            # Seed apenas se não houver admin
+            admin_exists = User.query.filter_by(username='admin').first()
+            if not admin_exists:
+                seed_users()
+                print(">>> Usuário admin criado")
+            else:
+                print(">>> Admin já existe, skip seed")
+        except Exception as e:
+            print(f">>> Erro na migração: {e}")
+    
     port = int(os.environ.get('PORT', 7000))
+    print(f">>> Servidor rodando em http://0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=True, use_reloader=True)
