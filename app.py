@@ -1860,73 +1860,62 @@ def scan_live_api():
         if not data or 'term' not in data:
              return jsonify({'status': 'error', 'message': 'Termo não fornecido'}), 400
              
-        term = data.get('term', '').lower().strip().replace(' ', '')
-        if not term:
-             return jsonify({'status': 'error', 'message': 'Termo vazio'}), 400
-
-        print(f"DEBUG: Scan para '{term}'")
-        
-        is_auth = current_user.is_authenticated
-        
-        results = {
-            'term': term,
-            'domains': [],
-            'social': [],
-            'local': [],
-            'bpi': [],
-            'restricted': not is_auth,
-            'counts': {'domains': 0, 'social': 0, 'local': 0, 'bpi': 0}
-        }
-
-        # 1. Busca Local (M24 Database) - PROTEÇÃO CRÍTICA
-        try:
-            local_recs = Brand.query.filter(Brand.name.ilike(f'%{term}%')).limit(50).all()
-            results['counts']['local'] = len(local_recs)
-            if is_auth:
-                for b in local_recs[:10]:  # Máximo 10 resultados
-                    results['local'].append({
-                        'name': b.name,
-                        'status': b.status,
-                        'owner': b.owner_name
-                    })
-        except Exception as e:
-            print(f"DEBUG: Erro Local: {e}")
-            results['counts']['local'] = 0
-
-        # 2. Busca BPI (IpiRecord Database) - ULTRA LIMITADO
+        # 2. Busca BPI (IpiRecord Database) - BUSCA INTELIGENTE E FONÉTICA
         try:
             import difflib
+            import jellyfish
             
-            # Limite CRÍTICO: máximo 100 registros para evitar OOM
+            # 2.1. Normalização do termo (mantendo espaços para nomes compostos)
+            search_term = data.get('term', '').lower().strip()
+            first_char = search_term[0] if search_term else ''
+            
+            # 2.2. Buscar Candidatos (Mais flexível para permitir fonética)
+            # Buscamos nomes que começam com a mesma letra ou que contenham partes do termo
             candidates = IpiRecord.query.filter(
-                IpiRecord.brand_name.ilike(f'%{term}%')
-            ).limit(100).all()
+                db.or_(
+                    IpiRecord.brand_name.ilike(f'{first_char}%'),
+                    IpiRecord.brand_name.ilike(f'%{search_term}%')
+                )
+            ).limit(300).all() # Puxamos mais candidatos para análise local
             
             bpi_matches = []
-            for r in candidates[:50]:  # Processar no máximo 50
+            for r in candidates:
                 if not r.brand_name: continue
                 db_name = r.brand_name.lower().strip()
-                similarity = difflib.SequenceMatcher(None, term, db_name).ratio()
                 
-                if term in db_name or db_name in term or similarity > 0.6:
-                    bpi_matches.append(r)
-                    if len(bpi_matches) >= 15:  # Parar cedo
-                        break
-
-            results['counts']['bpi'] = len(bpi_matches)
-            
-            if is_auth:
-                for r in bpi_matches[:10]:  # Máximo 10 resultados
-                    results['bpi'].append({
+                # Similaridade textual (Levenshtein/Difflib)
+                similarity = difflib.SequenceMatcher(None, search_term, db_name).ratio()
+                
+                # similaridade fonética (Metaphone é melhor que Soundex para PT)
+                try:
+                    p1 = jellyfish.metaphone(search_term)
+                    p2 = jellyfish.metaphone(db_name)
+                    phonetic_match = (p1 == p2 and len(p1) > 1)
+                except:
+                    phonetic_match = False
+                
+                # Critérios de Aceitação
+                if search_term in db_name or db_name in search_term or similarity > 0.7 or phonetic_match:
+                    match_data = {
                         'process': r.process_number,
                         'brand': r.brand_name,
                         'applicant': r.applicant_name or 'N/A',
                         'status': r.status,
                         'image': getattr(r, 'image_path', None),
-                        'source': r.bulletin_number or 'BPI-Oficial'
-                    })
+                        'source': r.bulletin_number or 'BPI-Oficial',
+                        'match_type': 'fonético' if phonetic_match else 'textual'
+                    }
+                    bpi_matches.append(match_data)
+                    if len(bpi_matches) >= 15: break
+
+            results['counts']['bpi'] = len(bpi_matches)
+            # Retornar dados diretamente para o objeto bpi
+            results['bpi'] = bpi_matches[:10]
+            
         except Exception as e:
-             print(f"DEBUG: Erro BPI: {e}")
+             print(f"DEBUG: Erro BPI no Scan: {e}")
+             import traceback
+             traceback.print_exc()
              results['counts']['bpi'] = 0
 
         # 3. Busca Web (Domínios .co.mz / .com) - RÁPIDO
