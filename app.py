@@ -70,8 +70,29 @@ database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-# CRITICAL: Supabase requer SSL
+# NUCLEAR OPTION: Resolver Supabase hostname para IPv4 manualmente
 if database_url and 'supabase.co' in database_url:
+    try:
+        import socket
+        import re
+        
+        # Extrair hostname
+        match = re.search(r'@([^:]+):', database_url)
+        if match:
+            hostname = match.group(1)
+            print(f">>> Resolvendo {hostname}...")
+            
+            # Forçar IPv4 usando getaddrinfo
+            addr_info = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
+            if addr_info:
+                ipv4 = addr_info[0][4][0]
+                database_url = database_url.replace(hostname, ipv4)
+                print(f">>> Conectando via IPv4: {ipv4}")
+    except Exception as e:
+        print(f">>> Erro ao resolver IPv4: {e}, tentando conexão direta...")
+
+# CRITICAL: Supabase requer SSL
+if database_url and ('supabase.co' in database_url or 'sslmode' not in database_url):
     if '?' not in database_url:
         database_url += '?sslmode=require'
     elif 'sslmode' not in database_url:
