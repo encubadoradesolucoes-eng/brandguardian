@@ -4,7 +4,9 @@ import os
 from difflib import SequenceMatcher
 import json
 from datetime import datetime
-from modules.real_scanner import scan_live_real  # IMPORTA O SCANNER REAL
+from modules.real_scanner import scan_live_real, verificacao_imagem_real  # IMPORTA O SCANNER REAL + VISUAL
+import tempfile
+import io
 
 class BrandAnalyzer:
     def __init__(self):
@@ -32,35 +34,56 @@ class BrandAnalyzer:
             # Passamos usuario_logado=True para ter detalhes completos
             resultados_reais = scan_live_real(target_brand.name, usuario_logado=True)
             
-            # 2. Interpretar Resultados para atualizar o Modelo da Marca
+            # 2. Executar Análise Visual se houver imagem
+            visual_matches = {}
+            if target_brand.image_data:
+                try:
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                        tmp.write(target_brand.image_data)
+                        tmp_path = tmp.name
+                    
+                    res_visual = verificacao_imagem_real(tmp_path, target_brand.name)
+                    # Mapeia resultados por processo para facilitar junção
+                    for v in res_visual.get('conflitos_visuais', []):
+                        if v.get('processo'):
+                            visual_matches[v['processo']] = v['similarity_final']
+                    
+                    # Limpa temporário
+                    if os.path.exists(tmp_path): os.remove(tmp_path)
+                except Exception as ve:
+                    print(f"Erro na análise visual: {ve}")
+
+            # 3. Interpretar Resultados para atualizar o Modelo da Marca
             risco_analise = resultados_reais.get('analise_risco', {})
             
             # Score atualizado do motor real (0 a 100)
-            novo_score = risco_analise.get('risco_total', 0)
-            novo_nivel = risco_analise.get('nivel_risco', 'BAIXO').lower() # high, medium, low
+            # Vamos recalcular o risco baseado no BPI + Visual se houver
+            confi_bpi = resultados_reais.get('bpi', [])
             
-            # Normalização de níveis
-            if novo_nivel == 'crítico': novo_nivel = 'high'
-            if novo_nivel == 'médio': novo_nivel = 'medium'
-            if novo_nivel == 'baixo': novo_nivel = 'low'
-            if novo_nivel == 'moderado': novo_nivel = 'medium'
-            if novo_nivel == 'alto': novo_nivel = 'high'
-
             # Atualiza a marca no banco
-            target_brand.risk_score = novo_score
-            target_brand.risk_level = novo_nivel
             target_brand.last_analyzed = datetime.now()
 
             # Tenta extrair score visual e fonético dos componentes
             target_brand.phonetic_score = 0
-            confi_bpi = resultados_reais.get('bpi', [])
             if confi_bpi:
-                # Pega a similaridade do topo
                 target_brand.phonetic_score = confi_bpi[0].get('similaridade', 0)
             
-            target_brand.visual_score = 0 
+            # Pega o maior score visual encontrado
+            target_brand.visual_score = max(visual_matches.values()) if visual_matches else 0
             
-            print(f">>> [REAL ANALYZER] Conclusão para {target_brand.name}: Risco {novo_score} ({novo_nivel})")
+            # Recalcular score total: Média ponderada (70% Fonético/Texto, 30% Visual) se houver classe overlap
+            # Se for EXATAMENTE a mesma marca por logo, risco sobe
+            max_visual = target_brand.visual_score
+            max_phonetic = target_brand.phonetic_score
+            
+            novo_score = max(max_phonetic, max_visual)
+            if max_phonetic > 60 and max_visual > 60:
+                novo_score = min(100, novo_score + 20) # Combinado é pior
+                
+            target_brand.risk_score = novo_score
+            target_brand.risk_level = self.get_risk_level(novo_score)
+
+            print(f">>> [REAL ANALYZER] Conclusão para {target_brand.name}: Risco {novo_score} (V:{max_visual} F:{max_phonetic})")
             
             # Retorna lista de "marcas similares" no formato antigo para compatibilidade com o frontend
             # AGORA COM DADOS REAIS E EVIDÊNCIAS
@@ -120,7 +143,17 @@ class BrandAnalyzer:
                     risk_factors.append(f"Overlap de classe Nice: {class_overlap:.0f}%")
                 
                 # Calcular risco total ponderado
-                total_risk = (text_sim * 0.7) + (class_overlap * 0.3)
+                visual_sim = visual_matches.get(str(bpi.get('processo')), 0)
+                
+                # Se houver similaridade visual, adiciona fator
+                if visual_sim > 70:
+                    risk_factors.append(f"Similaridade VISUAL CRÍTICA: {visual_sim}%")
+                elif visual_sim > 40:
+                    risk_factors.append(f"Similaridade visual detectada: {visual_sim}%")
+
+                total_risk = max(text_sim, visual_sim)
+                if text_sim > 50 and visual_sim > 50:
+                    total_risk = min(100, total_risk + 15)
                 
                 similar_brands_compat.append({
                     'brand': type('obj', (object,), {
@@ -134,14 +167,14 @@ class BrandAnalyzer:
                     'id': bpi.get('id', 0),
                     'logo_url': f"/api/get-image/ipi/{bpi.get('id')}" if bpi.get('id') else None,
                     'text_similarity': text_sim,
-                    'visual_similarity': 0,  # TODO: Implementar comparação visual de logos
+                    'visual_similarity': visual_sim,
                     'class_overlap': class_overlap, 
                     'total_risk': total_risk,
                     'risk_level': 'high' if total_risk > 70 else ('medium' if total_risk > 40 else 'low'),
                     'source': 'BPI',
                     'evidence': {
                         'phonetic_match': f"Marca '{bpi['marca']}' tem {text_sim}% de similaridade fonética",
-                        'visual_match': 'Análise visual não disponível',
+                        'visual_match': f"Similaridade visual de {visual_sim}%" if visual_sim > 0 else 'Nenhuma similaridade visual significativa',
                         'class_match': f"Classes Nice: {bpi.get('classe')} (overlap: {class_overlap:.0f}%)",
                         'risk_factors': ' | '.join(risk_factors)
                     }
