@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# 1. Criar as tabelas na base de dados (Postgres ou SQLite) automaticamente
-echo ">>> Verificando Base de Dados..."
-python migrate_db.py
+# 1. Tabelas já existem no Supabase (criadas via full_supabase_setup.sql)
+# echo ">>> Verificando Base de Dados..."
+# python migrate_db.py
 
 # 2. Iniciar a aplicação Flask
 echo ">>> Iniciando Flask App..."
