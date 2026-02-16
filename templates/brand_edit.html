@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Processo | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .input-m24 {
+        width: 100%;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        padding: 1.25rem;
+        border-radius: var(--radius-xl);
+        color: var(--text-vibrant);
+        font-family: inherit;
+        font-size: 1rem;
+        transition: var(--transition-elite);
+        margin-top: 10px;
+    }
+
+    .input-m24:focus {
+        border-color: var(--brand-primary);
+        background: var(--bg-elevated);
+        box-shadow: 0 0 15px var(--brand-primary-glow);
+    }
+
+    .label-m24 {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-top: 1.5rem;
+        display: block;
+    }
+
+    .class-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 12px;
+        margin-top: 1rem;
+    }
+
+    .class-pill {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        padding: 12px;
+        border-radius: var(--radius-lg);
+        text-align: center;
+        cursor: pointer;
+        font-weight: 800;
+        font-family: 'JetBrains Mono';
+        transition: var(--transition-elite);
+        color: var(--text-dim);
+    }
+
+    .class-pill.selected {
+        background: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: white;
+        box-shadow: 0 8px 15px var(--brand-primary-glow);
+    }
+    
+    .edit-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding-bottom: 5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div style="margin-bottom: 3rem;">
+        <a href="{{ url_for('brand_detail', brand_id=brand.id) }}" class="btn-m24-ghost">
+            <i class="ri-arrow-left-line"></i> Voltar ao Detalhe
+        </a>
+    </div>
+
+    <h1 class="hero-title">Editar Processo: {{ brand.name }}</h1>
+    <p class="hero-desc">Atualize as informações da marca e assets visuais.</p>
+
+    <form action="{{ url_for('edit_brand', brand_id=brand.id) }}" method="POST" enctype="multipart/form-data">
+        <div class="bento-card" style="margin-top: 2rem;">
+            <h3 style="font-family: 'Outfit'; margin-bottom: 2rem;">Dados Principais</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <label class="label-m24">Nome da Marca</label>
+                    <input type="text" name="name" class="input-m24" value="{{ brand.name }}" required>
+                </div>
+                <div>
+                    <label class="label-m24">Tipo de Ativo</label>
+                    <select name="property_type" class="input-m24">
+                        <option value="marca" {% if brand.property_type == 'marca' %}selected{% endif %}>Marca</option>
+                        <option value="patente" {% if brand.property_type == 'patente' %}selected{% endif %}>Patente</option>
+                        <option value="logotipo" {% if brand.property_type == 'logotipo' %}selected{% endif %}>Logotipo</option>
+                    </select>
+                </div>
+            </div>
+
+            <label class="label-m24">Slogan</label>
+            <input type="text" name="slogan" class="input-m24" value="{{ brand.slogan or '' }}">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <label class="label-m24">Status</label>
+                    <select name="status" class="input-m24" {% if current_user.role != 'admin' %}disabled{% endif %}>
+                        <option value="under_study" {% if brand.status == 'under_study' %}selected{% endif %}>Sob Estudo</option>
+                        <option value="waiting_admin" {% if brand.status == 'waiting_admin' %}selected{% endif %}>Aguardando Gestor</option>
+                        <option value="approved" {% if brand.status == 'approved' %}selected{% endif %}>Aprovado</option>
+                        <option value="rejected" {% if brand.status == 'rejected' %}selected{% endif %}>Reprovado</option>
+                        <option value="monitored" {% if brand.status == 'monitored' %}selected{% endif %}>Vigiando</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label-m24">Jurisdição</label>
+                    <input type="text" name="country" class="input-m24" value="{{ brand.country }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="bento-card" style="margin-top: 2rem;">
+            <h3 style="font-family: 'Outfit'; margin-bottom: 2rem;">Asset Visual (Logo)</h3>
+            <div style="display: flex; gap: 2rem; align-items: start;">
+                <div style="width: 150px; height: 150px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-subtle); overflow: hidden;">
+                    {% if brand.image_data or brand.logo_path %}
+                    <img src="{{ url_for('get_image_from_db', type='brand', record_id=brand.id) }}" style="max-width: 80%; max-height: 80%; object-fit: contain;">
+                    {% else %}
+                    <i class="ri-image-line" style="font-size: 3rem; color: #ccc;"></i>
+                    {% endif %}
+                </div>
+                <div style="flex: 1;">
+                    <label class="label-m24">Alterar Logotipo</label>
+                    <input type="file" name="logo" class="input-m24">
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px;">Ao carregar um novo arquivo, ele será armazenado diretamente no banco de dados.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bento-card" style="margin-top: 2rem;">
+            <h3 style="font-family: 'Outfit'; margin-bottom: 1rem;">Classes de Nice</h3>
+            <div class="class-grid">
+                {% for i in range(1, 46) %}
+                <div class="class-pill {% if i|string in (brand.nice_classes or '').split(',') %}selected{% endif %}" 
+                     onclick="toggleNiceClass(this, {{ i }})" 
+                     data-class="{{ i }}">
+                     {{ i }}
+                </div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="nice_classes" id="niceClassesInput" value="{{ brand.nice_classes }}">
+        </div>
+
+        <div style="margin-top: 3rem; display: flex; gap: 1rem;">
+            <button type="submit" class="btn-m24 btn-m24-primary" style="flex: 1; justify-content: center; padding: 1.5rem;">
+                <i class="ri-save-line"></i> SALVAR ALTERAÇÕES
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const selectedClasses = new Set("{{ brand.nice_classes }}".split(',').filter(x => x).map(x => parseInt(x)));
+
+    function toggleNiceClass(element, clsId) {
+        if (selectedClasses.has(clsId)) {
+            selectedClasses.delete(clsId);
+            element.classList.remove('selected');
+        } else {
+            selectedClasses.add(clsId);
+            element.classList.add('selected');
+        }
+        document.getElementById('niceClassesInput').value = Array.from(selectedClasses).join(',');
+    }
+</script>
+{% endblock %}

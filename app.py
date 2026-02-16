@@ -367,27 +367,28 @@ class Brand(db.Model):
     # Status do Processo: under_study, waiting_admin, approved, rejected, monitored
     status = db.Column(db.String(50), default='under_study')  
     
-    logo_path = db.Column(db.String(300))
-    colors = db.Column(db.String(500))  
-    typography = db.Column(db.String(200))
-    slogan = db.Column(db.String(300))
+    logo_path = db.Column(db.Text)
+    colors = db.Column(db.Text)  
+    typography = db.Column(db.Text)
+    slogan = db.Column(db.Text)
     
-    owner_name = db.Column(db.String(200))
-    owner_email = db.Column(db.String(200))
-    owner_nuit = db.Column(db.String(100))
-    owner_phone = db.Column(db.String(100))
+    owner_name = db.Column(db.Text)
+    owner_email = db.Column(db.Text)
+    owner_nuit = db.Column(db.Text)
+    owner_phone = db.Column(db.Text)
     
     submission_date = db.Column(db.DateTime, default=datetime.utcnow)
     last_analyzed = db.Column(db.DateTime)
-    risk_score = db.Column(db.Float, default=0.0)
-    risk_level = db.Column(db.String(20), default='low')  
-    phonetic_score = db.Column(db.Float, default=0.0)
-    visual_score = db.Column(db.Float, default=0.0)
-    admin_notes = db.Column(db.Text) # Notas do gestor m24
+    risk_score = db.Column(db.Numeric)
+    risk_level = db.Column(db.Text, default='low')  
+    phonetic_score = db.Column(db.Numeric)
+    visual_score = db.Column(db.Numeric)
+    admin_notes = db.Column(db.Text)
     
-    logo_hash = db.Column(db.String(100))
-    phonetic_name = db.Column(db.String(200))
-    registered_by = db.Column(db.String(100), default='Sistema m24') # Quem registrou (Ex: Admin, Titular)
+    logo_hash = db.Column(db.Text)
+    phonetic_name = db.Column(db.Text)
+    image_data = db.Column(db.LargeBinary) # BINÁRIO BYTEA
+    registered_by = db.Column(db.Text, default='Sistema m24')
 
     def generate_process_number(self):
         # DOCSTRING_REMOVED Gera um número de processo único no formato M24-YYYY-XXX.# DOCSTRING_REMOVED 
@@ -418,7 +419,8 @@ class IpiRecord(db.Model):
     opposition_deadline = db.Column(db.Date) # Data limite para oposição (Pub + 30d)
     
     # Imagem Extraída
-    image_path = db.Column(db.String(300)) # Caminho para o arquivo .png recortado
+    image_path = db.Column(db.Text) 
+    image_data = db.Column(db.LargeBinary) # BINÁRIO BYTEA
     
     # Log de Importação
     imported_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -934,10 +936,13 @@ def register():
 
         # Logo Upload
         logo_path = None
+        image_data = None
         if 'logo' in request.files:
             file = request.files['logo']
             if file and allowed_file(file.filename):
+                image_data = file.read() # Lê o binário diretamente
                 filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
+                file.seek(0) # Volta ao início para salvar no disco se necessário (legado)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 logo_path = filename
 
@@ -1018,6 +1023,7 @@ def register():
             country=country,
             slogan=slogan,
             logo_path=logo_path,
+            image_data=image_data,
             owner_name=entity.name,
             owner_email=entity.email,
             owner_nuit=entity.nuit,
@@ -1311,6 +1317,45 @@ def update_brand_status(brand_id, action):
     db.session.commit()
     return redirect(url_for('brand_detail', brand_id=brand_id))
 
+@app.route('/brand/edit/<int:brand_id>', methods=['GET', 'POST'])
+@login_required
+def edit_brand(brand_id):
+    brand = Brand.query.get_or_404(brand_id)
+    
+    # Verificação de Permissão: Apenas o dono ou admin/agente responsável
+    if current_user.role != 'admin' and brand.user_id != current_user.id and brand.agent_id != current_user.id:
+        flash('Acesso negado para edição deste processo.', 'danger')
+        return redirect(url_for('brand_detail', brand_id=brand_id))
+
+    if request.method == 'POST':
+        brand.name = request.form.get('name')
+        brand.property_type = request.form.get('property_type')
+        brand.slogan = request.form.get('slogan')
+        brand.country = request.form.get('country')
+        brand.nice_classes = request.form.get('nice_classes')
+        
+        # Apenas admin altera status diretamente aqui
+        if current_user.role == 'admin':
+            brand.status = request.form.get('status', brand.status)
+
+        # Logo Upload
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and allowed_file(file.filename):
+                brand.image_data = file.read() # Salva binário no banco
+                
+                # Salvar em disco também por legado se quiser (opcional)
+                filename = secure_filename(f"edit_{datetime.now().timestamp()}_{file.filename}")
+                file.seek(0)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                brand.logo_path = filename
+
+        db.session.commit()
+        flash('Alterações salvas com sucesso!', 'success')
+        return redirect(url_for('brand_detail', brand_id=brand.id))
+
+    return render_template('brand_edit.html', brand=brand)
+
 @app.route('/brand/add_note/<int:brand_id>', methods=['POST'])
 @login_required
 def add_brand_note(brand_id):
@@ -1327,8 +1372,34 @@ def add_brand_note(brand_id):
         flash('Mensagem registrada no histórico do processo.', 'success')
     return redirect(url_for('brand_detail', brand_id=brand_id))
 
+@app.route('/api/get-image/<type>/<int:record_id>')
+def get_image_from_db(type, record_id):
+    """Serve imagem diretamente do BYTEA do banco de dados"""
+    import io
+    try:
+        if type == 'brand':
+            record = Brand.query.get(record_id)
+            data = record.image_data if record else None
+        elif type == 'ipi':
+            record = IpiRecord.query.get(record_id)
+            data = record.image_data if record else None
+        else:
+            return "Tipo inválido", 400
+            
+        if not data:
+            # Retorna uma imagem transparente ou placeholder se não houver dados
+            return "Imagem não encontrada no banco", 404
+            
+        return send_file(
+            io.BytesIO(data),
+            mimetype='image/png'  # Ou detectar do mime se guardado
+        )
+    except Exception as e:
+        return str(e), 500
+
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
+    # Fallback para arquivos físicos enquanto a migração não é total
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
@@ -2942,6 +3013,7 @@ def ipi_data():
         results = query.order_by(IpiRecord.imported_at.desc()).limit(100).all()
         for r in results:
             records.append({
+                'id': r.id,
                 'process_number': r.process_number,
                 'brand_name': r.brand_name,
                 'applicant_name': r.applicant_name,
@@ -2949,7 +3021,8 @@ def ipi_data():
                 'status': r.status,
                 'publication_date': r.publication_date,
                 'bulletin_number': r.bulletin_number,
-                'image_path': r.image_path
+                'image_path': r.image_path,
+                'has_image_data': r.image_data is not None
             })
     
     return render_template('admin/ipi_data.html', records=records, active_tag='ipi')

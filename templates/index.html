@@ -264,7 +264,9 @@
                     <td>
                         <div class="brand-preview">
                             <div class="brand-img">
-                                {% if brand.logo_path %}
+                                {% if brand.image_data %}
+                                <img src="{{ url_for('get_image_from_db', type='brand', record_id=brand.id) }}">
+                                {% elif brand.logo_path %}
                                 <img src="{{ url_for('static', filename='../uploads/' + brand.logo_path) }}">
                                 {% else %}
                                 <i class="ri-trademark-fill" style="color: #eee; font-size: 1.5rem;"></i>

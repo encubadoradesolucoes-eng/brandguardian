@@ -125,12 +125,14 @@ class BrandAnalyzer:
                 similar_brands_compat.append({
                     'brand': type('obj', (object,), {
                         'name': bpi['marca'], 
-                        'id': 0, 
+                        'id': bpi.get('id', 0), 
                         'logo_path': None, 
                         'nice_classes': str(bpi.get('classe')),
                         'owner_name': bpi.get('titular', 'Titular BPI'),
                         'process_number': str(bpi.get('processo'))
                     }),
+                    'id': bpi.get('id', 0),
+                    'logo_url': f"/api/get-image/ipi/{bpi.get('id')}" if bpi.get('id') else None,
                     'text_similarity': text_sim,
                     'visual_similarity': 0,  # TODO: Implementar comparação visual de logos
                     'class_overlap': class_overlap, 

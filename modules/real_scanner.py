@@ -194,11 +194,13 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
                                 data_str = str(registro.publication_date)
 
                         similares_encontrados.append({
+                            'id': registro.id,
                             'marca': nome_bpi,
                             'processo': registro.process_number or 'N/A',
                             'similaridade': round(similarity * 100),
                             'classe': registro.nice_class or 'N/A',
                             'status': registro.status or 'N/A',
+                            'titular': registro.applicant_name or 'N/A',
                             'data': data_str
                         })
 
@@ -262,11 +264,13 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
                     # Se for muito alta (>75%), adicionamos (reduzi o limiar para pegar fonéticas melhores)
                     if similaridade >= 0.75: 
                         similares_encontrados.append({
+                            'id': registro.id,
                             'marca': nome_bpi,
                             'processo': registro.process_number or 'N/A',
                             'similaridade': round(similaridade * 100),
                             'classe': registro.nice_class or 'N/A',
                             'status': registro.status or 'N/A',
+                            'titular': registro.applicant_name or 'N/A',
                             'data': registro.publication_date.isoformat() if registro.publication_date else 'N/A'
                         })
 
@@ -300,11 +304,13 @@ def scan_live_real(termo: str, usuario_logado: bool = False) -> Dict[str, Any]:
                             # inclui candidaturas fonéticas mesmo com similaridade textual moderada
                             if similaridade >= 0.6:
                                 similares_encontrados.append({
+                                    'id': registro.id,
                                     'marca': nome_bpi,
                                     'processo': registro.process_number or 'N/A',
                                     'similaridade': round(similaridade * 100),
                                     'classe': registro.nice_class or 'N/A',
                                     'status': registro.status or 'N/A',
+                                    'titular': registro.applicant_name or 'N/A',
                                     'data': registro.publication_date.isoformat() if registro.publication_date else 'N/A',
                                     'fonetica': True
                                 })
@@ -962,55 +968,44 @@ def verificacao_imagem_real(caminho_imagem: str, marca_nome: str = "") -> Dict[s
         # Importa modelos do banco de dados e busca registros
         brand_records = []
         ipi_records = []
-        
         try:
-            print(f"[VISUAL] Tentando acessar modelos do banco...")
+            print("[RASTREIO VISUAL] Iniciando captura de alvos para comparação...")
             
-            # Evita importação circular - usa registry se em contexto web
             if has_app_context():
-                print(f"[VISUAL] Usando contexto Flask existente")
-                from modules.extensions import db
-                Brand = db.Model.registry._class_registry.get('Brand')
-                IpiRecord = db.Model.registry._class_registry.get('IpiRecord')
+                from app import Brand, IpiRecord
                 
-                if Brand is None or IpiRecord is None:
-                    print(f"[VISUAL] Modelos não encontrados no registry, importando...")
-                    from app import Brand, IpiRecord
+                # 1. PASSO: IPI RECORDS (Base Oficial)
+                ipi_items = IpiRecord.query.filter(IpiRecord.image_data.isnot(None)).all()
+                ipi_records = []
+                for r in ipi_items:
+                    ipi_records.append({
+                        'id': r.id,
+                        'brand_name': r.brand_name,
+                        'image_data': r.image_data, # Binário direto
+                        'applicant_name': r.applicant_name,
+                        'process_number': r.process_number
+                    })
+                print(f"[RASTREIO VISUAL] IpiRecord: {len(ipi_records)} binários encontrados no Supabase.")
+
+                # 2. PASSO: BRANDS (Clientes M24)
+                brands = Brand.query.filter(Brand.image_data.isnot(None)).all()
+                brand_records = []
+                for b in brands:
+                    brand_records.append({
+                        'id': b.id,
+                        'name': b.name,
+                        'image_data': b.image_data, # Binário direto
+                        'owner_name': b.owner_name
+                    })
+                print(f"[RASTREIO VISUAL] Brands: {len(brand_records)} binários de clientes encontrados.")
             else:
-                print(f"[VISUAL] Sem contexto Flask, importando app...")
-                from app import Brand, IpiRecord, app as flask_app
-                ctx = flask_app.app_context()
-                ctx.push()
-            
-            print(f"[VISUAL] Modelos carregados com sucesso")
-            
-            # Query marcas com logo
-            brands = Brand.query.filter(Brand.logo_path.isnot(None)).all()
-            brand_records = [{
-                'id': b.id,
-                'name': b.name,
-                'logo_path': b.logo_path,
-                'owner_name': b.owner_name
-            } for b in brands]
-            
-            print(f"[VISUAL] Encontradas {len(brand_records)} marcas de usuários com logo")
-            
-            # Query registros BPI com imagem
-            ipi_items = IpiRecord.query.filter(IpiRecord.image_path.isnot(None)).all()
-            ipi_records = [{
-                'id': r.id,
-                'brand_name': r.brand_name,
-                'image_path': r.image_path,
-                'applicant_name': r.applicant_name,
-                'process_number': r.process_number
-            } for r in ipi_items]
-            
-            print(f"[VISUAL] Encontrados {len(ipi_records)} registros BPI com imagem")
-            
+                print("[RASTREIO VISUAL] ⚠️ Aviso: Fora de contexto Flask. Rodando busca sem banco.")
         except Exception as e:
             import traceback
             print(f"⚠️ Aviso: Não foi possível buscar dados do banco: {e}")
             print(traceback.format_exc())
+            brand_records = []
+            ipi_records = []
         
         # Obtém o diretório base da aplicação
         app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1018,10 +1013,10 @@ def verificacao_imagem_real(caminho_imagem: str, marca_nome: str = "") -> Dict[s
         
         print("🔎 Iniciando busca completa de duplicatas...")
         
-        # Busca com threshold 12 (moderado - pega similaridades relevantes)
+        # Busca com threshold 15 (Mais resiliente para o Supabase)
         conflitos_encontrados = finder.find_duplicate_images(
             caminho_imagem,
-            threshold=12,
+            threshold=15,
             brand_records=brand_records,
             ipi_records=ipi_records
         )

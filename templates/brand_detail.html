@@ -208,14 +208,18 @@
         <div style="display: flex; gap: 1rem;">
             <button class="btn-m24-ghost"><i class="ri-history-line"></i> Log de Auditoria</button>
             <button class="btn-m24-ghost"><i class="ri-file-pdf-line"></i> Exportar Dossier</button>
-            <button class="btn-m24 btn-m24-primary"><i class="ri-edit-2-line"></i> Editar Processo</button>
+            <a href="{{ url_for('edit_brand', brand_id=brand.id) }}" class="btn-m24 btn-m24-primary" style="text-decoration: none;">
+                <i class="ri-edit-2-line"></i> Editar Processo
+            </a>
         </div>
     </div>
 
     <!-- Process Hero -->
     <div class="brand-hero-pro">
         <div class="brand-viz-pro">
-            {% if brand.logo_path %}
+            {% if brand.image_data %}
+            <img src="{{ url_for('get_image_from_db', type='brand', record_id=brand.id) }}" alt="Logo {{ brand.name }}">
+            {% elif brand.logo_path %}
             <img src="/uploads/{{ brand.logo_path }}" alt="Logo {{ brand.name }}">
             {% else %}
             <i class="ri-trademark-fill" style="font-size: 6rem; color: #e2e8f0;"></i>
@@ -431,18 +435,23 @@
                             
                             html += `
                             <div style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-left: 4px solid ${riskColor}; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                                    <div>
-                                        <div style="font-weight: 800; font-size: 1.1rem; color: white; margin-bottom: 4px;">${conflict.brand.name}</div>
-                                        <div style="font-size: 0.85rem; color: var(--text-dim);">
-                                            <i class="ri-building-line"></i> ${conflict.brand.owner_name} | 
-                                            <i class="ri-file-list-line"></i> ${conflict.brand.process_number}
-                                        </div>
-                                    </div>
-                                    <div style="background: ${riskColor}20; border: 1px solid ${riskColor}; color: ${riskColor}; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;">
-                                        ${Math.round(conflict.total_risk)}% ${riskLabel}
+                            <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1rem;">
+                                ${conflict.logo_url ? `
+                                <div style="width: 60px; height: 60px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0;">
+                                    <img src="${conflict.logo_url}" style="max-width: 80%; max-height: 80%; object-fit: contain;">
+                                </div>
+                                ` : ''}
+                                <div>
+                                    <div style="font-weight: 800; font-size: 1.1rem; color: white; margin-bottom: 4px;">${conflict.brand.name}</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-dim);">
+                                        <i class="ri-building-line"></i> ${conflict.brand.owner_name} | 
+                                        <i class="ri-file-list-line"></i> ${conflict.brand.process_number}
                                     </div>
                                 </div>
+                                <div style="margin-left: auto; background: ${riskColor}20; border: 1px solid ${riskColor}; color: ${riskColor}; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;">
+                                    ${Math.round(conflict.total_risk)}% ${riskLabel}
+                                </div>
+                            </div>
                                 
                                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
                                     <div style="background: var(--bg-base); padding: 12px; border-radius: 10px; border: 1px solid var(--border-subtle);">

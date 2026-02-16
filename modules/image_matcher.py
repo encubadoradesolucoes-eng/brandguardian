@@ -1,6 +1,7 @@
 import imagehash
 from PIL import Image, ImageOps
 import os
+import io
 from typing import Dict, List, Optional, Any
 
 class DuplicateImageFinder:
@@ -33,69 +34,65 @@ class DuplicateImageFinder:
             
             # ========== BUSCA EM MARCAS DE USUÁRIOS ==========
             if brand_records:
-                print(f"🔍 Comparando com {len(brand_records)} marcas de usuários...")
+                print(f"🔍 Comparando com {len(brand_records)} marcas de usuários via banco de dados...")
                 
                 for brand in brand_records:
-                    if brand.get('logo_path'):
-                        logo_path = self._resolve_logo_path(brand['logo_path'], ['static/uploads', 'uploads'])
+                    if brand.get('image_data'):
+                        # Carrega binário diretamente do banco
+                        img_io = io.BytesIO(brand['image_data'])
+                        conflito = self._compare_images_bin(
+                            img_io,
+                            target_hash_avg,
+                            target_hash_phash,
+                            target_hash_dhash,
+                            threshold
+                        )
                         
-                        if logo_path and os.path.exists(logo_path):
-                            conflito = self._compare_images(
-                                logo_path,
-                                target_hash_avg,
-                                target_hash_phash,
-                                target_hash_dhash,
-                                threshold
-                            )
-                            
-                            if conflito:
-                                print(f"   ⚠️  Conflito encontrado: {brand['name']} ({conflito['similarity_final']}%)")
-                                results.append({
-                                    'brand_name': brand['name'],
-                                    'owner': brand.get('owner_name') or 'N/A',
-                                    'similarity_avg': conflito['similarity_avg'],
-                                    'similarity_phash': conflito['similarity_phash'],
-                                    'similarity_dhash': conflito['similarity_dhash'],
-                                    'similarity_final': conflito['similarity_final'],
-                                    'status': f'MARCA USUÁRIO (ID: {brand["id"]})',
-                                    'gravidade': conflito['gravidade'],
-                                    'logo_url': brand['logo_path'],
-                                    'tipo': 'USER_BRAND'
-                                })
-                        else:
-                            print(f"   ⚠️  Logo não encontrado para {brand['name']}: {brand['logo_path']}")
+                        if conflito:
+                            print(f"   ⚠️  Conflito encontrado: {brand['name']} ({conflito['similarity_final']}%)")
+                            results.append({
+                                'brand_name': brand['name'],
+                                'owner': brand.get('owner_name') or 'N/A',
+                                'similarity_avg': conflito['similarity_avg'],
+                                'similarity_phash': conflito['similarity_phash'],
+                                'similarity_dhash': conflito['similarity_dhash'],
+                                'similarity_final': conflito['similarity_final'],
+                                'status': f'MARCA USUÁRIO (ID: {brand["id"]})',
+                                'gravidade': conflito['gravidade'],
+                                'logo_url': f"/api/get-image/brand/{brand['id']}", # URL para renderizar do banco
+                                'tipo': 'USER_BRAND'
+                            })
             
             # ========== BUSCA NA BASE BPI (IPIRecord) ==========
             if ipi_records:
-                print(f"🔍 Comparando com {len(ipi_records)} registros BPI...")
+                print(f"🔍 Comparando com {len(ipi_records)} registros BPI via banco de dados...")
                 
                 for rec in ipi_records:
-                    if rec.get('image_path'):
-                        logo_path = self._resolve_logo_path(rec['image_path'], ['static/ipi_images', 'ipi_images'])
+                    if rec.get('image_data'):
+                        # Carrega binário diretamente do banco
+                        img_io = io.BytesIO(rec['image_data'])
+                        conflito = self._compare_images_bin(
+                            img_io,
+                            target_hash_avg,
+                            target_hash_phash,
+                            target_hash_dhash,
+                            threshold
+                        )
                         
-                        if logo_path and os.path.exists(logo_path):
-                            conflito = self._compare_images(
-                                logo_path,
-                                target_hash_avg,
-                                target_hash_phash,
-                                target_hash_dhash,
-                                threshold
-                            )
-                            
-                            if conflito:
-                                results.append({
-                                    'brand_name': rec.get('brand_name') or 'Desconhecida',
-                                    'owner': rec.get('applicant_name') or 'N/A',
-                                    'similarity_avg': conflito['similarity_avg'],
-                                    'similarity_phash': conflito['similarity_phash'],
-                                    'similarity_dhash': conflito['similarity_dhash'],
-                                    'similarity_final': conflito['similarity_final'],
-                                    'status': f'BPI OFICIAL (Proc: {rec.get("process_number") or "N/A"})',
-                                    'gravidade': conflito['gravidade'],
-                                    'logo_url': f'ipi_images/{rec["image_path"]}',
-                                    'tipo': 'BPI_RECORD',
-                                    'processo': rec.get('process_number')
-                                })
+                        if conflito:
+                            results.append({
+                                'brand_name': rec.get('brand_name') or 'Desconhecida',
+                                'owner': rec.get('applicant_name') or 'N/A',
+                                'similarity_avg': conflito['similarity_avg'],
+                                'similarity_phash': conflito['similarity_phash'],
+                                'similarity_dhash': conflito['similarity_dhash'],
+                                'similarity_final': conflito['similarity_final'],
+                                'status': f'BPI OFICIAL (Proc: {rec.get("process_number") or "N/A"})',
+                                'gravidade': conflito['gravidade'],
+                                'logo_url': f"/api/get-image/ipi/{rec['id']}", # URL para renderizar do banco
+                                'tipo': 'BPI_RECORD',
+                                'processo': rec.get('process_number')
+                            })
 
             # Ordenar por similaridade final (média dos 3 algoritmos)
             results.sort(key=lambda x: x['similarity_final'], reverse=True)
@@ -129,10 +126,10 @@ class DuplicateImageFinder:
         
         return None
     
-    def _compare_images(self, image_path: str, target_avg, target_phash, target_dhash, threshold: int) -> Optional[Dict]:
-        """Compara uma imagem usando 3 algoritmos de hash."""
+    def _compare_images_bin(self, image_io, target_avg, target_phash, target_dhash, threshold: int) -> Optional[Dict]:
+        """Compara uma imagem binária (BytesIO) usando 3 algoritmos de hash."""
         try:
-            img = Image.open(image_path)
+            img = Image.open(image_io)
             
             # Gera os 3 hashes
             hash_avg = imagehash.average_hash(img)
@@ -175,5 +172,15 @@ class DuplicateImageFinder:
             return None
             
         except Exception as e:
-            print(f"⚠️  Erro ao comparar imagem {image_path}: {e}")
+            print(f"⚠️  Erro ao comparar imagem binária: {e}")
+            return None
+
+    def _compare_images(self, image_path: str, target_avg, target_phash, target_dhash, threshold: int) -> Optional[Dict]:
+        """Compara uma imagem física usando 3 algoritmos de hash."""
+        try:
+            with open(image_path, 'rb') as f:
+                img_io = io.BytesIO(f.read())
+                return self._compare_images_bin(img_io, target_avg, target_phash, target_dhash, threshold)
+        except Exception as e:
+            print(f"⚠️  Erro ao carregar arquivo {image_path}: {e}")
             return None

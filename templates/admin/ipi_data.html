@@ -90,7 +90,11 @@
                         </div>
                     {% endif %}
 
-                    {% if rec.image_path %}
+                    {% if rec.has_image_data %}
+                        <img src="{{ url_for('get_image_from_db', type='ipi', record_id=rec.id) }}" 
+                             style="max-width: 80%; max-height: 80%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));" 
+                             alt="Logo {{ rec.process_number }}">
+                    {% elif rec.image_path %}
                         <img src="{{ url_for('static', filename=rec.image_path) }}" 
                              style="max-width: 80%; max-height: 80%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));" 
                              alt="Logo {{ rec.process_number }}">
