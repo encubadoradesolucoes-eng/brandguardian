@@ -66,6 +66,24 @@ def health_check():
 
 # Suporte para PostgreSQL (Produção) ou SQLite (Local)
 database_url = os.environ.get('DATABASE_URL')
+
+# WORKAROUND IPv6: Forçar resolução IPv4 para Supabase
+if database_url and 'supabase.co' in database_url:
+    try:
+        import socket
+        import re
+        # Extrair hostname
+        match = re.search(r'@([^:]+):', database_url)
+        if match:
+            hostname = match.group(1)
+            # Resolver para IPv4
+            ipv4 = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+            # Substituir hostname por IP
+            database_url = database_url.replace(hostname, ipv4)
+            print(f">>> Supabase IPv4: {ipv4}")
+    except Exception as e:
+        print(f">>> Erro ao resolver IPv4: {e}")
+
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
