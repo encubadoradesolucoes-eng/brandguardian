@@ -235,6 +235,34 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Relação Cliente -> Agente (Muitos para Um)
+# Adicione manualmente essa coluna ao banco se não recriar: 
+# ALTER TABLE user ADD COLUMN agent_id INTEGER REFERENCES user(id);
+User.agent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+User.clients = db.relationship('User', backref=db.backref('my_agent', remote_side=[User.id]))
+
+class RepresentationRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    agent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending') # pending, accepted, rejected
+    message = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    client = db.relationship('User', foreign_keys=[client_id], backref='representation_sent')
+    agent = db.relationship('User', foreign_keys=[agent_id], backref='representation_received')
+
+class AgentRating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    agent_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    stars = db.Column(db.Integer) # 1-5
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    agent = db.relationship('User', foreign_keys=[agent_id], backref='ratings')
+    client = db.relationship('User', foreign_keys=[client_id])
+
 
 @app.after_request
 def update_last_active(response):
@@ -796,6 +824,30 @@ def landing():
 
 
 
+
+class ClientIPLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(50))
+    action = db.Column(db.String(50))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+@app.route('/api/check_search_limit', methods=['POST'])
+def check_search_limit():
+    ip = request.remote_addr
+    # Limit: 1 search per IP
+    count = ClientIPLog.query.filter_by(ip_address=ip, action='search').count()
+    if count >= 1:
+        return jsonify({'status': 'limit_reached', 'redirect_url': url_for('subscribe_now')})
+    
+    # Log the search
+    new_log = ClientIPLog(ip_address=ip, action='search')
+    db.session.add(new_log)
+    db.session.commit()
+    return jsonify({'status': 'allowed'})
+
+@app.route('/subscribe_now')
+def subscribe_now():
+    return render_template('plans_only.html')
 
 @app.route('/save_entity', methods=['POST'])
 def save_entity():
@@ -1425,7 +1477,7 @@ def agents_list():
     # Estatísticas dos agentes
     agents_data = []
     for agent in agents:
-        brands_count = Brand.query.filter_by(owner_id=agent.id).count()
+        brands_count = Brand.query.filter_by(user_id=agent.id).count()
         agents_data.append({
             'agent': agent,
             'brands_count': brands_count,
@@ -1440,7 +1492,7 @@ def agents_list():
 def dashboard():
     # Redirecionamento inteligente baseado no role
     if current_user.role == 'agent':
-        return redirect(url_for('agent_dashboard_new'))
+        return redirect(url_for('agent_dashboard'))
     elif current_user.role == 'client':
         return redirect(url_for('client_dashboard'))
     
@@ -1521,8 +1573,7 @@ def client_dashboard():
         flash('Acesso negado. Esta área é exclusiva para clientes.', 'danger')
         return redirect(url_for('dashboard'))
     
-    # Apenas marcas do próprio usuário
-    my_brands = Brand.query.filter_by(owner_id=current_user.id)
+    my_brands = Brand.query.filter_by(user_id=current_user.id)
     
     stats = {
         'total': my_brands.count(),
@@ -1553,35 +1604,108 @@ def client_dashboard():
 
 @app.route('/agent-dashboard')
 @login_required
-def agent_dashboard_new():
-    """Dashboard exclusivo para Agentes de PI - ferramentas profissionais"""
+def agent_dashboard():
+    """Dashboard exclusivo para Agentes de PI"""
     if current_user.role != 'agent':
-        flash('Acesso negado. Esta área é exclusiva para agentes de propriedade industrial.', 'danger')
+        flash('Acesso negado.', 'danger')
         return redirect(url_for('dashboard'))
     
-    # Marcas do próprio agente (se tiver)
-    my_brands = Brand.query.filter_by(owner_id=current_user.id)
+    # Buscar clientes deste agente
+    my_clients = User.query.filter_by(agent_id=current_user.id).all()
     
-    # Clientes do agente (usuários que ele gerencia - implementar relacionamento depois)
-    # Por enquanto, mostrar estatísticas básicas
+    # Estatísticas
+    total_clients = len(my_clients)
+    total_brands_managed = 0
     
+    clients_data = []
+    for client in my_clients:
+        client_brands = Brand.query.filter_by(user_id=client.id).all()
+        brand_count = len(client_brands)
+        total_brands_managed += brand_count
+        clients_data.append({
+            'id': client.id,
+            'name': client.name or client.username,
+            'email': client.email,
+            'brands_count': brand_count,
+            'status': 'Ativo' if client.account_validated else 'Pendente'
+        })
+
     stats = {
-        'my_brands': my_brands.count(),
-        'clients_count': 0,  # TODO: Implementar relacionamento agente-cliente
-        'opportunities': 0,  # TODO: Implementar prospector
-        'reports_generated': 0,  # TODO: Implementar contador de relatórios
-        'user_role': 'Agente de Propriedade Industrial',
-        'agent_number': current_user.agent_registration_number or 'Não informado',
-        'subscription_plan': current_user.subscription_plan
+        'clients_count': total_clients,
+        'brands_managed': total_brands_managed,
+        'rating': 4.8, # Placeholder
+        'revenue': 0,   # Placeholder
+        'agent_number': current_user.agent_registration_number or 'N/A'
     }
     
-    recent = my_brands.order_by(Brand.submission_date.desc()).limit(5).all()
-    alerts = Alert.query.filter_by(user_id=current_user.id).order_by(Alert.created_at.desc()).limit(10).all()
+    return render_template('agent_dashboard.html', stats=stats, clients=clients_data)
+
+@app.route('/agent/requests')
+@login_required
+def agent_requests():
+    """Lista pedidos de representação para o agente"""
+    if current_user.role != 'agent':
+        return redirect(url_for('dashboard'))
     
-    return render_template('agent_dashboard.html', 
-                           stats=stats, 
-                           recent=recent, 
-                           alerts=alerts)
+    requests = RepresentationRequest.query.filter_by(agent_id=current_user.id, status='pending').all()
+    return render_template('agent_requests.html', pending_requests=requests)
+
+@app.route('/agent/handle-request/<int:req_id>/<action>')
+@login_required
+def handle_representation_request(req_id, action):
+    if current_user.role != 'agent':
+        return "Acesso negado", 403
+        
+    req = RepresentationRequest.query.get_or_404(req_id)
+    if req.agent_id != current_user.id:
+        return "Não autorizado", 401
+        
+    if action == 'accept':
+        req.status = 'accepted'
+        # Vincular o cliente ao agente
+        client = User.query.get(req.client_id)
+        client.agent_id = current_user.id
+        flash(f'Agora você representa {client.name or client.username}.', 'success')
+    else:
+        req.status = 'rejected'
+        flash('Pedido recusado.', 'info')
+        
+    db.session.commit()
+    return redirect(url_for('agent_dashboard'))
+
+@app.route('/find-agents')
+@login_required
+def find_agents():
+    """Lista de agentes disponíveis para os clientes escolherem"""
+    agents = User.query.filter_by(role='agent').all()
+    # Adicionar médias de avaliação mockadas
+    for agent in agents:
+        agent.avg_rating = 4.8
+        agent.reviews_count = 12
+        
+    return render_template('find_agents.html', agents=agents)
+
+@app.route('/rate-agent/<int:agent_id>', methods=['POST'])
+@login_required
+def rate_agent(agent_id):
+    if current_user.role != 'client':
+        return "Acesso negado", 403
+        
+    stars = request.form.get('stars', type=int)
+    comment = request.form.get('comment')
+    
+    if stars:
+        rating = AgentRating(
+            agent_id=agent_id,
+            client_id=current_user.id,
+            stars=stars,
+            comment=comment
+        )
+        db.session.add(rating)
+        db.session.commit()
+        flash('Avaliação enviada com sucesso!', 'success')
+    
+    return redirect(url_for('client_dashboard'))
 
 @app.route('/conflicts')
 @login_required
@@ -2718,6 +2842,22 @@ def seed_users():
             db.session.add(test_user)
             print(f">>> VÍNCULO CRIADO: Entidade e Usuário para {test_email}")
 
+    # 3. Agente de PI
+    agent_email = 'agente@guardian.co.mz'
+    if not User.query.filter_by(role='agent').first():
+        agent_user = User(
+            username=agent_email,
+            email=agent_email,
+            role='agent',
+            name='Agente Oficial de PI',
+            account_validated=True,
+            agent_registration_number='AO-2024-TEST',
+            subscription_plan='agent_pro'
+        )
+        agent_user.set_password('123456')
+        db.session.add(agent_user)
+        print(f">>> Usuário AGENTE criado: {agent_email} / 123456")
+
     db.session.commit()
 
 @app.route('/api/entity/action', methods=['POST'])
@@ -3450,12 +3590,17 @@ document.getElementById('conf').innerHTML=cv.length?cv.map((c,i)=>`<div style="b
 @app.route('/wizard', methods=['GET', 'POST'])
 @login_required
 def wizard():
+    # Buscar agentes para o passo de representação
+    agents = User.query.filter_by(role='agent').all()
+    
     if request.method == 'POST':
         # Dados da Marca vindos do TurboTax
         name = request.form.get('name')
         nice_classes = request.form.get('nice_classes', '')
         owner_name = request.form.get('owner_name')
         owner_nuit = request.form.get('owner_nuit')
+        rep_type = request.form.get('representation_type') # 'm24' or 'agent'
+        selected_agent_id = request.form.get('selected_agent_id')
         
         # Simulação de criação de Entidade/Titular
         entity = Entity.query.filter_by(nuit=owner_nuit).first()
@@ -3475,25 +3620,40 @@ def wizard():
             nice_classes=nice_classes,
             status='under_study',
             risk_level='low',
-            risk_score=15.0, # TurboTax geralmente filtra riscos antes
+            risk_score=15.0, 
             user_id=current_user.id,
             entity_id=entity.id
         )
         
-        # Logo Upload (Se houver)
+        # Logo Upload
         if 'logo' in request.files:
             file = request.files['logo']
             if file and allowed_file(file.filename):
-                image_data = file.read()
-                new_brand.image_data = image_data
+                new_brand.image_data = file.read()
         
         db.session.add(new_brand)
+        
+        # Lógica de Representação
+        if rep_type == 'agent' and selected_agent_id:
+            req = RepresentationRequest(
+                client_id=current_user.id,
+                agent_id=int(selected_agent_id),
+                message=f"Pedido de representação para a nova marca: {name}",
+                status='pending'
+            )
+            db.session.add(req)
+            flash('Pedido de representação enviado ao agente selecionado.', 'info')
+        else:
+            # Representado pelo m24 (Agentes internos)
+            # Definir agent_id do m24 se houver um usuário admin/agente padrão
+            pass
+
         db.session.commit()
         
-        flash(f'Parabéns! O dossiê da marca {name} foi gerado e submetido para análise prioritária.', 'success')
-        return redirect(url_for('index'))
+        flash(f'Parabéns! O dossiê da marca {name} foi gerado com sucesso.', 'success')
+        return redirect(url_for('client_dashboard'))
 
-    return render_template('wizard.html')
+    return render_template('wizard.html', agents=agents)
 
 @app.route('/api/wizard/classify', methods=['POST'])
 @login_required

@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}Pedidos de Representação | m24 Agent{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700;"><i class="ri-user-add-line text-primary"></i> Pedidos Pendentes</h2>
+        <a href="{{ url_for('agent_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="ri-arrow-left-line"></i> Voltar ao Painel
+        </a>
+    </div>
+
+    {% if pending_requests %}
+    <div class="row">
+        {% for req in pending_requests %}
+        <div class="col-md-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="mb-1 fw-bold">{{ req.client.name or req.client.username }}</h5>
+                            <p class="text-muted small mb-2"><i class="ri-mail-line"></i> {{ req.client.email }}</p>
+                            <div class="bg-light p-3 rounded mb-3">
+                                <small class="text-muted d-block mb-1">Mensagem do Cliente:</small>
+                                <em>"{{ req.message }}"</em>
+                            </div>
+                            <small class="text-muted">Solicitado em: {{ req.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning text-dark mb-4">Pendente</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('handle_representation_request', req_id=req.id, action='reject') }}" class="btn btn-outline-danger btn-sm">Recusar</a>
+                        <a href="{{ url_for('handle_representation_request', req_id=req.id, action='accept') }}" class="btn btn-success btn-sm">Aceitar Representação</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm py-5 text-center">
+        <div class="card-body">
+            <i class="ri-ghost-line text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+            <h4 class="text-muted mt-3">Sem novos pedidos no momento</h4>
+            <p class="text-muted small">Quando um cliente solicitar a sua representação, ela aparecerá aqui.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

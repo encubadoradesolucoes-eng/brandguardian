@@ -3,31 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>m24 Pro | Segurança Digital</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>m24 Pro | Proteção de Marcas e PI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
+        :root {
+            --brand-primary: #6366f1;
+            --brand-secondary: #8b5cf6;
+            --brand-accent: #0ea5e9;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --bg-dark: #020617;
+            --glass: rgba(30, 41, 59, 0.6);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #020617; /* Darkest Navy */
-            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             overflow-x: hidden;
-            scroll-behavior: smooth;
+            line-height: 1.6;
         }
 
-        /* Nav estilo Mabulu */
+        /* --- NAVIGATION --- */
         nav {
-            position: absolute;
+            position: fixed;
             top: 0;
             width: 100%;
-            padding: 2rem 5%;
+            padding: 1.5rem 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
+            z-index: 1000;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
         .logo {
@@ -36,177 +49,251 @@
             font-size: 1.8rem;
             color: white;
             text-decoration: none;
-            letter-spacing: -1px;
-        }
-        
-        .logo span { color: #8b5cf6; }
-
-        .nav-links a {
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
-            margin-left: 2rem;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-links a:hover { color: white; }
-
-        /* Hero Section */
-        .hero {
-            height: 100vh;
-            min-height: 700px;
             display: flex;
             align-items: center;
-            position: relative;
-            background: linear-gradient(to right, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0.6) 100%), url('/static/hero-guardian.png');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 1300px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 10;
+            gap: 10px;
         }
         
-        .hero-container {
+        .logo span { color: var(--brand-primary); }
+
+        .nav-actions {
             display: flex;
-            align-items: center;
-            height: 100%;
+            gap: 15px;
         }
 
-        .hero-content { 
-            max-width: 700px; 
-            animation: fadeInUp 1s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .tagine {
-            display: inline-block;
-            padding: 8px 18px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
+        .role-btn {
+            padding: 10px 20px;
             border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
-            color: #38bdf8;
-            text-transform: uppercase;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 5rem;
-            line-height: 1.05;
-            font-weight: 800;
-            margin-bottom: 2rem;
+        .role-btn.entity {
+            background: rgba(255,255,255,0.1);
             color: white;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .role-btn.entity:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .role-btn.agent {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            color: white;
+            border: 1px solid var(--brand-primary);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .role-btn.agent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        /* --- HERO & SEARCH --- */
+        .hero {
+            padding: 180px 5% 100px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            position: relative;
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
         }
 
         .hero p {
-            font-size: 1.4rem;
-            color: #cbd5e1;
-            line-height: 1.6;
-            margin-bottom: 3.5rem;
+            font-size: 1.25rem;
+            color: var(--text-dim);
             max-width: 600px;
-            font-weight: 300;
+            margin: 0 auto 3rem;
         }
 
-        /* Botões */
-        .btn-group { display: flex; gap: 1.5rem; }
-
-        .btn {
-            padding: 1.2rem 3rem;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: #6366f1;
-            color: white;
-            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.4);
-            border: 1px solid #6366f1;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 30px 60px -10px rgba(99, 102, 241, 0.6);
-            background: #4f46e5;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: white;
-            transform: translateY(-2px);
-        }
-        
-        /* Pricing Section - Elegant & Dark */
-        .pricing-section {
-            padding: 100px 0;
+        .search-box-container {
+            max-width: 700px;
+            margin: 0 auto;
             position: relative;
-            background: #020617; /* Matches body */
         }
-        
-        .section-header {
-            text-align: center;
-            margin-bottom: 70px;
+
+        .search-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 10px;
+            display: flex;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
         }
-        
-        .section-tag {
-            color: #8b5cf6;
+
+        .search-box:focus-within {
+            border-color: var(--brand-primary);
+            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.2);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            outline: none;
+        }
+
+        .search-btn {
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            background: var(--brand-secondary);
+            transform: scale(1.05);
+        }
+
+        /* --- LOCKED RESULTS ANIMATION --- */
+        .results-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.95);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .results-card {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            transform: translateY(50px);
+            transition: transform 0.5s;
+        }
+
+        .blur-content {
+            filter: blur(8px);
+            opacity: 0.5;
+            margin-bottom: 2rem;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .lock-icon {
+            font-size: 3rem;
+            color: var(--brand-primary);
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .cta-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* --- STEPS & EDUCATION --- */
+        .section-std {
+            padding: 100px 5%;
+        }
+
+        .section-title {
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .step-num {
+            font-size: 4rem;
+            opacity: 0.1;
+            font-weight: 900;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+
+        .step-icon {
+            font-size: 2rem;
+            color: var(--brand-accent);
+            margin-bottom: 20px;
             display: block;
         }
-        
-        .section-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: white;
-        }
-        
-        .section-desc {
-            font-size: 1.2rem;
-            color: #94a3b8;
-            max-width: 600px;
+
+        .info-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+            max-width: 1200px;
             margin: 0 auto;
-            line-height: 1.6;
         }
-        
+
+        .info-img {
+            width: 100%;
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* --- PRICING --- */
+        .pricing-section {
+            background: #020617;
+            padding: 100px 5%;
+        }
+
         .pricing-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
-            padding: 0 5%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         .pricing-card {
@@ -215,238 +302,283 @@
             border-radius: 24px;
             padding: 40px 30px;
             transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
             backdrop-filter: blur(10px);
         }
-        
-        .pricing-card:hover {
-            transform: translateY(-10px);
-            border-color: rgba(99, 102, 241, 0.5);
-            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
-        }
-        
+
         .pricing-card.featured {
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(99, 102, 241, 0.1));
             border: 1px solid rgba(99, 102, 241, 0.3);
+            transform: scale(1.05);
         }
-        
-        .pricing-card.featured::before {
-            content: 'MAIS ESCOLHIDO';
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(99, 102, 241, 0.2);
-            color: #818cf8;
-            font-size: 0.7rem;
-            font-weight: 800;
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-        }
-        
-        .plan-name {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 10px;
-        }
-        
-        .plan-price {
-            font-size: 3rem;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 5px;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .plan-price span {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #94a3b8;
-        }
-        
-        .plan-period {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 30px;
-        }
-        
-        .features-list {
-            list-style: none;
-            margin-bottom: 30px;
-        }
-        
-        .features-list li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            color: #cbd5e1;
-            font-size: 0.95rem;
-        }
-        
-        .features-list li i {
-            color: #10b981;
-            font-size: 1.1rem;
-        }
-        
-        .features-list li.dimmed {
-            color: #64748b;
-            text-decoration: line-through;
-            opacity: 0.6;
-        }
-        
-        .features-list li.dimmed i {
-            color: #64748b;
-        }
-        
-        .card-btn {
+
+        .btn-full {
             display: block;
             width: 100%;
+            text-align: center;
             padding: 15px;
             border-radius: 12px;
-            text-align: center;
-            font-weight: 600;
+            background: var(--brand-primary);
+            color: white;
             text-decoration: none;
-            transition: all 0.3s;
+            font-weight: 700;
+            margin-top: 20px;
         }
-        
-        .card-btn.outline {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-        }
-        
-        .card-btn.outline:hover {
-            border-color: white;
-            background: rgba(255,255,255,0.05);
-        }
-        
-        .card-btn.filled {
-            background: #6366f1;
-            color: white;
-            border: 1px solid #6366f1;
-            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
-        }
-        
-        .card-btn.filled:hover {
-            background: #4f46e5;
-            transform: translateY(-2px);
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .info-split { grid-template-columns: 1fr; }
+            .nav-actions { display: none; } /* Mobile Menu todo */
         }
     </style>
 </head>
 <body>
+
+    <!-- NAV -->
     <nav>
-        <a href="/" class="logo">m24<span>PRO</span></a>
-        <div class="nav-links">
-            <a href="#pricing">Planos</a>
-            <a href="/dashboard">Painel</a>
-            <a href="/dossie">Carteira</a>
-            <a href="/scan-live" style="color: #38bdf8;">Varredura LIVE</a>
+        <a href="/" class="logo">
+            <i class="ri-shield-check-fill" style="color: var(--brand-primary);"></i>
+            m24<span>Guardian</span>
+        </a>
+        <div class="nav-actions">
+            <a href="/login" class="role-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); margin-right: 10px;">
+                <i class="ri-login-box-line"></i> Login m24
+            </a>
+            <a href="/login?role=entity" class="role-btn entity"><i class="ri-building-line"></i> Sou Entidade</a>
+            <a href="/login?role=agent" class="role-btn agent"><i class="ri-briefcase-4-line"></i> Sou Agente de PI</a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- HERO -->
     <section class="hero">
-        <div class="container hero-container">
-            <div class="hero-content">
-                <div class="tagine">PROTEÇÃO DE ELITE</div>
-                <h1>Liderança e<br>Segurança<br>Digital</h1>
-                <p>O parceiro estratégico para empresas que não aceitam riscos. Monitoramento de alta performance para ativos de propriedade industrial.</p>
-                
-                <div class="btn-group">
-                    <a href="/dashboard" class="btn btn-primary">
-                        Aceder ao Painel
-                    </a>
-                    <a href="/scan-live" class="btn btn-secondary">
-                        <i class="ri-radar-line"></i> Check LIVE
-                    </a>
-                </div>
+        <div style="display: inline-block; padding: 5px 15px; background: rgba(255,255,255,0.1); border-radius: 30px; font-size: 0.8rem; font-weight: 700; margin-bottom: 20px; color: var(--brand-accent);">
+            <i class="ri-eye-2-line"></i> TECNOLOGIA DE MONITORAMENTO ATIVO
+        </div>
+        <h1>A sua marca está segura<br>neste exato momento?</h1>
+        <p>Milhares de pedidos são publicados todos os meses. Não deixe o seu maior ativo vulnerável. Teste a viabilidade ou riscos agora.</p>
+
+        <div class="search-box-container">
+            <form onsubmit="event.preventDefault(); startSearch();" class="search-box">
+                <input type="text" id="brandInput" class="search-input" placeholder="Digite o nome da sua marca..." required>
+                <button type="submit" class="search-btn">
+                    <i class="ri-search-2-line"></i> Analisar
+                </button>
+            </form>
+            <div style="margin-top: 15px; color: var(--text-dim); font-size: 0.9rem;">
+                <i class="ri-shield-check-line"></i> Análise preliminar gratuita e instantânea
             </div>
         </div>
     </section>
-    
-    <!-- Pricing Section -->
-    <section class="pricing-section" id="pricing">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-tag">Investimento Estratégico</span>
-                <h2 class="section-title">Planos Flexíveis</h2>
-                <p class="section-desc">Escolha a potência de proteção ideal para o seu portfólio. Escalabilidade total conforme suas marcas crescem.</p>
+
+    <!-- LOCKED RESULT -->
+    <div id="resultsOverlay" class="results-overlay" style="background: #020617; z-index: 9999;">
+        <div class="results-card" style="max-width: 900px; width: 95%;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <i class="ri-lock-2-fill" style="font-size: 4rem; color: var(--brand-primary); animation: pulse 2s infinite;"></i>
+                <h2 style="font-family: 'Outfit'; font-size: 2.5rem; margin: 15px 0 10px;">Resultado da Análise</h2>
+                <p style="color: var(--text-dim); font-size: 1.2rem;">Encontramos dados relevantes para "<span id="searchTerm" style="color: white; font-weight: 700;">Marca</span>".<br>Para visualizar o relatório de riscos e conflitos, desbloqueie seu acesso.</p>
             </div>
-            
-            <div class="pricing-grid">
-                <!-- Free Plan -->
-                <div class="pricing-card">
-                    <div class="plan-name">Starter</div>
-                    <div class="plan-price">0 <span>MT</span></div>
-                    <div class="plan-period">Para sempre</div>
-                    
-                    <ul class="features-list">
-                        <li><i class="ri-check-line"></i> 5 Marcas Monitoradas</li>
-                        <li><i class="ri-check-line"></i> Alertas por Email</li>
-                        <li class="dimmed"><i class="ri-close-line"></i> Alertas por WhatsApp</li>
-                        <li class="dimmed"><i class="ri-close-line"></i> Monitoramento BPI/IPI</li>
-                        <li class="dimmed"><i class="ri-close-line"></i> Relatórios PDF</li>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left;">
+                <!-- PLANO PME -->
+                <div style="background: rgba(255,255,255,0.03); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 10px;">Para Empresas</div>
+                    <div style="font-size: 2rem; font-weight: 800; margin-bottom: 20px;">Business Shield</div>
+                    <ul style="list-style: none; margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px;">
+                        <li style="display: flex; gap: 10px;"><i class="ri-check-line" style="color: var(--success);"></i> Relatório Completo de Riscos</li>
+                        <li style="display: flex; gap: 10px;"><i class="ri-check-line" style="color: var(--success);"></i> Monitoramento 24/7</li>
+                        <li style="display: flex; gap: 10px;"><i class="ri-check-line" style="color: var(--success);"></i> Alertas de Conflito</li>
                     </ul>
-                    
-                    <a href="/register" class="card-btn outline">Começar Grátis</a>
-                </div>
-                
-                <!-- Professional Plan -->
-                <div class="pricing-card featured">
-                    <div class="plan-name">Professional</div>
-                    <div class="plan-price">8.000 <span>MT</span></div>
-                    <div class="plan-period">por mês</div>
-                    
-                    <ul class="features-list">
-                        <li><i class="ri-check-line"></i> 25 Marcas Monitoradas</li>
-                        <li><i class="ri-check-line"></i> Alertas por Email + WhatsApp</li>
-                        <li><i class="ri-check-line"></i> Monitoramento BPI Oficial</li>
-                        <li><i class="ri-check-line"></i> Detecção de Conflitos IA</li>
-                        <li><i class="ri-check-line"></i> Relatórios PDF Completos</li>
-                    </ul>
-                    
-                    <a href="/pricing" class="card-btn filled">Assinar Agora</a>
-                </div>
-                
-                <!-- Business Plan -->
-                <div class="pricing-card">
-                    <div class="plan-name">Business</div>
-                    <div class="plan-price">18.000 <span>MT</span></div>
-                    <div class="plan-period">por mês</div>
-                    
-                    <ul class="features-list">
-                        <li><i class="ri-check-line"></i> 100 Marcas Monitoradas</li>
-                        <li><i class="ri-check-line"></i> Tudo do Professional</li>
-                        <li><i class="ri-check-line"></i> Acesso API de Integração</li>
-                        <li><i class="ri-check-line"></i> Suporte Prioritário 24/7</li>
-                        <li><i class="ri-check-line"></i> Gestor de Conta Dedicado</li>
-                    </ul>
-                    
-                    <a href="/pricing" class="card-btn outline">Falar com Vendas</a>
+                    <a href="/register?plan=business" class="btn-full">Subscrever Agora</a>
+                    <a href="/login?role=entity" style="display: block; text-align: center; margin-top: 15px; color: var(--text-dim); font-size: 0.9rem;">Já tenho conta Entidade</a>
                 </div>
 
-                <!-- Agent Pro Plan (NOVO) -->
-                <div class="pricing-card" style="border-color: #8b5cf6; background: rgba(139, 92, 246, 0.05);">
-                    <div class="plan-name" style="color: #8b5cf6;">Agent PRO</div>
-                    <div class="plan-price">25.000 <span>MT</span></div>
-                    <div class="plan-period">por mês</div>
-                    
-                    <ul class="features-list">
-                        <li><i class="ri-check-line"></i> Marcas Ilimitadas (Terceiros)</li>
-                        <li><i class="ri-check-line"></i> Dashboard de Consultor</li>
-                        <li><i class="ri-check-line"></i> Prospector de Oportunidades</li>
-                        <li><i class="ri-check-line"></i> White-label Reports</li>
-                        <li><i class="ri-check-line"></i> Acesso à Base BPI Completa</li>
+                <!-- AGENTE -->
+                <div style="background: rgba(139, 92, 246, 0.05); padding: 30px; border-radius: 20px; border: 1px solid var(--brand-secondary);">
+                    <div style="font-size: 0.9rem; color: var(--brand-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 10px;">Para Profissionais</div>
+                    <div style="font-size: 2rem; font-weight: 800; margin-bottom: 20px;">Agent PRO</div>
+                    <ul style="list-style: none; margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px;">
+                        <li style="display: flex; gap: 10px;"><i class="ri-check-line" style="color: var(--brand-secondary);"></i> Gestão de Múltiplos Clientes</li>
+                        <li style="display: flex; gap: 10px;"><i class="ri-check-line" style="color: var(--brand-secondary);"></i> Acesso à Base BPI Completa</li>
+                        <li style="display: flex; gap: 10px;"><i class="ri-check-line" style="color: var(--brand-secondary);"></i> Marca Branca (White-label)</li>
                     </ul>
-                    
-                    <a href="/signup?role=agent&plan=agent_pro" class="card-btn filled" style="background: #8b5cf6; border-color: #8b5cf6;">Assinar como Agente</a>
+                    <a href="/register?role=agent" class="btn-full" style="background: var(--brand-secondary);">Conta Profissional</a>
+                    <a href="/login?role=agent" style="display: block; text-align: center; margin-top: 15px; color: var(--text-dim); font-size: 0.9rem;">Login Agente</a>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- STEPS VISUAL -->
+    <section class="section-std">
+        <h2 class="section-title">Ciclo de Proteção <span style="color: var(--brand-primary);">360º</span></h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">01</div>
+                <i class="ri-search-eye-line step-icon"></i>
+                <h3>Busca e Viabilidade</h3>
+                <p style="color: var(--text-dim); margin-top: 10px;">Verificação profunda no Boletim da Propriedade Industrial e bases internacionais antes do registro.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">02</div>
+                <i class="ri-file-shield-2-line step-icon"></i>
+                <h3>Registro Oficial</h3>
+                <p style="color: var(--text-dim); margin-top: 10px;">Geração automática de documentação e submissão do pedido (M/1, M/2) com classificação adequada.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">03</div>
+                <i class="ri-radar-line step-icon"></i>
+                <h3>Vigilância 24/7</h3>
+                <p style="color: var(--text-dim); margin-top: 10px;">Nossa IA monitora cada novo boletim publicado para detectar tentativas de cópia da sua marca.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">04</div>
+                <i class="ri-hammer-line step-icon"></i>
+                <h3>Defesa Ativa</h3>
+                <p style="color: var(--text-dim); margin-top: 10px;">Ferramentas para oposição, avisos de caducidade e defesa jurídica de seus ativos intangíveis.</p>
+            </div>
+        </div>
     </section>
+
+    <!-- IMPORTANCE SPLIT -->
+    <section class="section-std" style="background: rgba(255,255,255,0.02);">
+        <div class="info-split">
+            <div>
+                <img src="https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?q=80&w=1000&auto=format&fit=crop" class="info-img" alt="Escritório Africano Moderno">
+            </div>
+            <div>
+                <h2 style="font-family: 'Outfit'; font-size: 3rem; line-height: 1.1; margin-bottom: 20px;">Por que proteger<br>a sua marca?</h2>
+                <p style="font-size: 1.1rem; color: var(--text-dim); margin-bottom: 30px;">
+                    Sua marca é o ativo mais valioso do seu negócio. Sem registro, você corre o risco de perder o direito de uso, enfrentar processos judiciais ou ver concorrentes copiarem sua identidade impunemente.
+                </p>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 15px;">
+                    <li style="display: flex; gap: 15px; align-items: center;">
+                        <i class="ri-checkbox-circle-fill" style="color: var(--success); font-size: 1.2rem;"></i>
+                        <span>Exclusividade de uso em todo território nacional</span>
+                    </li>
+                    <li style="display: flex; gap: 15px; align-items: center;">
+                        <i class="ri-checkbox-circle-fill" style="color: var(--success); font-size: 1.2rem;"></i>
+                        <span>Valorização do ativo (Valuation) para investidores</span>
+                    </li>
+                    <li style="display: flex; gap: 15px; align-items: center;">
+                        <i class="ri-checkbox-circle-fill" style="color: var(--success); font-size: 1.2rem;"></i>
+                        <span>Proteção contra pirataria e concorrência desleal</span>
+                    </li>
+                </ul>
+                <a href="#plans" class="role-btn entity" style="display: inline-flex; margin-top: 30px; background: white; color: black; font-weight: 800;">
+                    Proteger Minha Marca Agora
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- PLANS -->
+    <section class="pricing-section" id="plans">
+        <h2 class="section-title">Escolha seu Plano de Proteção</h2>
+        <div class="pricing-grid">
+            <!-- PME -->
+            <div class="pricing-card">
+                <h3 style="margin-bottom: 10px;">Starter PME</h3>
+                <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 20px;">0 MT <span style="font-size: 1rem; color: var(--text-dim);">/ mês</span></div>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; color: var(--text-dim);">
+                    <li><i class="ri-check-line text-green-500"></i> Monitoramento de 1 Marca</li>
+                    <li><i class="ri-check-line text-green-500"></i> Alertas por Email</li>
+                    <li><i class="ri-check-line text-green-500"></i> Relatórios Básicos</li>
+                </ul>
+                <a href="/register?plan=starter" class="btn-full" style="background: rgba(255,255,255,0.1);">Começar Grátis</a>
+            </div>
+
+            <!-- PRO -->
+            <div class="pricing-card featured">
+                <div style="position: absolute; top: 0; right: 0; background: var(--brand-primary); padding: 5px 15px; border-bottom-left-radius: 15px; font-weight: 700; font-size: 0.8rem;">RECOMENDADO</div>
+                <h3 style="margin-bottom: 10px;">Business Shield</h3>
+                <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 20px;">8.500 MT <span style="font-size: 1rem; color: var(--text-dim);">/ mês</span></div>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; color: var(--text-dim);">
+                    <li><i class="ri-check-line"></i> Até 10 Marcas</li>
+                    <li><i class="ri-check-line"></i> Alertas Email + WhatsApp</li>
+                    <li><i class="ri-check-line"></i> Detecção de Conflitos IA</li>
+                    <li><i class="ri-check-line"></i> Suporte Prioritário</li>
+                </ul>
+                <a href="/register?plan=business" class="btn-full">Assinar Proteção</a>
+            </div>
+
+            <!-- AGENT -->
+            <div class="pricing-card" style="border: 1px solid var(--brand-secondary);">
+                <h3 style="margin-bottom: 10px; color: var(--brand-secondary);">Agentes & Escritórios</h3>
+                <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 20px;">25.000 MT</div>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; color: var(--text-dim);">
+                    <li><i class="ri-check-line"></i> Marcas Ilimitadas</li>
+                    <li><i class="ri-check-line"></i> Painel de Gestão de Clientes</li>
+                    <li><i class="ri-check-line"></i> Relatórios White-label</li>
+                    <li><i class="ri-check-line"></i> Integração API</li>
+                </ul>
+                <a href="/register?role=agent" class="btn-full" style="background: var(--brand-secondary);">Conta Agente</a>
+            </div>
+        </div>
+    </section>
+
+    <footer style="padding: 50px 5%; text-align: center; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,0.05);">
+        <p>&copy; 2024 m24 Guardian. Todos os direitos reservados. Inteligência de Propriedade Industrial.</p>
+    </footer>
+
+    <script>
+        function startSearch() {
+            const input = document.getElementById('brandInput');
+            const term = input.value;
+            if(!term) return;
+
+            const btn = document.querySelector('.search-btn');
+            const originalText = btn.innerHTML;
+            
+            // 1. Check IP Limit
+            fetch('/api/check_search_limit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'limit_reached') {
+                    // Redirect to plans page immediately
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Allowed: Run Simulation
+                    btn.innerHTML = '<i class="ri-loader-4-line"></i> Analisando Base Nacional...';
+                    btn.disabled = true;
+
+                    setTimeout(() => {
+                        // FORCE SUBSCRIPTION MODE
+                        const overlay = document.getElementById('resultsOverlay');
+                        document.getElementById('searchTerm').textContent = term;
+                        
+                        // Hide Navbar and Hero to focus attention
+                        document.querySelector('nav').style.display = 'none';
+                        document.querySelector('.hero').style.display = 'none';
+                        
+                        overlay.style.display = 'flex';
+                        
+                        setTimeout(() => {
+                            overlay.style.opacity = '1';
+                            overlay.querySelector('.results-card').style.transform = 'translateY(0)';
+                        }, 10);
+                        
+                        // Lock interface - User must choose a plan or login
+                    }, 2000);
+                }
+            })
+            .catch(err => {
+                console.error('Error checking limit:', err);
+                // Fallback: allow search if API fails
+                alert("Erro ao validar acesso. Tente novamente.");
+            });
+        }
+
+        function closeOverlay() {
+            const overlay = document.getElementById('resultsOverlay');
+            overlay.style.opacity = '0';
+            overlay.querySelector('.results-card').style.transform = 'translateY(50px)';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+        }
+    </script>
 </body>
 </html>

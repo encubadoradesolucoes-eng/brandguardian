@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-MZ">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>m24 Pro | Assinar para Proteger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --brand-primary: #6366f1;
+            --brand-secondary: #8b5cf6;
+            --brand-accent: #0ea5e9;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --bg-dark: #020617;
+            --glass: rgba(30, 41, 59, 0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo span { color: var(--brand-primary); }
+
+        .nav-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .role-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .role-btn.entity {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .role-btn.entity:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .role-btn.agent {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            color: white;
+            border: 1px solid var(--brand-primary);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .role-btn.agent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        /* --- PRICING --- */
+        .pricing-section {
+            padding: 60px 0;
+            background: #020617;
+            flex: 1;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        .section-tag {
+            color: #8b5cf6;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .pricing-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 40px 30px;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .pricing-card.featured {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(99, 102, 241, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .pricing-card.featured::before {
+            content: 'MAIS ESCOLHIDO';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        
+        .plan-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 5px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .plan-price span {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        
+        .features-list {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+        
+        .features-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+        
+        .features-list li i {
+            color: #10b981;
+            font-size: 1.1rem;
+        }
+        
+        .features-list li.dimmed {
+            color: #64748b;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .btn-full {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            background: var(--brand-primary);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+        
+        .btn-full:hover {
+            transform: translateY(-2px);
+            background: #4f46e5;
+        }
+
+        .limit-alert {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            color: #ef4444;
+            max-width: 600px;
+            margin: 0 auto 40px;
+            text-align: center;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <a href="/" class="logo">
+            <i class="ri-shield-check-fill" style="color: var(--brand-primary);"></i>
+            m24<span>Guardian</span>
+        </a>
+        <div class="nav-actions">
+            <a href="/login" class="role-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); margin-right: 10px;">
+                <i class="ri-login-box-line"></i> Login m24
+            </a>
+            <a href="/login?role=entity" class="role-btn entity"><i class="ri-building-line"></i> Login Entidade</a>
+            <a href="/login?role=agent" class="role-btn agent"><i class="ri-briefcase-4-line"></i> Login Agente</a>
+        </div>
+    </nav>
+    
+    <!-- LIMIT ALERT -->
+    <div class="limit-alert">
+        <i class="ri-error-warning-line"></i>
+        Você já realizou sua pesquisa gratuita. Para continuar protegendo suas marcas, escolha um plano.
+    </div>
+
+    <!-- PLANS -->
+    <section class="pricing-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Acesso Premium</span>
+                <h2 class="section-title">Escolha seu Plano de Proteção</h2>
+                <p style="color: var(--text-dim);">Desbloqueie acesso ilimitado à Inteligência Artificial m24 Guardian.</p>
+            </div>
+            
+            <div class="pricing-grid">
+                <!-- PME -->
+                <div class="pricing-card">
+                    <h3 style="margin-bottom: 10px;">Starter PME</h3>
+                    <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 20px;">0 MT <span style="font-size: 1rem; color: var(--text-dim);">/ mês</span></div>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; color: var(--text-dim);">
+                        <li><i class="ri-check-line text-green-500"></i> Monitoramento de 1 Marca</li>
+                        <li><i class="ri-check-line text-green-500"></i> Alertas por Email</li>
+                        <li><i class="ri-check-line text-green-500"></i> Relatórios Básicos</li>
+                    </ul>
+                    <a href="/register?plan=starter" class="btn-full" style="background: rgba(255,255,255,0.1);">Criar Conta Grátis</a>
+                </div>
+
+                <!-- PRO -->
+                <div class="pricing-card featured">
+                    <div style="position: absolute; top: 0; right: 0; background: var(--brand-primary); padding: 5px 15px; border-bottom-left-radius: 15px; font-weight: 700; font-size: 0.8rem;">RECOMENDADO</div>
+                    <h3 style="margin-bottom: 10px;">Business Shield</h3>
+                    <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 20px;">8.500 MT <span style="font-size: 1rem; color: var(--text-dim);">/ mês</span></div>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; color: var(--text-dim);">
+                        <li><i class="ri-check-line"></i> Até 10 Marcas</li>
+                        <li><i class="ri-check-line"></i> Alertas Email + WhatsApp</li>
+                        <li><i class="ri-check-line"></i> Detecção de Conflitos IA</li>
+                        <li><i class="ri-check-line"></i> Suporte Prioritário</li>
+                    </ul>
+                    <a href="/register?plan=business" class="btn-full">Assinar Proteção</a>
+                </div>
+
+                <!-- AGENT -->
+                <div class="pricing-card" style="border: 1px solid var(--brand-secondary);">
+                    <h3 style="margin-bottom: 10px; color: var(--brand-secondary);">Agentes & Escritórios</h3>
+                    <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 20px;">25.000 MT</div>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; color: var(--text-dim);">
+                        <li><i class="ri-check-line"></i> Marcas Ilimitadas</li>
+                        <li><i class="ri-check-line"></i> Painel de Gestão de Clientes</li>
+                        <li><i class="ri-check-line"></i> Relatórios White-label</li>
+                        <li><i class="ri-check-line"></i> Integração API</li>
+                    </ul>
+                    <a href="/register?role=agent" class="btn-full" style="background: var(--brand-secondary);">Conta Agente</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="padding: 30px 5%; text-align: center; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem;">
+        <p>&copy; 2024 m24 Guardian. Todos os direitos reservados.</p>
+    </footer>
+</body>
+</html>

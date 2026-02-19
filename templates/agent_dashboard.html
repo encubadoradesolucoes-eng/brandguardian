@@ -1,187 +1,180 @@
 {% extends "layout.html" %}
 
-{% block title %}Dashboard Agente PI | m24 Guardian{% endblock %}
+{% block title %}Dashboard do Agente | m24 Pro{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <!-- Header do Agente -->
+    <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="mb-1">
-                        <i class="ri-briefcase-4-fill text-primary"></i> Dashboard Agente PI
+                    <h2 class="mb-1 text-primary" style="font-family: 'Outfit', sans-serif; font-weight: 700;">
+                        <i class="ri-briefcase-4-fill"></i> Painel do Agente
                     </h2>
-                    <p class="text-muted mb-0">
-                        {{ stats.user_role }} 
-                        {% if stats.agent_number != 'Não informado' %}
-                        | Registro: <span class="badge bg-success">{{ stats.agent_number }}</span>
-                        {% endif %}
-                        | Plano: <span class="badge bg-primary">{{ stats.subscription_plan }}</span>
-                    </p>
+                    <p class="text-muted mb-0">Licença Oficial No: <strong>{{ stats.agent_number }}</strong> | Avaliação: ⭐ {{ stats.rating }}</p>
                 </div>
                 <div>
-                    <a href="{{ url_for('add_brand') }}" class="btn btn-primary">
-                        <i class="ri-add-circle-line"></i> Nova Marca
+                    <a href="{{ url_for('agent_requests') }}" class="btn btn-outline-warning me-2">
+                        <i class="ri-notification-badge-line"></i> Pedidos Pendentes
+                    </a>
+                    <a href="#" class="btn btn-outline-primary me-2">
+                        <i class="ri-settings-3-line"></i> Configurações
+                    </a>
+                    <button class="btn btn-primary" onclick="alert('Funcionalidade de convite em breve')">
+                        <i class="ri-user-add-line"></i> Novo Cliente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-light text-primary rounded p-2 me-3">
+                            <i class="ri-building-line ri-xl"></i>
+                        </div>
+                        <h6 class="card-subtitle text-muted mb-0">Total de Entidades</h6>
+                    </div>
+                    <h2 class="card-title mb-0">{{ stats.clients_count }}</h2>
+                    <small class="text-success"><i class="ri-arrow-up-line"></i> Carteira Ativa</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-light text-success rounded p-2 me-3">
+                            <i class="ri-shield-check-line ri-xl"></i>
+                        </div>
+                        <h6 class="card-subtitle text-muted mb-0">Marcas Geridas</h6>
+                    </div>
+                    <h2 class="card-title mb-0">{{ stats.brands_managed }}</h2>
+                    <small class="text-muted">Total sob vigilância</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-light text-warning rounded p-2 me-3">
+                            <i class="ri-star-smile-line ri-xl"></i>
+                        </div>
+                        <h6 class="card-subtitle text-muted mb-0">Reputação</h6>
+                    </div>
+                    <h2 class="card-title mb-0">{{ stats.rating }}</h2>
+                    <small class="text-warning">Excelente</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="icon-square bg-light text-info rounded p-2 me-3">
+                            <i class="ri-money-dollar-circle-line ri-xl"></i>
+                        </div>
+                        <h6 class="card-subtitle text-muted mb-0">Receita (Mês)</h6>
+                    </div>
+                    <h2 class="card-title mb-0">{{ stats.revenue }} MT</h2>
+                    <small class="text-muted">Estimativa</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Section -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(90deg, #1e293b, #0f172a);">
+                <div class="card-body d-flex justify-content-between align-items-center py-4">
+                    <div>
+                        <h4 class="text-white mb-1"><i class="ri-magic-line text-info"></i> Assistente TurboTax Agent</h4>
+                        <p class="text-muted mb-0">Utilize a nossa IA para registar marcas rapidamente em nome dos seus clientes.</p>
+                    </div>
+                    <a href="{{ url_for('wizard') }}" class="btn btn-info px-4">
+                        Abrir Wizard de Registro
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Estatísticas do Agente -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white">
-                    <h6 class="card-subtitle mb-2 opacity-75">Minhas Marcas</h6>
-                    <h2 class="card-title mb-0">{{ stats.my_brands }}</h2>
-                    <small>Portfólio pessoal</small>
-                </div>
-            </div>
+    <!-- Cliente List Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 card-title"><i class="ri-group-line"></i> Minhas Entidades</h5>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="card-body text-white">
-                    <h6 class="card-subtitle mb-2 opacity-75">Clientes</h6>
-                    <h2 class="card-title mb-0">{{ stats.clients_count }}</h2>
-                    <small>Em breve</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-gradient" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="card-body text-white">
-                    <h6 class="card-subtitle mb-2 opacity-75">Oportunidades</h6>
-                    <h2 class="card-title mb-0">{{ stats.opportunities }}</h2>
-                    <small>Prospector IA</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-gradient" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body text-white">
-                    <h6 class="card-subtitle mb-2 opacity-75">Relatórios</h6>
-                    <h2 class="card-title mb-0">{{ stats.reports_generated }}</h2>
-                    <small>White-label</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ferramentas do Agente -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="ri-tools-fill"></i> Ferramentas Profissionais</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="card h-100 border-primary">
-                                <div class="card-body text-center">
-                                    <i class="ri-user-search-line" style="font-size: 3rem; color: #667eea;"></i>
-                                    <h5 class="mt-3">Prospector de Clientes</h5>
-                                    <p class="text-muted">Identifique empresas que precisam de proteção de marca</p>
-                                    <button class="btn btn-outline-primary" disabled>Em Breve</button>
+        <div class="card-body p-0">
+            {% if clients %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Entidade / Cliente</th>
+                            <th>Marcas</th>
+                            <th>Status no m24</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        {{ client.name[0] | upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ client.name }}</div>
+                                        <div class="small text-muted">{{ client.email }}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card h-100 border-success">
-                                <div class="card-body text-center">
-                                    <i class="ri-file-chart-line" style="font-size: 3rem; color: #10b981;"></i>
-                                    <h5 class="mt-3">Relatórios White-Label</h5>
-                                    <p class="text-muted">Gere relatórios profissionais com sua marca</p>
-                                    <button class="btn btn-outline-success" disabled>Em Breve</button>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ client.brands_count }} Marcas</span>
+                            </td>
+                            <td>
+                                {% if client.status == 'Ativo' %}
+                                <span class="badge bg-success-subtle text-success">Ativo</span>
+                                {% else %}
+                                <span class="badge bg-warning-subtle text-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Ver Detalhes">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Gerir Marcas">
+                                        <i class="ri-shield-star-line"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Mensagem">
+                                        <i class="ri-message-2-line"></i>
+                                    </button>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card h-100 border-info">
-                                <div class="card-body text-center">
-                                    <i class="ri-team-line" style="font-size: 3rem; color: #3b82f6;"></i>
-                                    <h5 class="mt-3">Gestão de Clientes</h5>
-                                    <p class="text-muted">Gerencie o portfólio dos seus clientes</p>
-                                    <button class="btn btn-outline-info" disabled>Em Breve</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        </div>
-    </div>
-
-    <!-- Marcas e Alertas -->
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="ri-bookmark-fill"></i> Minhas Marcas</h5>
-                </div>
-                <div class="card-body">
-                    {% if recent %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Marca</th>
-                                    <th>Status</th>
-                                    <th>Data</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for brand in recent %}
-                                <tr>
-                                    <td><strong>{{ brand.name }}</strong></td>
-                                    <td><span class="badge bg-info">{{ brand.status }}</span></td>
-                                    <td>{{ brand.submission_date.strftime('%d/%m/%Y') if brand.submission_date else 'N/A' }}</td>
-                                    <td>
-                                        <a href="{{ url_for('brand_detail', brand_id=brand.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="ri-eye-line"></i> Ver
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center py-4">
-                        <i class="ri-inbox-line" style="font-size: 3rem;"></i><br>
-                        Você ainda não tem marcas registradas.<br>
-                        <a href="{{ url_for('add_brand') }}" class="btn btn-primary mt-2">Adicionar Primeira Marca</a>
-                    </p>
-                    {% endif %}
-                </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="ri-user-shared-line text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+                <h5 class="mt-3 text-muted">Nenhuma entidade vinculada</h5>
+                <p class="text-muted small">Partilhe o seu link de agente para começar a gerir clientes.</p>
+                <button class="btn btn-sm btn-outline-primary mt-2">
+                    <i class="ri-link"></i> Copiar Link de Convite
+                </button>
             </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="ri-notification-fill"></i> Alertas</h5>
-                </div>
-                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                    {% if alerts %}
-                    {% for alert in alerts %}
-                    <div class="alert alert-{{ 'danger' if alert.severity == 'high' else 'warning' if alert.severity == 'medium' else 'info' }} alert-dismissible fade show" role="alert">
-                        <strong>{{ alert.title }}</strong><br>
-                        <small>{{ alert.message }}</small><br>
-                        <small class="text-muted">{{ alert.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <p class="text-muted text-center py-4">
-                        <i class="ri-checkbox-circle-line" style="font-size: 2rem;"></i><br>
-                        Nenhum alerta no momento
-                    </p>
-                    {% endif %}
-                </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>

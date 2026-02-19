@@ -121,6 +121,7 @@
             <div class="step-dot" id="dot-2">2</div>
             <div class="step-dot" id="dot-3">3</div>
             <div class="step-dot" id="dot-4">4</div>
+            <div class="step-dot" id="dot-5">5</div>
         </div>
 
         <form id="wizardForm" method="POST" enctype="multipart/form-data">
@@ -189,13 +190,65 @@
                 
                 <div style="margin-top: 3rem; display: flex; justify-content: space-between;">
                     <button type="button" onclick="prevStep(2)" class="btn-m24 btn-m24-ghost"><i class="ri-arrow-left-line"></i> Voltar</button>
-                    <button type="button" onclick="nextStep(4)" class="btn-m24 btn-m24-primary">Revisar e Finalizar <i class="ri-check-line"></i></button>
+                    <button type="button" onclick="nextStep(4)" class="btn-m24 btn-m24-primary">Próximo Passo <i class="ri-arrow-right-line"></i></button>
                 </div>
             </div>
 
-            <!-- Passo 4: Pagamento e Documentação -->
+            <!-- Passo 4: Representação -->
             <div class="wizard-step" id="step-4">
-                <h3 style="margin-bottom: 1.5rem; color: white;">4. Quase pronto!</h3>
+                <h3 style="margin-bottom: 1.5rem; color: white;">4. Quem irá representá-lo?</h3>
+                <p style="color: var(--text-dim); margin-bottom: 2rem;">Escolha como deseja submeter seu pedido ao INPI.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- Opção m24 -->
+                    <div class="q-card" onclick="selectRep('m24')" id="rep-m24" style="cursor: pointer; padding: 20px; border: 2px solid var(--border-subtle); border-radius: 16px;">
+                        <input type="radio" name="representation_type" value="m24" id="radio-m24" style="display: none;" checked>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="background: var(--brand-primary); color: white; padding: 10px; border-radius: 10px;">
+                                <i class="ri-shield-flash-line ri-2x"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0;">Representação m24</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0;">Automático via canal prioritário.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opção Agente Oficial -->
+                    <div class="q-card" onclick="selectRep('agent')" id="rep-agent" style="cursor: pointer; padding: 20px; border: 2px solid var(--border-subtle); border-radius: 16px;">
+                        <input type="radio" name="representation_type" value="agent" id="radio-agent" style="display: none;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="background: var(--brand-secondary); color: white; padding: 10px; border-radius: 10px;">
+                                <i class="ri-user-star-line ri-2x"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0;">Agente Externo</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0;">Escolha um especialista oficial.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Agentes (Aparece se escolher agente) -->
+                <div id="agentList" style="margin-top: 2rem; display: none;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 700;">Selecione o Agente:</label>
+                    <select name="selected_agent_id" class="global-search" style="width: 100%; background: #0f172a; color: white; border: 1px solid var(--border-subtle); padding: 10px; border-radius: 8px;">
+                        <option value="">-- Escolha um agente recomendado --</option>
+                        {% for agent in agents %}
+                        <option value="{{ agent.id }}">{{ agent.name or agent.username }} (⭐ 4.8) - Reg: {{ agent.agent_registration_number or 'Oficial' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="margin-top: 3rem; display: flex; justify-content: space-between;">
+                    <button type="button" onclick="prevStep(3)" class="btn-m24 btn-m24-ghost"><i class="ri-arrow-left-line"></i> Voltar</button>
+                    <button type="button" onclick="nextStep(5)" class="btn-m24 btn-m24-primary">Revisar e Finalizar <i class="ri-check-line"></i></button>
+                </div>
+            </div>
+
+            <!-- Passo 5: Pagamento e Documentação -->
+            <div class="wizard-step" id="step-5">
+                <h3 style="margin-bottom: 1.5rem; color: white;">5. Quase pronto!</h3>
                 <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--success); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -249,6 +302,16 @@
         currentStep = step;
         document.getElementById(`step-${currentStep}`).classList.add('active');
         document.getElementById(`dot-${currentStep}`).classList.remove('completed');
+    }
+
+    function selectRep(type) {
+        document.getElementById('radio-m24').checked = (type === 'm24');
+        document.getElementById('radio-agent').checked = (type === 'agent');
+        
+        document.getElementById('rep-m24').style.borderColor = (type === 'm24') ? 'var(--brand-primary)' : 'var(--border-subtle)';
+        document.getElementById('rep-agent').style.borderColor = (type === 'agent') ? 'var(--brand-secondary)' : 'var(--border-subtle)';
+        
+        document.getElementById('agentList').style.display = (type === 'agent') ? 'block' : 'none';
     }
 
     async function autoClassify() {

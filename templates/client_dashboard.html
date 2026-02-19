@@ -7,18 +7,34 @@
     <!-- Header do Cliente -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-1">
-                        <i class="ri-shield-user-fill text-primary"></i> Meu Painel
-                    </h2>
-                    <p class="text-muted mb-0">{{ stats.user_role }} | Plano: <span class="badge bg-primary">{{ stats.subscription_plan }}</span></p>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary-subtle text-primary rounded-circle p-3 me-3">
+                            <i class="ri-shield-user-line ri-2x"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-0 fw-bold">{{ stats.user_role }}</h2>
+                            <p class="text-muted mb-0">Proteção Ativa | Plano: <span class="badge bg-primary">{{ stats.subscription_plan }}</span></p>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Representação Atual:</small>
+                        {% if current_user.my_agent %}
+                        <span class="fw-bold text-success"><i class="ri-user-follow-line"></i> {{ current_user.my_agent.name or current_user.my_agent.username }}</span>
+                        {% else %}
+                        <a href="{{ url_for('find_agents') }}" class="btn btn-sm btn-outline-warning">
+                            <i class="ri-search-eye-line"></i> Encontrar Representante
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
-                <div>
-                    <a href="{{ url_for('add_brand') }}" class="btn btn-primary">
-                        <i class="ri-add-circle-line"></i> Nova Marca
-                    </a>
-                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <h4 class="mb-0">Gestão de Ativos</h4>
+                <a href="{{ url_for('wizard') }}" class="btn btn-primary">
+                    <i class="ri-add-circle-line"></i> Registar Nova Marca
+                </a>
             </div>
         </div>
     </div>
@@ -62,6 +78,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Agent Rating & Support (If represented) -->
+    {% if current_user.my_agent %}
+    <div class="alert bg-white border shadow-sm mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1"><i class="ri-user-star-line text-warning"></i> Avalie o seu Agente</h5>
+            <p class="text-muted small mb-0">Como está a ser a sua experiência com <strong>{{ current_user.my_agent.name or current_user.my_agent.username }}</strong>?</p>
+        </div>
+        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#ratingModal">
+            Deixar Avaliação
+        </button>
+    </div>
+
+    <!-- Rating Modal -->
+    <div class="modal fade" id="ratingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Avaliar Representante</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('rate_agent', agent_id=current_user.agent_id) }}" method="POST">
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <label class="d-block mb-2">Quantas estrelas?</label>
+                            <div class="fs-2 text-warning">
+                                <i class="ri-star-line rating-star" data-value="1"></i>
+                                <i class="ri-star-line rating-star" data-value="2"></i>
+                                <i class="ri-star-line rating-star" data-value="3"></i>
+                                <i class="ri-star-line rating-star" data-value="4"></i>
+                                <i class="ri-star-line rating-star" data-value="5"></i>
+                            </div>
+                            <input type="hidden" name="stars" id="starInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="comment" class="form-control" placeholder="Opcional: Deixe um comentário..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary w-100">Enviar Avaliação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Marcas Recentes e Alertas -->
     <div class="row">
@@ -112,7 +174,7 @@
                     <p class="text-muted text-center py-4">
                         <i class="ri-inbox-line" style="font-size: 3rem;"></i><br>
                         Você ainda não tem marcas registradas.<br>
-                        <a href="{{ url_for('add_brand') }}" class="btn btn-primary mt-2">Adicionar Primeira Marca</a>
+                        <a href="{{ url_for('wizard') }}" class="btn btn-primary mt-2">Adicionar Primeira Marca</a>
                     </p>
                     {% endif %}
                 </div>
@@ -144,4 +206,24 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.rating-star').forEach(star => {
+    star.addEventListener('click', function() {
+        const val = this.getAttribute('data-value');
+        document.getElementById('starInput').value = val;
+        
+        // Reset and highlight
+        document.querySelectorAll('.rating-star').forEach(s => {
+            if(parseInt(s.getAttribute('data-value')) <= parseInt(val)) {
+                s.classList.replace('ri-star-line', 'ri-star-fill');
+            } else {
+                s.classList.replace('ri-star-fill', 'ri-star-line');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

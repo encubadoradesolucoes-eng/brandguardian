@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}Especialistas em PI | m24 Guardian{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div style="text-align: center; margin-bottom: 4rem;">
+        <h1 style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.5rem;">Agentes Oficiais de <span class="text-primary">Propriedade Industrial</span></h1>
+        <p class="text-muted">Encontre o representante ideal para gerir os seus ativos de marca em Moçambique.</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- m24 Internal Agent -->
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05)); border-left: 4px solid var(--brand-primary) !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded p-2 me-3">
+                            <i class="ri-shield-flash-line ri-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Representação m24</h5>
+                            <small class="text-primary fw-bold">RECOMENDADO</small>
+                        </div>
+                    </div>
+                    <p class="small text-muted">Gestão automatizada e direta através da plataforma m24 Guardian. Ideal para PMEs que procuram rapidez e conformidade.</p>
+                    <ul class="list-unstyled small mb-4">
+                        <li><i class="ri-check-line text-success"></i> Submissão Digital Prioritária</li>
+                        <li><i class="ri-check-line text-success"></i> Monitoramento IA Integrado</li>
+                        <li><i class="ri-check-line text-success"></i> Suporte 24/7 via WhatsApp</li>
+                    </ul>
+                    <button class="btn btn-primary w-100">Solicitar m24</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- External Agents -->
+        {% for agent in agents %}
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light text-secondary rounded p-2 me-3">
+                            <i class="ri-user-star-line ri-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ agent.name or agent.username }}</h5>
+                            <small class="text-warning">⭐ {{ agent.avg_rating }} ({{ agent.reviews_count }} reviews)</small>
+                        </div>
+                    </div>
+                    <p class="small text-muted">Agente Oficial Certificado para representação perante o INPI Moçambique.</p>
+                    <div class="bg-light p-2 rounded mb-3">
+                        <small class="text-muted d-block">Especialidade:</small>
+                        <span class="badge bg-white text-dark border">Marcas e Patentes</span>
+                        <span class="badge bg-white text-dark border">Direito Autoral</span>
+                    </div>
+                    <button class="btn btn-outline-primary w-100" onclick="alert('Funcionalidade de pedido direto em breve')">Contatar Agente</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
