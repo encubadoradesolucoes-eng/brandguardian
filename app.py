@@ -3088,8 +3088,8 @@ def upload_bpi():
                         except:
                             pass
             
-            # Usar _get_current_object() para passar o app real para a thread
-            threading.Thread(target=run_import_async, args=(app._get_current_object(), save_path)).start()
+            # Passar o app diretamente para a thread
+            threading.Thread(target=run_import_async, args=(app, save_path)).start()
             
             flash(f'Iniciado processamento de {filename}. Você receberá os dados em alguns minutos.', 'success')
         except Exception as e:
