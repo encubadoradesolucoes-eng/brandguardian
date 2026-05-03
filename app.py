@@ -24,6 +24,7 @@ from modules.real_scanner import (
     purification_real, 
     verificacao_imagem_real
 )
+from modules.report_generator import BrandReportGenerator
 
 # Suporte para Executável (PyInstaller)
 def get_resource_path(relative_path):
@@ -74,7 +75,9 @@ def migrate_db_hotfix():
             ("renunciation_date", "VARCHAR(50)"), ("final_refusal_date", "VARCHAR(50)"),
             ("renewal_deadline", "VARCHAR(50)"), ("triple_fee", "VARCHAR(20)"),
             ("definite_expiry_date", "VARCHAR(50)"), ("nationality", "VARCHAR(100)"),
-            ("full_address", "TEXT"), ("total_processes", "INTEGER")
+            ("full_address", "TEXT"), ("total_processes", "INTEGER"),
+            ("suffix", "VARCHAR(50)"), ("category", "VARCHAR(100)"),
+            ("detected_year", "VARCHAR(10)"), ("page", "INTEGER")
         ]
         for col_name, col_type in cols:
             try:
@@ -82,9 +85,24 @@ def migrate_db_hotfix():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
-        return "✅ Migração concluída com sucesso! Podes voltar ao dashboard.", 200
+        # ========== SINCRONIZAR SEQUÊNCIAS (POSTGRESQL HOTFIX) ==========
+        # Resolve erro de "UniqueViolation" em PKs de forma dinâmica
+        tables = ['alert', 'brand', 'user', 'ipi_record', 'bpi_applicant', 'keyword_watch', 'payment', 'entity', 'brand_conflict', 'process_activity', 'brand_note']
+        for table in tables:
+            try:
+                # Buscar nome real da sequência para a coluna 'id'
+                seq_res = db.session.execute(text(f"SELECT pg_get_serial_sequence('{table}', 'id')")).fetchone()
+                seq_name = seq_res[0] if seq_res and seq_res[0] else f"{table}_id_seq"
+                
+                # Ajustar o valor da sequência para o MAX(id) + 1
+                db.session.execute(text(f"SELECT setval('{seq_name}', COALESCE((SELECT MAX(id) FROM {table}), 1), true)"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        return "✅ Sincronização Dinâmica Concluída! Tente realizar a operação novamente.", 200
     except Exception as e:
-        return f"❌ Erro: {str(e)}", 500
+        return f"❌ Erro Crítico: {str(e)}", 500
 
 # ========== HEALTH CHECK (para Render) ==========
 @app.route('/health')
@@ -472,6 +490,12 @@ class Brand(db.Model):
     nationality = db.Column(db.String(100))
     full_address = db.Column(db.Text)
     total_processes = db.Column(db.Integer)
+    
+    # Metadados de Indexação
+    suffix = db.Column(db.String(50))
+    category = db.Column(db.String(100))
+    detected_year = db.Column(db.String(10))
+    page = db.Column(db.Integer)
 
     def generate_process_number(self):
         # DOCSTRING_REMOVED Gera um número de processo único no formato M24-YYYY-XXX.# DOCSTRING_REMOVED 
@@ -587,6 +611,17 @@ class AuditLog(db.Model):
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(50))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class KeywordWatch(db.Model):
+    # MON-05: Monitoramento de Palavras-Chave e Radicais
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    keyword = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), default='active') # 'active', 'paused'
+    match_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('keyword_watches', lazy=True))
 
 class Task(db.Model):
     # PRZ-03/04: Gestão de tarefas e prazos.
@@ -958,9 +993,30 @@ def analysis_page():
 @app.route('/dossie')
 @login_required
 def index():
-    # FILTRAGEM COMPLETA POR STATUS
+    # FILTRAGEM COMPLETA POR STATUS E METADADOS BPI
     status_filter = request.args.get('status')
     search_query = request.args.get('q')
+    suffix_filter = request.args.get('suffix')
+    category_filter = request.args.get('category')
+    nationality_filter = request.args.get('nationality')
+    triple_fee_filter = request.args.get('triple_fee')
+    year_filter = request.args.get('year')
+    property_type_filter = request.args.get('property_type')
+    nice_class_filter = request.args.get('nice_class')
+    risk_level_filter = request.args.get('risk_level')
+    official_status_filter = request.args.get('official_status')
+    
+    # Filtros de Datas (Intervalos)
+    filing_date_start = request.args.get('filing_date_start')
+    filing_date_end = request.args.get('filing_date_end')
+    pub_date_start = request.args.get('pub_date_start')
+    pub_date_end = request.args.get('pub_date_end')
+    grant_date_start = request.args.get('grant_date_start')
+    grant_date_end = request.args.get('grant_date_end')
+    opp_deadline_start = request.args.get('opp_deadline_start')
+    opp_deadline_end = request.args.get('opp_deadline_end')
+    renewal_start = request.args.get('renewal_start')
+    renewal_end = request.args.get('renewal_end')
     
     query = Brand.query
     
@@ -969,9 +1025,43 @@ def index():
     
     if status_filter:
         query = query.filter_by(status=status_filter)
+    if official_status_filter:
+        query = query.filter(Brand.status.ilike(f"%{official_status_filter}%"))
+    if suffix_filter:
+        query = query.filter(Brand.suffix.ilike(f"%{suffix_filter}%"))
+    if category_filter:
+        query = query.filter_by(category=category_filter)
+    if nationality_filter:
+        query = query.filter_by(nationality=nationality_filter)
+    if triple_fee_filter:
+        query = query.filter(Brand.triple_fee.ilike(f"%{triple_fee_filter}%"))
+    if year_filter:
+        query = query.filter(Brand.detected_year == year_filter)
+    if property_type_filter:
+        query = query.filter_by(property_type=property_type_filter)
+    if risk_level_filter:
+        query = query.filter_by(risk_level=risk_level_filter)
+    if nice_class_filter:
+        query = query.filter(Brand.nice_classes.ilike(f"%{nice_class_filter}%"))
+        
+    # Aplicar Filtros de Data
+    if filing_date_start: query = query.filter(Brand.filing_date >= filing_date_start)
+    if filing_date_end: query = query.filter(Brand.filing_date <= filing_date_end)
+    if pub_date_start: query = query.filter(Brand.publication_date_bpi >= pub_date_start)
+    if pub_date_end: query = query.filter(Brand.publication_date_bpi <= pub_date_end)
+    if grant_date_start: query = query.filter(Brand.grant_date >= grant_date_start)
+    if grant_date_end: query = query.filter(Brand.grant_date <= grant_date_end)
+    if opp_deadline_start: query = query.filter(Brand.opposition_deadline >= opp_deadline_start)
+    if opp_deadline_end: query = query.filter(Brand.opposition_deadline <= opp_deadline_end)
+    if renewal_start: query = query.filter(Brand.next_renewal_date >= renewal_start)
+    if renewal_end: query = query.filter(Brand.next_renewal_date <= renewal_end)
         
     if search_query:
-        query = query.filter(Brand.name.ilike(f'%{search_query}%'))
+        query = query.filter(db.or_(
+            Brand.name.ilike(f'%{search_query}%'),
+            Brand.process_number.ilike(f'%{search_query}%'),
+            Brand.owner_name.ilike(f'%{search_query}%')
+        ))
 
     brands = query.order_by(Brand.submission_date.desc()).all()
     
@@ -1162,7 +1252,11 @@ def register():
             definite_expiry_date=request.form.get('definite_expiry_date'),
             nationality=request.form.get('nationality'),
             full_address=request.form.get('full_address'),
-            total_processes=request.form.get('total_processes')
+            total_processes=request.form.get('total_processes'),
+            suffix=request.form.get('suffix'),
+            category=request.form.get('category'),
+            detected_year=request.form.get('detected_year'),
+            page=request.form.get('page')
         )
         
         # Gerar número de processo para novos pedidos
@@ -1448,6 +1542,26 @@ def update_brand_status(brand_id, action):
             description=f"Status alterado de {old_status.upper()} para {brand.status.upper()}"
         )
         db.session.add(act)
+
+        # CRIAR ALERTA PARA O TITULAR (Titular da Marca)
+        # Se houver um dono vinculado (brand.user_id), notificamos ele.
+        if brand.user_id:
+            status_labels = {
+                'approved': 'APROVADA ✅',
+                'rejected': 'REPROVADA ❌',
+                'monitored': 'EM VIGILÂNCIA 📡',
+                'under_study': 'EM ESTUDO 📝'
+            }
+            new_label = status_labels.get(brand.status, brand.status.upper())
+            
+            alert = Alert(
+                user_id=brand.user_id,
+                brand_id=brand.id,
+                type='CRITICAL' if brand.status == 'rejected' else 'INFO',
+                title=f'Atualização de Status: {brand.name}',
+                message=f'O estado do seu processo {brand.process_number or ""} foi alterado para: {new_label}.'
+            )
+            db.session.add(alert)
     
     db.session.commit()
     return redirect(url_for('brand_detail', brand_id=brand_id))
@@ -1471,7 +1585,18 @@ def edit_brand(brand_id):
         
         # Apenas admin altera status diretamente aqui
         if current_user.role == 'admin':
-            brand.status = request.form.get('status', brand.status)
+            new_status = request.form.get('status', brand.status)
+            if new_status != brand.status:
+                brand.status = new_status
+                if brand.user_id:
+                    alert = Alert(
+                        user_id=brand.user_id,
+                        brand_id=brand.id,
+                        type='INFO',
+                        title=f'Atualização de Status: {brand.name}',
+                        message=f'O status do seu processo foi alterado administrativamente para: {brand.status.upper()}.'
+                    )
+                    db.session.add(alert)
 
         # Logo Upload
         if 'logo' in request.files:
@@ -1683,6 +1808,71 @@ def client_dashboard():
                            recent=recent, 
                            alerts=alerts,
                            documents=documents)
+
+@app.route('/keywords')
+@login_required
+def m24_keyword_watch():
+    """Página de Gestão de Palavras-Chave (Keywords)"""
+    watches = KeywordWatch.query.filter_by(user_id=current_user.id).order_by(KeywordWatch.created_at.desc()).all()
+    return render_template('keywords.html', watches=watches)
+
+@app.route('/keywords/add', methods=['POST'])
+@login_required
+def add_keyword_watch():
+    keyword = request.form.get('keyword', '').strip()
+    if keyword:
+        # Evitar duplicados para o mesmo usuário
+        existing = KeywordWatch.query.filter_by(user_id=current_user.id, keyword=keyword).first()
+        if not existing:
+            new_watch = KeywordWatch(user_id=current_user.id, keyword=keyword)
+            db.session.add(new_watch)
+            db.session.commit()
+            flash(f'Vigilância ativa para o termo: "{keyword}"', 'success')
+        else:
+            flash('Este termo já está sendo monitorado por você.', 'info')
+    return redirect(url_for('m24_keyword_watch'))
+
+@app.route('/keywords/delete/<int:watch_id>')
+@login_required
+def delete_keyword_watch(watch_id):
+    watch = KeywordWatch.query.get_or_404(watch_id)
+    if watch.user_id == current_user.id or current_user.role == 'admin':
+        db.session.delete(watch)
+        db.session.commit()
+        flash('Vigilância de palavra-chave removida.', 'success')
+    return redirect(url_for('m24_keyword_watch'))
+
+@app.route('/brand/dossier/pdf/<int:brand_id>')
+@login_required
+def download_brand_dossier(brand_id):
+    """Gera e faz download do dossier em PDF"""
+    brand = Brand.query.get_or_404(brand_id)
+    
+    # Verificar permissão (Admin ou Dono)
+    if current_user.role != 'admin' and brand.user_id != current_user.id:
+        # Verificar se é o agente da marca
+        if current_user.role != 'agent' or brand.agent_id != current_user.id:
+            flash('Acesso negado ao dossier técnico.', 'danger')
+            return redirect(url_for('index'))
+            
+    user = User.query.get(brand.user_id)
+    entity = Entity.query.filter_by(email=user.email).first() if user else None
+    
+    generator = BrandReportGenerator()
+    pdf_path = generator.generate_brand_dossier(brand, entity)
+    
+    # Criar alerta de geração de dossier
+    new_alert = Alert(
+        user_id=current_user.id,
+        brand_id=brand.id,
+        type='INFO',
+        title='Dossier Gerado',
+        message=f'O dossier técnico da marca {brand.name} foi gerado com sucesso.'
+    )
+    db.session.add(new_alert)
+    db.session.commit()
+    
+    return send_file(pdf_path, as_attachment=True, download_name=f"Dossier_{brand.name}.pdf")
 
 @app.route('/agent-dashboard')
 @login_required
@@ -2343,6 +2533,33 @@ def scan_live_image_api_OLD():
 
 # (Código de imagem removido)
 
+
+@app.route('/api/alerts')
+@login_required
+def get_alerts():
+    """API para buscar notificações do usuário"""
+    alerts = Alert.query.filter_by(user_id=current_user.id).order_by(Alert.created_at.desc()).limit(10).all()
+    
+    return jsonify({
+        'status': 'success',
+        'count': Alert.query.filter_by(user_id=current_user.id, is_read=False).count(),
+        'alerts': [{
+            'id': a.id,
+            'type': a.type,
+            'title': a.title,
+            'message': a.message,
+            'is_read': a.is_read,
+            'created_at': a.created_at.strftime('%d/%m %H:%M')
+        } for a in alerts]
+    })
+
+@app.route('/api/alerts/read-all', methods=['POST'])
+@login_required
+def mark_alerts_read():
+    """Marca todas as notificações como lidas"""
+    Alert.query.filter_by(user_id=current_user.id, is_read=False).update({Alert.is_read: True})
+    db.session.commit()
+    return jsonify({'status': 'success'})
 
 @app.route('/reports')
 @login_required

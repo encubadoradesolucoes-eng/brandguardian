@@ -229,6 +229,179 @@ class BrandReportGenerator:
         return filepath
 
 
+    def generate_brand_dossier(self, brand, entity=None):
+        """Gera um dossier completo de um único processo/marca"""
+        filename = f"dossier_{brand.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filepath = os.path.join(self.output_path, filename)
+        
+        doc = SimpleDocTemplate(filepath, pagesize=A4,
+                                rightMargin=2*cm, leftMargin=2*cm,
+                                topMargin=2*cm, bottomMargin=2*cm)
+        
+        story = []
+        
+        # Header Pro
+        story.append(Paragraph("M24 BRAND GUARDIAN - DOSSIER TÉCNICO", self.styles['CustomTitle']))
+        story.append(Spacer(1, 0.5*cm))
+        
+        # Logo da Marca (se houver)
+        if brand.image_data:
+            # Salvar temporariamente para o PDF
+            temp_img_path = f"uploads/temp_logo_{brand.id}.png"
+            with open(temp_img_path, 'wb') as f:
+                f.write(brand.image_data)
+            try:
+                img = Image(temp_img_path, width=5*cm, height=5*cm)
+                img.hAlign = 'CENTER'
+                story.append(img)
+                story.append(Spacer(1, 0.5*cm))
+            except:
+                pass
+        
+        # IDENTIFICAÇÃO PRINCIPAL
+        story.append(Paragraph("1. IDENTIFICAÇÃO DO ATIVO", self.styles['SectionHeader']))
+        id_data = [
+            ['Nome da Marca:', brand.name],
+            ['Processo M24:', brand.process_number or 'N/A'],
+            ['Sufixo Jurídico:', brand.suffix or 'N/A'],
+            ['Categoria:', brand.category or 'N/A'],
+            ['Tipo de PI:', (brand.property_type or 'Marca').upper()],
+            ['Status Atual:', brand.status.upper().replace('_', ' ')],
+            ['Nacionalidade:', brand.nationality or 'N/A']
+        ]
+        id_table = Table(id_data, colWidths=[5*cm, 11*cm])
+        id_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e0e7ff')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        story.append(id_table)
+
+        # INFORMAÇÃO DO TITULAR
+        story.append(Paragraph("2. INFORMAÇÃO DO TITULAR", self.styles['SectionHeader']))
+        owner_data = [
+            ['Nome/Razão Social:', brand.owner_name or 'N/A'],
+            ['NUIT:', brand.owner_nuit or 'N/A'],
+            ['Email de Contato:', brand.owner_email or 'N/A'],
+            ['Telefone:', brand.owner_phone or 'N/A'],
+            ['Endereço Completo:', Paragraph(brand.full_address or 'N/D', self.styles['Normal'])]
+        ]
+        owner_table = Table(owner_data, colWidths=[5*cm, 11*cm])
+        owner_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#fef3c7')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(owner_table)
+        
+        # DADOS TÉCNICOS BPI
+        story.append(Paragraph("3. DADOS TÉCNICOS E DATAS LEGAIS", self.styles['SectionHeader']))
+        tech_data = [
+            ['Classes Nice:', brand.nice_classes or 'N/A'],
+            ['Data de Depósito:', brand.filing_date or 'N/D'],
+            ['Publicação BPI:', brand.publication_date_bpi or 'N/D'],
+            ['Boletim nº:', brand.bulletin_number or 'N/D'],
+            ['Prazo Oposição:', brand.opposition_deadline or 'N/D'],
+            ['Data Concessão:', brand.grant_date or 'Pendente'],
+            ['Validade / Expira:', brand.expiry_date or 'N/D'],
+            ['Próxima Renovação:', brand.next_renewal_date or 'N/D'],
+            ['Taxa Tripla:', 'SIM (Em Mora)' if brand.triple_fee == 'sim' else 'NÃO']
+        ]
+        tech_table = Table(tech_data, colWidths=[5*cm, 11*cm])
+        tech_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(tech_table)
+
+        # HISTÓRICO E DECISÕES
+        story.append(Paragraph("4. HISTÓRICO E DECISÕES JURÍDICAS", self.styles['SectionHeader']))
+        decision_data = [
+            ['Prazo de Recurso:', brand.appeal_deadline or 'N/A'],
+            ['Motivo da Recusa:', Paragraph(brand.refusal_reason or 'Nenhum registro', self.styles['Normal'])],
+            ['Data de Renúncia:', brand.renunciation_date or 'N/A'],
+            ['Recusa Definitiva:', brand.final_refusal_date or 'N/A'],
+            ['Caducidade Definitiva:', brand.definite_expiry_date or 'N/A'],
+            ['Próxima Ação:', brand.next_action or 'N/A']
+        ]
+        decision_table = Table(decision_data, colWidths=[5*cm, 11*cm])
+        decision_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#fee2e2')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(decision_table)
+
+        # OBSERVAÇÕES E NOTAS
+        story.append(Paragraph("5. OBSERVAÇÕES TÉCNICAS", self.styles['SectionHeader']))
+        obs_text = brand.observations or "Nenhuma observação técnica registrada para este processo."
+        story.append(Paragraph(obs_text, self.styles['Normal']))
+        
+        if brand.admin_notes:
+            story.append(Spacer(1, 0.5*cm))
+            story.append(Paragraph("NOTAS ADMINISTRATIVAS:", self.styles['Helvetica-Bold'] if 'Helvetica-Bold' in self.styles else self.styles['Normal']))
+            story.append(Paragraph(brand.admin_notes, self.styles['Normal']))
+
+        # TITULARIDADE
+        if entity:
+            story.append(Paragraph("6. TITULARIDADE E ENDEREÇO", self.styles['SectionHeader']))
+            ent_data = [
+                ['Nome / Razão:', entity.name],
+                ['NUIT:', entity.nuit or 'N/A'],
+                ['Email:', entity.email],
+                ['Telefone:', entity.phone or 'N/A'],
+                ['Endereço:', f"{entity.address}, {entity.city}"]
+            ]
+            ent_table = Table(ent_data, colWidths=[5*cm, 11*cm])
+            ent_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#dcfce7')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            story.append(ent_table)
+
+        # DIAGNÓSTICO IA
+        story.append(Paragraph("7. DIAGNÓSTICO DE PROTEÇÃO M24", self.styles['SectionHeader']))
+        risk_color = colors.green if brand.risk_level == 'low' else (colors.orange if brand.risk_level == 'medium' else colors.red)
+        diag_data = [
+            ['Nível de Risco:', brand.risk_level.upper()],
+            ['Score Global:', f"{brand.risk_score or 0}%"],
+            ['Fonético:', f"{brand.phonetic_score or 0}%"],
+            ['Visual:', f"{brand.visual_score or 0}%"],
+            ['Conflitos Det.:', str(len(brand.conflicts) if hasattr(brand, 'conflicts') else 0)]
+        ]
+        diag_table = Table(diag_data, colWidths=[5*cm, 11*cm])
+        diag_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#fef3c7')),
+            ('TEXTCOLOR', (1, 0), (1, 0), risk_color),
+            ('FONTNAME', (1, 0), (1, 1), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        story.append(diag_table)
+
+        if brand.observations:
+            story.append(Spacer(1, 0.5*cm))
+            story.append(Paragraph("OBSERVAÇÕES ADICIONAIS:", self.styles['Heading3']))
+            story.append(Paragraph(brand.observations, self.styles['Normal']))
+
+        # Footer
+        story.append(Spacer(1, 2*cm))
+        footer = f"Gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')} | Documento de Uso Exclusivo e Confidencial."
+        story.append(Paragraph(footer, self.styles['Normal']))
+        
+        doc.build(story)
+        return filepath
+
+
 def generate_weekly_report(user_id):
     """Gera relatório semanal para um usuário"""
     from app import User, Brand, BrandConflict, db

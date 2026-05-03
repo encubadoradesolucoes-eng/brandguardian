@@ -330,7 +330,22 @@
                     <div style="font-weight: 800; font-size: 0.75rem; color: var(--danger); text-transform: uppercase; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
                         <i class="ri-exchange-line"></i> Despachos, Alterações e Recusas
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="label-m24">Estado Oficial (BPI)</label>
+                            <select name="official_status" class="input-m24">
+                                <option value="under_study">M24: Sob Estudo</option>
+                                <option value="STATUS_01">BPI: Pedido Publicado</option>
+                                <option value="STATUS_02">BPI: Marca Concedida</option>
+                                <option value="STATUS_03">BPI: Oposição Deduzida</option>
+                                <option value="STATUS_04">BPI: Marca Recusada</option>
+                                <option value="STATUS_05">BPI: Marca Renunciada</option>
+                                <option value="STATUS_06">BPI: Recusa Definitiva</option>
+                                <option value="STATUS_07">BPI: Aguarda Renovação</option>
+                                <option value="STATUS_08">BPI: Caducidade Declarada</option>
+                                <option value="STATUS_09">BPI: Alteração Averbada</option>
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label class="label-m24">Tipo de Alteração</label>
                             <input type="text" name="alteration_type" class="input-m24" placeholder="Ex: Mudança de Nome">
@@ -339,12 +354,16 @@
                             <label class="label-m24">Data de Renúncia</label>
                             <input type="date" name="renunciation_date" class="input-m24">
                         </div>
+                        <div class="form-group">
+                            <label class="label-m24">Recusa Definitiva</label>
+                            <input type="date" name="final_refusal_date" class="input-m24">
+                        </div>
                         <div class="form-group" style="grid-column: span 2;">
                             <label class="label-m24">Motivo da Recusa / Notas de Despacho</label>
                             <textarea name="refusal_reason" class="input-m24" rows="2" placeholder="Detalhes do despacho de recusa..."></textarea>
                         </div>
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label class="label-m24">Detalhes da Alteração / Observações</label>
+                        <div class="form-group" style="grid-column: span 3;">
+                            <label class="label-m24">Detalhes da Alteração / Observações Oficiais</label>
                             <textarea name="observations" class="input-m24" rows="2" placeholder="Notas adicionais do boletim..."></textarea>
                         </div>
                     </div>
@@ -368,7 +387,23 @@
                             <label class="label-m24">Próxima Ação Manual</label>
                             <input type="text" name="next_action" class="input-m24" placeholder="Ação sugerida...">
                         </div>
-                        <div class="form-group" style="grid-column: span 3;">
+                        <div class="form-group">
+                            <label class="label-m24">Sufixo (Lda, SA)</label>
+                            <input type="text" name="suffix" class="input-m24" placeholder="Ex: Lda">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Categoria (Empresa/Ind)</label>
+                            <input type="text" name="category" class="input-m24" placeholder="Ex: Empresa">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Ano Detetado</label>
+                            <input type="text" name="detected_year" class="input-m24" placeholder="2024">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Página do Boletim</label>
+                            <input type="number" name="page" class="input-m24" placeholder="0">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
                             <label class="label-m24">Endereço Completo no BPI</label>
                             <input type="text" name="full_address" class="input-m24" placeholder="Endereço conforme consta no boletim">
                         </div>

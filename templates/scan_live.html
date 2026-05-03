@@ -4,46 +4,50 @@
 
 {% block extra_css %}
 <style>
-    /* Background da landing page em toda a página */
+    /* Background alinhado com o sistema */
     body {
-        background: linear-gradient(to right, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0.6) 100%), url('/static/hero-guardian.png') !important;
-        background-size: cover !important;
-        background-position: center !important;
-        background-attachment: fixed !important;
+        background-color: var(--bg-base) !important;
     }
 
-    /* Estilo Retro-Moderno "Hacker" Limpo */
+    /* Estilo Premium Glassmorphism */
     :root {
-        --terminal-bg: #0f172a;
-        --terminal-text: #334155;
-        --accent: #0ea5e9;
+        --terminal-bg: var(--bg-surface);
+        --terminal-text: var(--text-standard);
+        --accent: var(--brand-primary);
     }
 
     .scan-container {
         min-height: 80vh;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(10px);
-        font-family: 'Courier New', Courier, monospace;
-        color: #e2e8f0;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+        background: var(--bg-surface);
+        backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--border-subtle);
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--text-standard);
+        padding: 30px;
+        border-radius: var(--radius-3xl);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
         position: relative;
         overflow: hidden;
     }
 
-    /* Linhas de grade sutis - mantém o efeito terminal */
+    /* Remove efeito hacker antigo e adiciona brilho de IA sutil */
     .scan-container::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-        background-size: 100% 2px, 3px 100%;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at center, var(--brand-primary-glow) 0%, transparent 70%);
+        opacity: 0.3;
         pointer-events: none;
         z-index: 1;
+        animation: rotateGlow 20s linear infinite;
+    }
+
+    @keyframes rotateGlow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
 
     .terminal-header {
@@ -121,36 +125,39 @@
         cursor: wait;
     }
 
-    /* Log Types */
+    /* Log Types - Cores Sincronizadas */
     .log-line {
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-        line-height: 1.4;
-        border-left: 3px solid transparent;
-        padding-left: 10px;
+        margin-bottom: 12px;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        border-left: 4px solid transparent;
+        padding: 8px 15px;
+        border-radius: 0 8px 8px 0;
+        transition: var(--transition-elite);
     }
 
     .log-line.info {
-        color: #94a3b8;
-        border-color: #475569;
+        color: var(--text-dim);
+        border-color: var(--border-subtle);
+        background: rgba(0,0,0,0.02);
     }
 
     .log-line.success {
-        color: #4ade80;
-        border-color: #22c55e;
-        background: rgba(34, 197, 94, 0.05);
+        color: var(--success);
+        border-color: var(--success);
+        background: var(--success-glow);
     }
 
     .log-line.warning {
-        color: #facc15;
-        border-color: #eab308;
-        background: rgba(234, 179, 8, 0.05);
+        color: var(--warning);
+        border-color: var(--warning);
+        background: rgba(245, 158, 11, 0.05);
     }
 
     .log-line.danger {
-        color: #f87171;
-        border-color: #ef4444;
-        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+        border-color: var(--danger);
+        background: var(--danger-glow);
     }
 
     /* Estilo especial para alertas BPI críticos */
@@ -193,127 +200,19 @@
         font-weight: bold;
     }
 
-    /* Sidebar Comercial */
-    .commercial-sidebar {
-        position: sticky;
-        top: 20px;
-        max-height: calc(100vh - 40px);
-        overflow-y: auto;
-    }
-
-    .cta-card {
-        background: rgba(30, 41, 59, 0.4);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(148, 163, 184, 0.1);
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .cta-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #6366f1, #8b5cf6);
-    }
-
-    .cta-card:hover {
-        transform: translateY(-5px);
-        border-color: rgba(99, 102, 241, 0.6);
-        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
-    }
-
-    .cta-card h4 {
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .cta-card h4 i {
-        color: #6366f1;
-        font-size: 1.3rem;
-    }
-
-    .cta-card p {
-        color: #cbd5e1;
-        font-size: 0.9rem;
-        line-height: 1.5;
-        margin-bottom: 16px;
-    }
-
-    .cta-btn {
-        display: block;
-        width: 100%;
-        padding: 8px 16px;
-        background: var(--brand-primary, #6366f1);
-        color: white;
-        text-align: center;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 0.85rem;
-        transition: all 0.3s;
-        border: 1px solid var(--brand-primary, #6366f1);
-    }
-
-    .cta-btn:hover {
-        background: #4f46e5;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
-        color: white;
-    }
-
-    .cta-btn.secondary {
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-    }
-
-    .cta-btn.secondary:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: white;
-    }
-
-    .cta-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        background: rgba(99, 102, 241, 0.2);
-        color: #818cf8;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        margin-bottom: 12px;
-        border: 1px solid rgba(99, 102, 241, 0.3);
-    }
-
-    /* Scrollbar customizada para sidebar */
-    .commercial-sidebar::-webkit-scrollbar {
+    /* Scrollbar customizada para terminal */
+    .terminal-body::-webkit-scrollbar {
         width: 6px;
     }
 
-    .commercial-sidebar::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.2);
+    .terminal-body::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
         border-radius: 10px;
     }
 
-    .commercial-sidebar::-webkit-scrollbar-thumb {
-        background: rgba(99, 102, 241, 0.5);
+    .terminal-body::-webkit-scrollbar-thumb {
+        background: var(--brand-primary-glow);
         border-radius: 10px;
-    }
-
-    .commercial-sidebar::-webkit-scrollbar-thumb:hover {
-        background: rgba(99, 102, 241, 0.7);
     }
 </style>
 {% endblock %}
@@ -321,8 +220,8 @@
 {% block content %}
 
 <div class="row">
-    <!-- Terminal Principal -->
-    <div class="col-lg-8">
+    <!-- Terminal Principal Centrado e Focado -->
+    <div class="col-lg-10 offset-lg-1">
         <div class="scan-container">
             <div class="terminal-header">
                 <div>
@@ -338,10 +237,8 @@
 
                 <!-- Mode Toggle -->
                 <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-                    <button onclick="setMode('text')" id="btnText" class="mode-btn active">PESQUISA TEXTO
-                        (COMPLETA)</button>
-                    <a href="{{ url_for('visual_check_page') }}" class="mode-btn"
-                        style="text-decoration:none; display:inline-block;">VARREDURA VISUAL (OCR IA)</a>
+                    <button onclick="setMode('text')" id="btnText" class="mode-btn active">PESQUISA TEXTO (COMPLETA)</button>
+                    <a href="{{ url_for('visual_check_page') }}" class="mode-btn" style="text-decoration:none; display:inline-block;">VARREDURA VISUAL (OCR IA)</a>
                 </div>
 
                 <div id="scanLogs"></div>
@@ -349,14 +246,16 @@
 
             <!-- Input Area -->
             <div id="textInputArea" class="input-line">
-                <span style="color: #10b981;">root@m24:~$</span>
-                <input type="text" id="brandInput" class="scan-input" placeholder="Digite nome da marca..." autofocus>
-                <button onclick="startScan()" class="scan-btn">EXECUTAR</button>
+                <span style="color: var(--brand-primary);">root@m24:~$</span>
+                <input type="text" id="brandInput" class="scan-input" placeholder="Digite nome da marca para varredura fonética e web..." autofocus>
+                <button onclick="startScan()" class="scan-btn">EXECUTAR VARREDURA</button>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
     const logs = document.getElementById('scanLogs');
     const input = document.getElementById('brandInput');
@@ -373,7 +272,6 @@
         
         logs.appendChild(div);
 
-        // Auto scroll
         const term = document.getElementById('terminal');
         term.scrollTop = term.scrollHeight;
     }
@@ -395,7 +293,6 @@
         const term = input.value.trim();
         if (!term) return;
 
-        // Limpar e bloquear
         logs.innerHTML = '';
         input.disabled = true;
         document.querySelector('.scan-btn').disabled = true;
@@ -405,14 +302,13 @@
         await wait(500);
 
         try {
-            const response = await fetch('/api/scan-live-real', {
+            const response = await fetch('/api/scan-live', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ termo: term })
+                body: JSON.stringify({ term: term })
             });
             
-            // Check if response is OK
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
@@ -420,213 +316,59 @@
             
             const data = await response.json();
             
-            // Debug: log full response
-            console.log('[DEBUG] Full API Response:', data);
-
-            if (data.status !== 'sucesso') {
-                throw new Error(data.mensagem || 'Erro desconhecido');
+            if (data.status === 'error') {
+                throw new Error(data.message || 'Erro desconhecido');
             }
 
-            const res = data.resultados;
-            
-            // Debug: log results structure
-            console.log('[DEBUG] Resultados:', res);
-
-            if (data.debug) {
-                log(`[DEBUG] termo="${data.debug.termo}" bpi_count=${data.debug.bpi_count} sql_count=${data.debug.sql_count ?? 'n/a'}`, 'info');
-                if (data.debug.sql_sample && data.debug.sql_sample.length > 0) {
-                    data.debug.sql_sample.forEach(r => {
-                        log(`[DEBUG] sql_sample: ${r.brand_name} (Proc: ${r.process_number})`, 'info');
-                    });
-                }
-                if (data.debug.limites && data.debug.limites.length > 0) {
-                    data.debug.limites.forEach(l => {
-                        log(`[DEBUG] limite: ${l}`, 'info');
-                    });
-                }
-                if (data.debug.debug_error) {
-                    log(`[DEBUG] error: ${data.debug.debug_error}`, 'danger');
-                }
-            }
-
-            // 1. Domínios
             log(`> [WEB] Verificando disponibilidade de domínios...`, 'info');
             await wait(600);
 
-            let dominiosOcupados = 0;
-            if (res.dominios && res.dominios.length > 0) {
-                res.dominios.forEach(d => {
-                    if (d.status === 'OCUPADO') {
-                        dominiosOcupados++;
-                        log(`[WEB] ❌ Indisponível: ${d.dominio}`, 'danger');
-                    } else if (d.status === 'DISPONÍVEL') {
-                        log(`[WEB] ✅ Disponível: ${d.dominio}`, 'success');
+            if (data.domains && data.domains.length > 0) {
+                data.domains.forEach(d => {
+                    if (d.status === 'occupied') {
+                        log(`[WEB] ❌ Indisponível: ${d.domain}`, 'danger');
+                    } else {
+                        log(`[WEB] ✅ Disponível: ${d.domain}`, 'success');
                     }
                 });
             }
 
-            if (dominiosOcupados === 0) log(`[WEB] Domínios principais parecem livres.`, 'success');
-
-            // 2. BPI Local
             log(`> [BPI] Consultando base oficial...`, 'info');
             await wait(800);
 
-            // Para usuários logados: res.bpi é array
-            // Para não logados: res.resumo_bpi é string
-            if (res.bpi && res.bpi.length > 0) {
-                log(`🚨 [BPI] ALERTA: ${res.bpi.length} registro(s) similar(es) encontrado(s)`, 'bpi-alert');
-                res.bpi.forEach(b => {
-                    log(`   -> [${b.similaridade}%] ${b.marca} (Proc: ${b.processo})`, 'warning');
+            if (data.bpi && data.bpi.length > 0) {
+                log(`🚨 [BPI] ALERTA: ${data.bpi.length} registro(s) similar(es) encontrado(s)`, 'bpi-alert');
+                data.bpi.forEach(b => {
+                    log(`   -> [${b.match_type.toUpperCase()}] ${b.brand} (Proc: ${b.process})`, 'warning');
                 });
-            } else if (res.resumo_bpi) {
-                // Usuário não logado - mostra resumo
-                const temConflitos = res.resumo_bpi.includes('marcas similares encontradas') && 
-                                     !res.resumo_bpi.startsWith('0 marcas');
-                if (temConflitos) {
-                    log(`🚨 [BPI] ALERTA: ${res.resumo_bpi}`, 'bpi-alert');
-                } else {
-                    log(`[✓] [BPI] ${res.resumo_bpi}`, 'success');
-                }
             } else {
-                log(`[✓] [BPI] Nenhuma similaridade direta encontrada na base local.`, 'success');
+                log(`[✓] [BPI] Nenhuma similaridade direta encontrada na base oficial.`, 'success');
             }
 
-            // 3. Redes Sociais
             log(`> [SOCIAL] Consultando presença digital...`, 'info');
             await wait(800);
 
-            if (res.redes_sociais && res.redes_sociais.length > 0) {
-                res.redes_sociais.forEach(r => {
-                    let icon = r.status === 'OCUPADO' ? '❌' : '✅';
-                    let estilo = r.status === 'OCUPADO' ? 'warning' : 'success';
-                    log(`[SOCIAL] ${icon} ${r.plataforma}: ${r.status}`, estilo);
+            if (data.social && data.social.length > 0) {
+                data.social.forEach(s => {
+                    let icon = s.status === 'occupied' ? '❌' : '✅';
+                    let estilo = s.status === 'occupied' ? 'warning' : 'success';
+                    log(`[SOCIAL] ${icon} ${s.network}: ${s.status}`, estilo);
                 });
-            }
-
-            // 4. Conclusão
-            log(`----------------------------------------`, 'info');
-            if (res.analise_risco) {
-                let nivel = res.analise_risco.nivel_risco;
-                let classeRisco = nivel === 'ALTO' || nivel === 'CRÍTICO' ? 'danger' : 
-                                  nivel === 'MÉDIO' || nivel === 'MODERADO' ? 'warning' : 'success';
-                log(`> CONCLUSÃO: RISCO ${nivel}`, classeRisco);
-                log(`  ${res.analise_risco.recomendacao}`, 'info');
-            }
-
-            // 5. Mensagem Comercial (se não logado)
-            if (res.mensagem_comercial) {
-                const msg = res.mensagem_comercial;
-                log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, 'info');
-                log(`${msg.titulo}`, 'warning');
-                log(`${msg.texto}`, 'info');
-                log(``, 'info');
-                
-                // Lista de benefícios
-                msg.beneficios.forEach(beneficio => {
-                    log(`  ${beneficio}`, 'success');
-                });
-                
-                log(``, 'info');
-                
-                // CTAs com botões clicáveis - cores da landing page
-                const ctaHtml = `
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <a href="/login" style="
-                            background: #6366f1;
-                            color: white;
-                            padding: 10px 20px;
-                            border-radius: 6px;
-                            text-decoration: none;
-                            font-weight: bold;
-                            display: inline-block;
-                            transition: all 0.3s;
-                            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#4f46e5'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#6366f1'">
-                            🔓 ${msg.cta_login}
-                        </a>
-                        <a href="/pricing" style="
-                            background: #8b5cf6;
-                            color: white;
-                            padding: 10px 20px;
-                            border-radius: 6px;
-                            text-decoration: none;
-                            font-weight: bold;
-                            display: inline-block;
-                            transition: all 0.3s;
-                            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.4);
-                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#7c3aed'" onmouseout="this.style.transform='translateY(0)'; this.style.background='#8b5cf6'">
-                            💎 ${msg.cta_planos}
-                        </a>
-                    </div>
-                `;
-                log(ctaHtml, 'info', true);
-                log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, 'info');
+            } else {
+                 log(`[✓] [SOCIAL] Canais sociais verificados e disponíveis.`, 'success');
             }
 
             log(`> VARREDURA CONCLUÍDA.`, 'success');
 
         } catch (e) {
             console.error('[ERROR] Scan failed:', e);
-            log(`[ERRO CRÍTICO] Falha na análise: ${e.message}`, 'danger');
-            log(`Detalhes técnicos: ${e.stack || 'N/A'}`, 'danger');
+            log(`[ERRO] Falha na análise: ${e.message}`, 'danger');
         }
 
-        // Reabilitar
         input.disabled = false;
         input.focus();
         document.querySelector('.scan-btn').disabled = false;
-        document.querySelector('.scan-btn').innerText = 'EXECUTAR';
+        document.querySelector('.scan-btn').innerText = 'EXECUTAR VARREDURA';
     }
 </script>
-        </div>
-    </div><!-- Fim col-lg-8 -->
-
-    <!-- Sidebar Visual com Cards Grandes -->
-    <div class="col-lg-4">
-        <div class="commercial-sidebar">
-            
-            <!-- Card: Planos Premium -->
-            <div class="cta-card" style="text-align: center;">
-                <div style="font-size: 2.5rem; margin-bottom: 12px;">
-                    <i class="ri-vip-crown-fill" style="color: #fbbf24;"></i>
-                </div>
-                <h4 style="font-size: 1.1rem; margin-bottom: 8px;">Planos Premium</h4>
-                <p style="margin-bottom: 12px; font-size: 0.85rem;">Proteja até 100 marcas com monitoramento 24/7 e relatórios profissionais.</p>
-                <a href="/pricing" class="cta-btn">Ver Planos e Preços</a>
-            </div>
-
-            <!-- Card: Cadastro Grátis -->
-            <div class="cta-card" style="text-align: center;">
-                <div style="font-size: 2.5rem; margin-bottom: 12px;">
-                    <i class="ri-rocket-fill" style="color: #10b981;"></i>
-                </div>
-                <h4 style="font-size: 1.1rem; margin-bottom: 8px;">Comece Grátis</h4>
-                <p style="margin-bottom: 12px; font-size: 0.85rem;">Crie sua conta e monitore 5 marcas gratuitamente. Sem cartão de crédito.</p>
-                <a href="/register" class="cta-btn">Criar Conta Agora</a>
-            </div>
-
-            <!-- Card: Agentes PI -->
-            <div class="cta-card" style="text-align: center;">
-                <div style="font-size: 2.5rem; margin-bottom: 12px;">
-                    <i class="ri-briefcase-4-fill" style="color: #8b5cf6;"></i>
-                </div>
-                <h4 style="font-size: 1.1rem; margin-bottom: 8px;">Agentes de PI</h4>
-                <p style="margin-bottom: 12px; font-size: 0.85rem;">Dashboard profissional, prospector de oportunidades e relatórios white-label.</p>
-                <a href="/signup?role=agent&plan=agent_pro" class="cta-btn secondary">Plano para Agentes</a>
-            </div>
-
-            <!-- Card: Cursos -->
-            <div class="cta-card" style="text-align: center;">
-                <div style="font-size: 2.5rem; margin-bottom: 12px;">
-                    <i class="ri-book-open-fill" style="color: #3b82f6;"></i>
-                </div>
-                <h4 style="font-size: 1.1rem; margin-bottom: 8px;">Cursos de PI</h4>
-                <p style="margin-bottom: 12px; font-size: 0.85rem;">Aprenda estratégias avançadas de proteção e gestão de propriedade industrial.</p>
-                <a href="#" class="cta-btn secondary" onclick="alert('Em breve! Cursos especializados.'); return false;">Em Breve</a>
-            </div>
-
-        </div>
-    </div><!-- Fim Sidebar -->
-
-</div><!-- Fim row -->
 {% endblock %}

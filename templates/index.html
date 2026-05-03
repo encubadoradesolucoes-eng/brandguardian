@@ -177,42 +177,160 @@
     </div>
     {% endif %}
 
-    <!-- Smart Filters -->
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl); padding: 1rem; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
-        <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-dim); padding-left: 5px; margin-right: 15px;"><i class="ri-filter-3-line"></i> FILTROS:</div>
-        
-        <a href="{{ url_for('index') }}" class="filter-pill {% if not request.args.get('status') %}active{% endif %}">
-            Todos <span>{{ counts.all }}</span>
-        </a>
-        <a href="{{ url_for('index', status='under_study') }}" class="filter-pill {% if request.args.get('status') == 'under_study' %}active{% endif %}">
-            Sob Estudo <span>{{ counts.under_study }}</span>
-        </a>
-        <a href="{{ url_for('index', status='waiting_admin') }}" class="filter-pill {% if request.args.get('status') == 'waiting_admin' %}active{% endif %}">
-            Aguardando <span>{{ counts.waiting_admin }}</span>
-        </a>
-        <a href="{{ url_for('index', status='approved') }}" class="filter-pill {% if request.args.get('status') == 'approved' %}active{% endif %}">
-            Aprovados <span>{{ counts.approved }}</span>
-        </a>
-        <a href="{{ url_for('index', status='monitored') }}" class="filter-pill {% if request.args.get('status') == 'monitored' %}active{% endif %}">
-            Vigiando <span>{{ counts.monitored }}</span>
-        </a>
-        <a href="{{ url_for('index', status='rejected') }}" class="filter-pill {% if request.args.get('status') == 'rejected' %}active{% endif %}" style="--active-color: var(--danger);">
-            Reprovados <span>{{ counts.rejected }}</span>
-        </a>
-        <a href="{{ url_for('index', status='official') }}" class="filter-pill {% if request.args.get('status') == 'official' %}active{% endif %}" style="--active-color: var(--brand-primary);">
-            Oficiais (BPI) <span>{{ counts.official }}</span>
-        </a>
-        
-        <form method="GET" action="{{ url_for('index') }}" style="margin-left: auto; display: flex; gap: 10px; flex: 1; min-width: 250px;">
+    <!-- Smart Filters & Advanced Search -->
+    <div style="margin-bottom: 2rem;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl); padding: 1rem; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+            <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-dim); padding-left: 5px; margin-right: 15px;"><i class="ri-filter-3-line"></i> FILTROS:</div>
+            
+            <a href="{{ url_for('index') }}" class="filter-pill {% if not request.args.get('status') %}active{% endif %}">
+                Todos <span>{{ counts.all }}</span>
+            </a>
+            <a href="{{ url_for('index', status='official') }}" class="filter-pill {% if request.args.get('status') == 'official' %}active{% endif %}" style="--active-color: var(--brand-primary);">
+                Oficiais (BPI) <span>{{ counts.official }}</span>
+            </a>
+            <a href="{{ url_for('index', status='waiting_admin') }}" class="filter-pill {% if request.args.get('status') == 'waiting_admin' %}active{% endif %}">
+                Pendências <span>{{ counts.waiting_admin }}</span>
+            </a>
+            
+            <button onclick="document.getElementById('advanced-filters').style.display = document.getElementById('advanced-filters').style.display === 'none' ? 'grid' : 'none'" class="filter-pill" style="border-style: dashed; cursor: pointer;">
+                <i class="ri-equalizer-line"></i> Filtros Avançados
+            </button>
+
+            <form method="GET" action="{{ url_for('index') }}" style="margin-left: auto; display: flex; gap: 10px; flex: 1; min-width: 250px;">
+                <input type="hidden" name="status" value="{{ request.args.get('status', '') }}">
+                <div class="global-search" style="width: 100%; height: 38px; display: flex;">
+                    <i class="ri-search-line"></i>
+                    <input type="text" name="q" placeholder="Pesquisar por nome da marca..." value="{{ request.args.get('q', '') }}">
+                </div>
+            </form>
+        </div>
+
+        <!-- Hidden Advanced Filters Panel -->
+        <form id="advanced-filters" method="GET" action="{{ url_for('index') }}" style="display: none; grid-template-columns: repeat(4, 1fr); gap: 15px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 25px; border-radius: var(--radius-xl); margin-top: 10px; animation: slideDown 0.3s ease-out;">
             <input type="hidden" name="status" value="{{ request.args.get('status', '') }}">
-            <div class="global-search" style="width: 100%; height: 38px; display: flex;">
-                <i class="ri-search-line"></i>
-                <input type="text" name="q" placeholder="Pesquisar por nome da marca..." value="{{ request.args.get('q', '') }}">
+            <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
+            
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Sufixo Jurídico</label>
+                <select name="suffix" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Todos</option>
+                    <option value="Lda" {% if request.args.get('suffix') == 'Lda' %}selected{% endif %}>Lda</option>
+                    <option value="SA" {% if request.args.get('suffix') == 'SA' %}selected{% endif %}>SA</option>
+                    <option value="Unipessoal" {% if request.args.get('suffix') == 'Unipessoal' %}selected{% endif %}>Unipessoal</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Categoria</label>
+                <select name="category" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Todos</option>
+                    <option value="Empresa" {% if request.args.get('category') == 'Empresa' %}selected{% endif %}>Empresa</option>
+                    <option value="Individual" {% if request.args.get('category') == 'Individual' %}selected{% endif %}>Individual</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Nacionalidade</label>
+                <select name="nationality" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Todas</option>
+                    <option value="Moçambique" {% if request.args.get('nationality') == 'Moçambique' %}selected{% endif %}>Moçambicana</option>
+                    <option value="Estrangeira" {% if request.args.get('nationality') == 'Estrangeira' %}selected{% endif %}>Estrangeira</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Taxa Tripla</label>
+                <select name="triple_fee" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Qualquer</option>
+                    <option value="sim" {% if request.args.get('triple_fee') == 'sim' %}selected{% endif %}>Sim (Crítico)</option>
+                    <option value="nao" {% if request.args.get('triple_fee') == 'nao' %}selected{% endif %}>Não</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Estado Legal (BPI)</label>
+                <select name="official_status" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Todos</option>
+                    <option value="STATUS_01" {% if request.args.get('official_status') == 'STATUS_01' %}selected{% endif %}>Pedido / Publicado</option>
+                    <option value="approved" {% if request.args.get('official_status') == 'approved' %}selected{% endif %}>Concedido / Registado</option>
+                    <option value="rejected" {% if request.args.get('official_status') == 'rejected' %}selected{% endif %}>Indeferido / Recusado</option>
+                    <option value="caducado" {% if request.args.get('official_status') == 'caducado' %}selected{% endif %}>Caducado</option>
+                    <option value="STATUS_07" {% if request.args.get('official_status') == 'STATUS_07' %}selected{% endif %}>Em Prorrogação</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Tipo de Ativo</label>
+                <select name="property_type" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Todos</option>
+                    <option value="marca" {% if request.args.get('property_type') == 'marca' %}selected{% endif %}>Marca</option>
+                    <option value="patente" {% if request.args.get('property_type') == 'patente' %}selected{% endif %}>Patente</option>
+                    <option value="desenho" {% if request.args.get('property_type') == 'desenho' %}selected{% endif %}>Desenho Ind.</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Classe Nice</label>
+                <input type="text" name="nice_class" class="m24-input" placeholder="Ex: 35" value="{{ request.args.get('nice_class', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Nível de Risco</label>
+                <select name="risk_level" class="m24-input" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <option value="">Todos</option>
+                    <option value="high" {% if request.args.get('risk_level') == 'high' %}selected{% endif %}>Alto Impacto</option>
+                    <option value="medium" {% if request.args.get('risk_level') == 'medium' %}selected{% endif %}>Médio</option>
+                    <option value="low" {% if request.args.get('risk_level') == 'low' %}selected{% endif %}>Seguro</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Ano BPI</label>
+                <input type="number" name="year" class="m24-input" placeholder="Ex: 2024" value="{{ request.args.get('year', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Depósito (De / Até)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" name="filing_date_start" class="m24-input" value="{{ request.args.get('filing_date_start', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <input type="date" name="filing_date_end" class="m24-input" value="{{ request.args.get('filing_date_end', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                </div>
+            </div>
+
+            <!-- NOVOS FILTROS DE HISTÓRICO -->
+            <div style="grid-column: span 2;">
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--success); text-transform: uppercase; margin-bottom: 8px; display: block;">Publicação BPI (De / Até)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" name="pub_date_start" class="m24-input" value="{{ request.args.get('pub_date_start', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <input type="date" name="pub_date_end" class="m24-input" value="{{ request.args.get('pub_date_end', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                </div>
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--success); text-transform: uppercase; margin-bottom: 8px; display: block;">Concessão (De / Até)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" name="grant_date_start" class="m24-input" value="{{ request.args.get('grant_date_start', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <input type="date" name="grant_date_end" class="m24-input" value="{{ request.args.get('grant_date_end', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                </div>
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--warning); text-transform: uppercase; margin-bottom: 8px; display: block;">Limite Oposição (De / Até)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" name="opp_deadline_start" class="m24-input" value="{{ request.args.get('opp_deadline_start', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <input type="date" name="opp_deadline_end" class="m24-input" value="{{ request.args.get('opp_deadline_end', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                </div>
+            </div>
+            <div style="grid-column: span 2;">
+                <label style="font-size: 0.65rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Próxima Renovação (De / Até)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" name="renewal_start" class="m24-input" value="{{ request.args.get('renewal_start', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                    <input type="date" name="renewal_end" class="m24-input" value="{{ request.args.get('renewal_end', '') }}" onchange="this.form.submit()" style="height: 38px; font-size: 0.85rem;">
+                </div>
+            </div>
+
+            <div style="grid-column: span 4; display: flex; align-items: flex-end; margin-top: 10px;">
+                <a href="{{ url_for('index') }}" class="btn-m24 btn-m24-ghost" style="width: 100%; justify-content: center; height: 42px; font-size: 0.85rem; border-color: var(--danger); color: var(--danger);">
+                    <i class="ri-delete-bin-7-line"></i> Resetar Todos os Filtros (Histórico e Metadados)
+                </a>
             </div>
         </form>
     </div>
 
     <style>
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         .filter-pill {
             padding: 8px 16px;
             border-radius: 12px;
@@ -253,18 +371,23 @@
         <table class="m24-table">
             <thead>
                 <tr>
-                    <th>Marca e Identificação</th>
+                    <th style="width: 50px;"></th> <!-- Toggle Icon -->
+                    <th>Marca</th>
                     <th>Tipo</th>
                     <th>Titular / Status</th>
                     <th>Classes Nice</th>
-                    <th>Próxima Ação / Prazo</th>
-                    <th>Probabilidade de Conflito</th>
+                    <th>Probabilidade</th>
                     <th style="text-align: right;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for brand in brands %}
                 <tr>
+                    <td>
+                        <button onclick="toggleDetails('{{ brand.id }}')" style="background:none; border:none; color:var(--brand-primary); cursor:pointer;">
+                            <i class="ri-add-circle-line" id="icon-{{ brand.id }}" style="font-size: 1.2rem;"></i>
+                        </button>
+                    </td>
                     <td>
                         <div class="brand-preview">
                             <div class="brand-img">
@@ -327,42 +450,6 @@
                         </div>
                     </td>
                     <td>
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            {% if brand.next_renewal_date %}
-                            <div style="font-size: 0.8rem; color: var(--text-vibrant); font-weight: 700;">
-                                <i class="ri-refresh-line" style="color: var(--success);"></i> Renovação: {{ brand.next_renewal_date }}
-                            </div>
-                            {% elif brand.opposition_deadline %}
-                            <div style="font-size: 0.8rem; color: var(--warning); font-weight: 700;">
-                                <i class="ri-timer-line"></i> Oposição: {{ brand.opposition_deadline }}
-                            </div>
-                            {% elif brand.grant_date %}
-                            <div style="font-size: 0.8rem; color: var(--brand-primary); font-weight: 700;">
-                                <i class="ri-award-line"></i> Concedida: {{ brand.grant_date }}
-                            </div>
-                            {% else %}
-                            <span style="font-size: 0.75rem; color: var(--text-dim);">Aguardando Atos...</span>
-                            {% endif %}
-                            
-                            {% if brand.bulletin_number %}
-                            <span style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase;">BPI Nº {{ brand.bulletin_number }}</span>
-                            {% endif %}
-                            
-                            <!-- Badges Inteligentes de Alerta -->
-                            <div style="display: flex; gap: 4px; margin-top: 4px;">
-                                {% if brand.triple_fee == 'SIM' %}
-                                <span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TAXA TRIPLA</span>
-                                {% endif %}
-                                {% if brand.status == 'STATUS_04' or brand.refusal_reason %}
-                                <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">RECUSA</span>
-                                {% endif %}
-                                {% if brand.definite_expiry_date %}
-                                <span style="background: var(--bg-strong); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">CADUCIDADE</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </td>
-                    <td>
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div class="risk-meter">
                                 <div class="risk-fill" style="width: {{ brand.risk_score }}%; background: {% if brand.risk_level == 'high' %}var(--danger){% elif brand.risk_level == 'medium' %}var(--warning){% else %}var(--success){% endif %};"></div>
@@ -370,16 +457,135 @@
                             <span style="font-weight: 800; color: var(--text-vibrant); font-size: 0.9rem;">{{ brand.risk_score|int }}%</span>
                         </div>
                     </td>
-                    <td>
+                    <td style="text-align: right;">
                         <div class="action-group">
-                            <!-- Ações Rápidas de Suporte (Apenas se não estiver reprovado) -->
-                            {% if brand.status != 'rejected' %}
-                            <a href="{{ url_for('support', brand_id=brand.id) }}" class="action-icon" title="Iniciar Chat Interno" style="color: #6366f1;"><i class="ri-chat-voice-line"></i></a>
-                            <a href="https://wa.me/258840000000?text=Olá, preciso de suporte para a marca {{ brand.name }}" target="_blank" class="action-icon" title="Suporte via WhatsApp" style="color: #25d366;"><i class="ri-whatsapp-line"></i></a>
-                            {% endif %}
+                            <button onclick="toggleDetails('{{ brand.id }}')" class="btn-m24 btn-m24-ghost" style="padding: 6px 12px; font-size: 0.7rem; gap: 5px;">
+                                <i class="ri-search-eye-line"></i> VISUALIZAR
+                            </button>
+                            <a href="{{ url_for('brand_detail', brand_id=brand.id) }}" class="action-icon" title="Dossier Completo"><i class="ri-external-link-line"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="details-{{ brand.id }}" style="display: none; background: rgba(255,255,255,0.01);">
+                    <td colspan="7" style="padding: 30px; border-top: 1px solid rgba(255,255,255,0.05); background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent);">
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;">
                             
-                            <a href="{{ url_for('analyze_brand', brand_id=brand.id) }}" class="action-icon" title="Inteligência de Conflito"><i class="ri-bubble-chart-line"></i></a>
-                            <a href="{{ url_for('brand_detail', brand_id=brand.id) }}" class="action-icon" title="Processo Completo"><i class="ri-profile-line"></i></a>
+                            <!-- COLUNA 1: CRONOGRAMA LEGAL -->
+                            <div class="dossier-col">
+                                <h4 style="color: var(--brand-primary); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ri-calendar-event-line"></i> Cronograma Legal
+                                </h4>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Data de Depósito</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.filing_date or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Publicação BPI</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.publication_date_bpi or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Prazo Oposição</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--warning);">{{ brand.opposition_deadline or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Data Concessão</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--success);">{{ brand.grant_date or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Prazo Recurso</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.appeal_deadline or '---' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- COLUNA 2: CICLO DE VIDA E TAXAS -->
+                            <div class="dossier-col">
+                                <h4 style="color: var(--brand-primary); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ri-refresh-line"></i> Ciclo de Vida e Taxas
+                                </h4>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Próxima Renovação</label>
+                                        <div style="font-size: 0.85rem; font-weight: 800; color: var(--brand-primary);">{{ brand.next_renewal_date or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Limite Renovação</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.renewal_deadline or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Taxa Tripla</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: {% if brand.triple_fee == 'SIM' %}var(--danger){% else %}var(--text-standard){% endif %};">
+                                            {{ brand.triple_fee or 'NÃO' }}
+                                        </div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Data Vencimento</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.expiry_date or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Caducidade Definitiva</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--danger);">{{ brand.definite_expiry_date or '---' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- COLUNA 3: DADOS DO TITULAR (BPI) -->
+                            <div class="dossier-col">
+                                <h4 style="color: var(--brand-primary); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ri-user-settings-line"></i> Titular e Indexação
+                                </h4>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Nacionalidade</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.nationality or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Sufixo Jurídico / Cat.</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.suffix or '---' }} / {{ brand.category or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Página / Ano Detetado</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">Pág. {{ brand.page or '---' }} ({{ brand.detected_year or '---' }})</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Total de Processos</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.total_processes or '1' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Morada Completa</label>
+                                        <div style="font-size: 0.75rem; line-height: 1.4; color: var(--text-standard);">{{ brand.full_address or '---' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- COLUNA 4: DESPACHOS E OBSERVAÇÕES -->
+                            <div class="dossier-col">
+                                <h4 style="color: var(--brand-primary); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ri-file-list-3-line"></i> Despachos e Alterações
+                                </h4>
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Tipo de Alteração</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700;">{{ brand.alteration_type or 'NENHUMA' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Próxima Ação Sugerida</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary);">{{ brand.next_action or 'MONITORAR' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Recusa Definitiva</label>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: var(--danger);">{{ brand.final_refusal_date or '---' }}</div>
+                                    </div>
+                                    <div class="data-group">
+                                        <label style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Observações Oficiais (BPI)</label>
+                                        <div style="font-size: 0.75rem; line-height: 1.4; color: var(--text-standard); max-height: 100px; overflow-y: auto;">
+                                            {{ brand.observations or 'Sem observações registadas no boletim.' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </td>
                 </tr>
@@ -388,4 +594,28 @@
         </table>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+function toggleDetails(brandId) {
+    const detailsRow = document.getElementById('details-' + brandId);
+    const icon = document.getElementById('icon-' + brandId);
+    
+    if (detailsRow.style.display === 'none') {
+        detailsRow.style.display = 'table-row';
+        if (icon) {
+            icon.classList.remove('ri-add-circle-line');
+            icon.classList.add('ri-subtract-circle-line');
+        }
+    } else {
+        detailsRow.style.display = 'none';
+        if (icon) {
+            icon.classList.remove('ri-subtract-circle-line');
+            icon.classList.add('ri-add-circle-line');
+        }
+    }
+}
+</script>
+{% endblock %}
+
 {% endblock %}

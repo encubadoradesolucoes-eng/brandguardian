@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block title %}Monitoramento de Palavras-Chave | m24 Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .keyword-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-2xl);
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: var(--transition-elite);
+    }
+    .keyword-card:hover {
+        border-color: var(--brand-primary);
+        transform: translateX(5px);
+        background: var(--bg-elevated);
+    }
+    .status-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+    .keyword-input-group {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-3xl);
+        padding: 1rem;
+        display: flex;
+        gap: 15px;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div style="margin-bottom: 3rem;">
+        <h1 class="hero-title">Monitoramento de Palavras-Chave</h1>
+        <p class="hero-desc">Vigilância ativa de termos, radicais e marcas em potencial na base do BPI.</p>
+    </div>
+
+    <!-- Adicionar Nova Keyword -->
+    <form action="{{ url_for('add_keyword_watch') }}" method="POST" class="keyword-input-group">
+        <div style="flex: 1; display: flex; align-items: center; gap: 15px; padding-left: 15px;">
+            <i class="ri-key-2-line" style="color: var(--brand-primary); font-size: 1.2rem;"></i>
+            <input type="text" name="keyword" placeholder="Introduza uma palavra-chave ou radical para monitorar..." 
+                   style="background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 1rem; font-family: 'Outfit';" required>
+        </div>
+        <button type="submit" class="btn-m24 btn-m24-primary" style="padding: 0 30px;">
+            Ativar Vigilância
+        </button>
+    </form>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- INFO CARD -->
+        <div class="bento-card" style="grid-column: span 2; display: flex; align-items: center; gap: 20px; border-left: 4px solid var(--brand-primary);">
+            <div style="font-size: 2rem; color: var(--brand-primary);"><i class="ri-information-line"></i></div>
+            <div style="font-size: 0.9rem; color: var(--text-dim); line-height: 1.6;">
+                O sistema irá varrer automaticamente todos os novos boletins do BPI em busca de termos que contenham a sua palavra-chave. 
+                Sempre que houver uma correspondência, receberá um alerta imediato via **Email e WhatsApp**.
+            </div>
+        </div>
+
+        {% if watches %}
+            {% for watch in watches %}
+            <div class="keyword-card">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--brand-primary-glow); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                        <i class="ri-radar-line"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-vibrant); margin-bottom: 4px;">{{ watch.keyword }}</div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="status-badge">Vigilância Ativa</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">Criado em {{ watch.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 800; color: var(--brand-primary);">{{ watch.match_count }}</div>
+                        <div style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase;">Conflitos</div>
+                    </div>
+                    <a href="{{ url_for('delete_keyword_watch', watch_id=watch.id) }}" style="color: var(--text-dim); font-size: 1.2rem; transition: color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-dim)'">
+                        <i class="ri-delete-bin-line"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="grid-column: span 2; text-align: center; padding: 5rem; border: 2px dashed var(--border-subtle); border-radius: var(--radius-3xl);">
+                <i class="ri-search-eye-line" style="font-size: 4rem; color: var(--border-subtle); margin-bottom: 1.5rem; display: block;"></i>
+                <h3 style="color: var(--text-dim);">Nenhuma palavra-chave em monitoramento</h3>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">Adicione termos acima para começar a receber alertas automáticos.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
