@@ -284,6 +284,16 @@
                 </div>
                 <div class="data-row">
                     <div class="data-item">
+                        <label>Data de Depósito</label>
+                        <span>{{ brand.filing_date or 'N/D' }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Número do Boletim (BPI)</label>
+                        <span>{{ brand.bulletin_number or 'N/D' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
                         <label>Paleta de Cores</label>
                         <span>{{ brand.colors or 'Baseada no Asset' }}</span>
                     </div>
@@ -342,7 +352,52 @@
                 {% endif %}
             </div>
 
-            <!-- Análise Detalhada IA -->
+            <!-- DADOS OFICIAIS BPI/IPI (AGREGADOS) -->
+            <div class="section-card" style="border-left: 5px solid var(--success);">
+                <h3 class="card-title-pro"><i class="ri-government-line" style="color:var(--success);"></i> Histórico Legal Agregado (BPI/IPI)</h3>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Publicação em Boletim</label>
+                        <span>{{ brand.publication_date_bpi or 'Aguardando...' }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Prazo Limite Oposição</label>
+                        <span style="color: var(--warning);">{{ brand.opposition_deadline or 'N/D' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Data de Concessão</label>
+                        <span style="color: var(--success);">{{ brand.grant_date or 'Em Processamento' }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>Data de Expiração</label>
+                        <span>{{ brand.expiry_date or 'N/D' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Última Renovação</label>
+                        <span>{{ brand.renewal_date or 'N/D' }}</span>
+                    </div>
+                    <div class="data-item">
+                        <label>PRÓXIMA RENOVAÇÃO</label>
+                        <span style="color: var(--brand-primary); font-weight: 800;">{{ brand.next_renewal_date or 'N/D' }}</span>
+                    </div>
+                </div>
+                {% if brand.refusal_reason %}
+                <div style="margin-top: 1rem; padding: 1.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 15px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <label style="display:block; font-size:0.65rem; font-weight:800; color:#ef4444; text-transform:uppercase; margin-bottom: 5px;">Motivo da Recusa (BPI)</label>
+                    <p style="font-size: 0.9rem; color: white; margin: 0;">{{ brand.refusal_reason }}</p>
+                </div>
+                {% endif %}
+                {% if brand.observations %}
+                <div style="margin-top: 1rem; padding: 1.5rem; background: var(--bg-elevated); border-radius: 15px;">
+                    <label style="display:block; font-size:0.65rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-bottom: 5px;">Notas e Observações</label>
+                    <p style="font-size: 0.9rem; color: var(--text-standard); margin: 0;">{{ brand.observations }}</p>
+                </div>
+                {% endif %}
+            </div>
             <div class="section-card">
                 <h3 class="card-title-pro"><i class="ri-radar-line" style="color:var(--brand-primary);"></i> Diagnóstico m24 Intelligence</h3>
                 <div class="analysis-bubble">

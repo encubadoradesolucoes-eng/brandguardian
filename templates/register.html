@@ -167,14 +167,18 @@
         </div>
         <div class="step-unit" id="step2-indicator">
             <div class="step-circle">2</div>
-            <div class="step-label">Assets</div>
+            <div class="step-label">Histórico</div>
         </div>
         <div class="step-unit" id="step3-indicator">
             <div class="step-circle">3</div>
-            <div class="step-label">Classes</div>
+            <div class="step-label">Assets</div>
         </div>
         <div class="step-unit" id="step4-indicator">
             <div class="step-circle">4</div>
+            <div class="step-label">Classes</div>
+        </div>
+        <div class="step-unit" id="step5-indicator">
+            <div class="step-circle">5</div>
             <div class="step-label">Holders</div>
         </div>
     </div>
@@ -201,7 +205,7 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr; gap: 2.5rem;">
+                <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
                     <div class="form-group">
                         <label class="label-m24">Finalidade do Registro</label>
                         <select name="registration_mode" class="input-m24" style="border-color: var(--brand-primary);">
@@ -209,6 +213,22 @@
                             <option value="PROTECTION">🛡 Proteger Marca já Existente (Monitoramento 24h)</option>
                         </select>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Selecione 'Novo Registro' se a marca ainda não possui registro legal no IPI.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="label-m24">Estado Legal (Opcional)</label>
+                        <select name="official_status" class="input-m24">
+                            <option value="">-- Automático (Baseado na Finalidade) --</option>
+                            <option value="STATUS_01">STATUS_01 - PUBLICADO</option>
+                            <option value="STATUS_02">STATUS_02 - CONCEDIDO</option>
+                            <option value="STATUS_03">STATUS_03 - RENOVADO</option>
+                            <option value="STATUS_04">STATUS_04 - RECUSA PROVISÓRIA</option>
+                            <option value="STATUS_05">STATUS_05 - RENUNCIADO</option>
+                            <option value="STATUS_06">STATUS_06 - RECUSA DEFINITIVA</option>
+                            <option value="STATUS_07">STATUS_07 - AVISO CADUCIDADE</option>
+                            <option value="STATUS_08">STATUS_08 - CADUCO DEFINITIVO</option>
+                            <option value="STATUS_09">STATUS_09 - ALTERADO</option>
+                        </select>
+                        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Forçar um estado oficial do Boletim Industrial (BPI).</p>
                     </div>
                 </div>
 
@@ -231,8 +251,134 @@
             </div>
         </div>
 
-        <!-- Step 2: Assets -->
+        <!-- Step 2: Histórico BPI/IPI (COMPLETO) -->
         <div class="form-section" id="step2">
+            <div class="bento-card">
+                <h3 style="font-family: 'Outfit'; margin-bottom: 2rem; font-size: 1.5rem;">Dossier Oficial do BPI (Full Parity)</h3>
+                
+                <!-- Grupo 1: Cronograma -->
+                <div style="margin-bottom: 2.5rem;">
+                    <div style="font-weight: 800; font-size: 0.75rem; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-calendar-todo-line"></i> Ações e Cronograma Legal
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="label-m24">Número do Boletim</label>
+                            <input type="text" name="bulletin_number" class="input-m24" placeholder="Ex: 170">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Data de Depósito</label>
+                            <input type="date" name="filing_date" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Publicação BPI</label>
+                            <input type="date" name="publication_date_bpi" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Prazo Oposição</label>
+                            <input type="date" name="opposition_deadline" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Data Concessão</label>
+                            <input type="date" name="grant_date" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Prazo Recurso</label>
+                            <input type="date" name="appeal_deadline" class="input-m24">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grupo 2: Ciclo de Vida -->
+                <div style="margin-bottom: 2.5rem;">
+                    <div style="font-weight: 800; font-size: 0.75rem; color: var(--success); text-transform: uppercase; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-refresh-line"></i> Ciclo de Vida e Renovações
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="label-m24">Última Renovação</label>
+                            <input type="date" name="renewal_date" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Próxima Renovação</label>
+                            <input type="date" name="next_renewal_date" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Limite Renovação</label>
+                            <input type="date" name="renewal_deadline" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Data de Vencimento</label>
+                            <input type="date" name="expiry_date" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Caducidade Definitiva</label>
+                            <input type="date" name="definite_expiry_date" class="input-m24">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Taxa Tripla (Sim/Não)</label>
+                            <select name="triple_fee" class="input-m24">
+                                <option value="NÃO">Não</option>
+                                <option value="SIM">Sim (Em atraso)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grupo 3: Despachos e Alterações -->
+                <div style="margin-bottom: 2.5rem;">
+                    <div style="font-weight: 800; font-size: 0.75rem; color: var(--danger); text-transform: uppercase; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-exchange-line"></i> Despachos, Alterações e Recusas
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="label-m24">Tipo de Alteração</label>
+                            <input type="text" name="alteration_type" class="input-m24" placeholder="Ex: Mudança de Nome">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Data de Renúncia</label>
+                            <input type="date" name="renunciation_date" class="input-m24">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label class="label-m24">Motivo da Recusa / Notas de Despacho</label>
+                            <textarea name="refusal_reason" class="input-m24" rows="2" placeholder="Detalhes do despacho de recusa..."></textarea>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label class="label-m24">Detalhes da Alteração / Observações</label>
+                            <textarea name="observations" class="input-m24" rows="2" placeholder="Notas adicionais do boletim..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grupo 4: Metadados do Titular -->
+                <div>
+                    <div style="font-weight: 800; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-user-settings-line"></i> Metadados Oficiais do Requerente
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="label-m24">Nacionalidade</label>
+                            <input type="text" name="nationality" class="input-m24" placeholder="Ex: Moçambicana">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Total de Processos</label>
+                            <input type="number" name="total_processes" class="input-m24" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="label-m24">Próxima Ação Manual</label>
+                            <input type="text" name="next_action" class="input-m24" placeholder="Ação sugerida...">
+                        </div>
+                        <div class="form-group" style="grid-column: span 3;">
+                            <label class="label-m24">Endereço Completo no BPI</label>
+                            <input type="text" name="full_address" class="input-m24" placeholder="Endereço conforme consta no boletim">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Assets -->
+        <div class="form-section" id="step3">
             <div class="bento-card">
                 <h3 style="font-family: 'Outfit'; margin-bottom: 2.5rem; font-size: 1.5rem;">Assets Digitais</h3>
                 <div class="upload-box-m24" onclick="document.getElementById('logoInput').click()">
@@ -247,8 +393,8 @@
             </div>
         </div>
 
-        <!-- Step 3: Classificação -->
-        <div class="form-section" id="step3">
+        <!-- Step 4: Classificação -->
+        <div class="form-section" id="step4">
             <div class="bento-card">
                 <h3 style="font-family: 'Outfit'; margin-bottom: 1rem; font-size: 1.5rem;">Classificação de Nice</h3>
                 <p style="color: var(--text-standard); margin-bottom: 2.5rem;">As classes selecionadas definirão o escopo de proteção jurídica.</p>
@@ -275,8 +421,8 @@
             </div>
         </div>
 
-        <!-- Step 4: Holders -->
-        <div class="form-section" id="step4">
+        <!-- Step 5: Holders -->
+        <div class="form-section" id="step5">
             <div class="bento-card">
                 <h3 style="font-family: 'Outfit'; margin-bottom: 2.5rem; font-size: 1.5rem;">Informações do Titular</h3>
                 
@@ -411,7 +557,7 @@
 
 <script>
     let currentStep = 1;
-    const totalSteps = 4;
+    const totalSteps = 5;
     const selectedClasses = new Set();
 
     function changeStep(n) {

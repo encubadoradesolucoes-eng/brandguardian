@@ -58,6 +58,34 @@ def scan_marca_page():
             resultado = scan_live_real(termo, usuario_logado=True)
     return render_template('scan_marca.html', resultado=resultado, termo=termo)
 
+# ========== HOTFIX MIGRATION ROUTE ==========
+@app.route('/migrate_db_hotfix')
+def migrate_db_hotfix():
+    from sqlalchemy import text
+    try:
+        cols = [
+            ("bulletin_number", "VARCHAR(50)"), ("filing_date", "VARCHAR(50)"),
+            ("publication_date_bpi", "VARCHAR(50)"), ("opposition_deadline", "VARCHAR(50)"),
+            ("grant_date", "VARCHAR(50)"), ("renewal_date", "VARCHAR(50)"),
+            ("next_renewal_date", "VARCHAR(50)"), ("appeal_deadline", "VARCHAR(50)"),
+            ("expiry_date", "VARCHAR(50)"), ("next_action", "VARCHAR(200)"),
+            ("refusal_reason", "TEXT"), ("observations", "TEXT"),
+            ("alteration_type", "VARCHAR(100)"), ("alteration_details", "TEXT"),
+            ("renunciation_date", "VARCHAR(50)"), ("final_refusal_date", "VARCHAR(50)"),
+            ("renewal_deadline", "VARCHAR(50)"), ("triple_fee", "VARCHAR(20)"),
+            ("definite_expiry_date", "VARCHAR(50)"), ("nationality", "VARCHAR(100)"),
+            ("full_address", "TEXT"), ("total_processes", "INTEGER")
+        ]
+        for col_name, col_type in cols:
+            try:
+                db.session.execute(text(f"ALTER TABLE brand ADD COLUMN {col_name} {col_type}"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        return "✅ Migração concluída com sucesso! Podes voltar ao dashboard.", 200
+    except Exception as e:
+        return f"❌ Erro: {str(e)}", 500
+
 # ========== HEALTH CHECK (para Render) ==========
 @app.route('/health')
 def health_check():
@@ -418,6 +446,32 @@ class Brand(db.Model):
     phonetic_name = db.Column(db.Text)
     image_data = db.Column(db.LargeBinary) # BINÁRIO BYTEA
     registered_by = db.Column(db.Text, default='Sistema m24')
+    
+    # --- CAMPOS INTELIGENTES AGREGADOS (BPI/IPI) ---
+    bulletin_number = db.Column(db.String(50))
+    filing_date = db.Column(db.String(50))
+    publication_date_bpi = db.Column(db.String(50))
+    opposition_deadline = db.Column(db.String(50))
+    grant_date = db.Column(db.String(50))
+    renewal_date = db.Column(db.String(50))
+    next_renewal_date = db.Column(db.String(50))
+    appeal_deadline = db.Column(db.String(50))
+    expiry_date = db.Column(db.String(50))
+    next_action = db.Column(db.String(200))
+    refusal_reason = db.Column(db.Text)
+    observations = db.Column(db.Text)
+    
+    # --- CAMPOS ADICIONAIS BPI (PARIDADE TOTAL) ---
+    alteration_type = db.Column(db.String(100))
+    alteration_details = db.Column(db.Text)
+    renunciation_date = db.Column(db.String(50))
+    final_refusal_date = db.Column(db.String(50))
+    renewal_deadline = db.Column(db.String(50))
+    triple_fee = db.Column(db.String(20))
+    definite_expiry_date = db.Column(db.String(50))
+    nationality = db.Column(db.String(100))
+    full_address = db.Column(db.Text)
+    total_processes = db.Column(db.Integer)
 
     def generate_process_number(self):
         # DOCSTRING_REMOVED Gera um número de processo único no formato M24-YYYY-XXX.# DOCSTRING_REMOVED 
@@ -932,7 +986,8 @@ def index():
         'waiting_admin': c_query.filter_by(status='waiting_admin').count(),
         'approved': c_query.filter_by(status='approved').count(),
         'rejected': c_query.filter_by(status='rejected').count(),
-        'monitored': c_query.filter_by(status='monitored').count()
+        'monitored': c_query.filter_by(status='monitored').count(),
+        'official': c_query.filter(Brand.status.like('STATUS_%')).count()
     }
 
     return render_template('index.html', brands=brands, counts=counts)
@@ -1084,15 +1139,42 @@ def register():
             user_id=user.id if user else (current_user.id if current_user.is_authenticated else None),
             agent_id=request.form.get('agent_id') if request.form.get('agent_id') else None,
             registered_by=current_user.name if current_user.is_authenticated else 'Auto-Registro',
-            registration_mode=request.form.get('registration_mode', 'NEW_REGISTRATION')
+            registration_mode=request.form.get('registration_mode', 'NEW_REGISTRATION'),
+            # Novos campos agregados
+            bulletin_number=request.form.get('bulletin_number'),
+            filing_date=request.form.get('filing_date'),
+            publication_date_bpi=request.form.get('publication_date_bpi'),
+            opposition_deadline=request.form.get('opposition_deadline'),
+            grant_date=request.form.get('grant_date'),
+            renewal_date=request.form.get('renewal_date'),
+            next_renewal_date=request.form.get('next_renewal_date'),
+            appeal_deadline=request.form.get('appeal_deadline'),
+            expiry_date=request.form.get('expiry_date'),
+            next_action=request.form.get('next_action'),
+            refusal_reason=request.form.get('refusal_reason'),
+            observations=request.form.get('observations'),
+            alteration_type=request.form.get('alteration_type'),
+            alteration_details=request.form.get('alteration_details'),
+            renunciation_date=request.form.get('renunciation_date'),
+            final_refusal_date=request.form.get('final_refusal_date'),
+            renewal_deadline=request.form.get('renewal_deadline'),
+            triple_fee=request.form.get('triple_fee'),
+            definite_expiry_date=request.form.get('definite_expiry_date'),
+            nationality=request.form.get('nationality'),
+            full_address=request.form.get('full_address'),
+            total_processes=request.form.get('total_processes')
         )
         
         # Gerar número de processo para novos pedidos
         if new_brand.registration_mode == 'NEW_REGISTRATION':
             new_brand.process_number = new_brand.generate_process_number()
-            new_brand.status = 'under_study'
+            # Se o usuário escolheu um status oficial no form, usamos ele. Senão, under_study.
+            form_status = request.form.get('official_status')
+            new_brand.status = form_status if form_status else 'under_study'
         else:
-            new_brand.status = 'monitored' # Marcas já existentes que estamos vigiando
+            # Para monitoramento, se houver status oficial usa ele, senão o padrão 'monitored'
+            form_status = request.form.get('official_status')
+            new_brand.status = form_status if form_status else 'monitored'
         
         db.session.add(new_brand)
         db.session.commit()

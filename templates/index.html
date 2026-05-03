@@ -199,6 +199,9 @@
         <a href="{{ url_for('index', status='rejected') }}" class="filter-pill {% if request.args.get('status') == 'rejected' %}active{% endif %}" style="--active-color: var(--danger);">
             Reprovados <span>{{ counts.rejected }}</span>
         </a>
+        <a href="{{ url_for('index', status='official') }}" class="filter-pill {% if request.args.get('status') == 'official' %}active{% endif %}" style="--active-color: var(--brand-primary);">
+            Oficiais (BPI) <span>{{ counts.official }}</span>
+        </a>
         
         <form method="GET" action="{{ url_for('index') }}" style="margin-left: auto; display: flex; gap: 10px; flex: 1; min-width: 250px;">
             <input type="hidden" name="status" value="{{ request.args.get('status', '') }}">
@@ -254,6 +257,7 @@
                     <th>Tipo</th>
                     <th>Titular / Status</th>
                     <th>Classes Nice</th>
+                    <th>Próxima Ação / Prazo</th>
                     <th>Probabilidade de Conflito</th>
                     <th style="text-align: right;">Ações</th>
                 </tr>
@@ -303,6 +307,10 @@
                             <span class="status-pill" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
                                 <i class="ri-eye-line"></i> Vigiando (IPI)
                             </span>
+                        {% elif brand.status.startswith('STATUS_') %}
+                            <span class="status-pill" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                <i class="ri-shield-check-line"></i> {{ brand.status }}
+                            </span>
                         {% else %}
                              <span class="status-pill danger">
                                 <i class="ri-close-circle-line"></i> Reprovado
@@ -316,6 +324,42 @@
                                 <span style="background: var(--bg-elevated); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">{{ cls }}</span>
                                 {% endfor %}
                             {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            {% if brand.next_renewal_date %}
+                            <div style="font-size: 0.8rem; color: var(--text-vibrant); font-weight: 700;">
+                                <i class="ri-refresh-line" style="color: var(--success);"></i> Renovação: {{ brand.next_renewal_date }}
+                            </div>
+                            {% elif brand.opposition_deadline %}
+                            <div style="font-size: 0.8rem; color: var(--warning); font-weight: 700;">
+                                <i class="ri-timer-line"></i> Oposição: {{ brand.opposition_deadline }}
+                            </div>
+                            {% elif brand.grant_date %}
+                            <div style="font-size: 0.8rem; color: var(--brand-primary); font-weight: 700;">
+                                <i class="ri-award-line"></i> Concedida: {{ brand.grant_date }}
+                            </div>
+                            {% else %}
+                            <span style="font-size: 0.75rem; color: var(--text-dim);">Aguardando Atos...</span>
+                            {% endif %}
+                            
+                            {% if brand.bulletin_number %}
+                            <span style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase;">BPI Nº {{ brand.bulletin_number }}</span>
+                            {% endif %}
+                            
+                            <!-- Badges Inteligentes de Alerta -->
+                            <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                {% if brand.triple_fee == 'SIM' %}
+                                <span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TAXA TRIPLA</span>
+                                {% endif %}
+                                {% if brand.status == 'STATUS_04' or brand.refusal_reason %}
+                                <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">RECUSA</span>
+                                {% endif %}
+                                {% if brand.definite_expiry_date %}
+                                <span style="background: var(--bg-strong); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">CADUCIDADE</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </td>
                     <td>
