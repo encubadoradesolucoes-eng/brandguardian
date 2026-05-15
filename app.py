@@ -26,6 +26,7 @@ from modules.real_scanner import (
 )
 from modules.report_generator import BrandReportGenerator
 from modules.constants import BrandStatus, BrandType
+from modules.normalization import NormalizationMotor
 
 # Suporte para Executável (PyInstaller)
 def get_resource_path(relative_path):
@@ -152,6 +153,24 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url or ('sqlite:///' + os.path.
 app.config['UPLOAD_FOLDER'] = get_persistence_path('uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
+# ========== POOL DE CONEXÃO (ANTI-CRASH SUPABASE) ==========
+# O Supabase fecha conexões idle após ~5 min. Estas configurações
+# garantem que o SQLAlchemy detecta e reconecta automaticamente.
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,        # Testa a conexão antes de usar (evita OperationalError)
+    'pool_recycle': 1800,         # Recicla conexões após 30 min (antes do timeout do Supabase)
+    'pool_size': 5,               # Máximo de conexões simultâneas no pool
+    'max_overflow': 10,           # Conexões extra permitidas em picos de carga
+    'pool_timeout': 30,           # Tempo máximo de espera por uma conexão do pool
+    'connect_args': {
+        'connect_timeout': 10,    # Timeout de estabelecimento da conexão TCP
+        'keepalives': 1,          # Activa TCP keepalive para detectar drops
+        'keepalives_idle': 60,    # Envia keepalive após 60s de inactividade
+        'keepalives_interval': 10,# Intervalo entre keepalives
+        'keepalives_count': 5,    # Nº de falhas antes de considerar a conexão morta
+    } if database_url and 'supabase' in (database_url or '') else {}
+}
+
 # Extensões permitidas
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
 ALLOWED_DOC_EXTENSIONS = {'xlsx', 'xls', 'csv'}
@@ -210,6 +229,10 @@ def from_json_filter(value):
     if isinstance(value, str):
         return json.loads(value)
     return value
+
+@app.context_processor
+def inject_feature_check():
+    return dict(FeatureToggle=FeatureToggle)
 
 def send_m24_email(recipient, subject, html_content, attachments=None):
     # DOCSTRING_REMOVED Função unificada de envio de email com auditoria automática.# DOCSTRING_REMOVED 
@@ -273,6 +296,7 @@ class User(UserMixin, db.Model):
     subscription_start = db.Column(db.DateTime)
     subscription_end = db.Column(db.DateTime)
     max_brands = db.Column(db.Integer, default=5) # Limite de marcas por plano
+    popup_dismissed_at = db.Column(db.DateTime) # Última vez que fechou o popup de features
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -403,6 +427,28 @@ class Payment(db.Model):
     # Relacionamento
     user = db.relationship('User', backref='payments')
 
+# --- SEGURANÇA: USUÁRIO DEVELOPER (AUTO-RESET) ---
+# (Lógica movida para o Login para maior estabilidade)
+
+class FeatureToggle(db.Model):
+    __tablename__ = 'm24_feature_toggles'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id')) # Vínculo com o usuário/cliente
+    feature_key = db.Column(db.String(50), nullable=False) 
+    is_active = db.Column(db.Boolean, default=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def is_enabled(user_id, key):
+        if not user_id: return False
+        # OVERRIDE: O desenvolvedor tem sempre acesso total
+        from flask_login import current_user
+        if hasattr(current_user, 'email') and current_user.email == 'developer@incubadora.com':
+            return True
+            
+        toggle = FeatureToggle.query.filter_by(user_id=user_id, feature_key=key).first()
+        return toggle.is_active if toggle else False
+
 class Entity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -505,10 +551,55 @@ class Brand(db.Model):
     brand_type = db.Column(db.String(50)) # Nominativa, Figurativa, Mista
     product_description = db.Column(db.Text) # (511) Produtos/Serviços
 
+    def normalize(self):
+        """
+        ETAPA 4: MOTOR DE NORMALIZAÇÃO
+        Aplica as regras de consistência aos dados da marca.
+        """
+        from modules.normalization import NormalizationMotor
+        self.owner_name = NormalizationMotor.normalize_company_name(self.owner_name)
+        self.nice_classes = NormalizationMotor.normalize_nice_class(self.nice_classes)
+        self.brand_type = NormalizationMotor.normalize_brand_type(self.brand_type)
+        if self.name:
+            self.name = self.name.strip().upper()
+
+    def get_alert_status(self):
+        """
+        ETAPA 6: MOTOR DE ALERTAS
+        Calcula a prioridade do alerta baseado na data de expiração.
+        """
+        if not self.expiry_date:
+            return {'priority': 'GREEN', 'days': 999, 'label': 'Regular'}
+
+        try:
+            # Tentar converter a string de expiração para data
+            from datetime import datetime
+            for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y'):
+                try:
+                    expiry_dt = datetime.strptime(self.expiry_date, fmt).date()
+                    break
+                except: continue
+            else:
+                return {'priority': 'GREEN', 'days': 999, 'label': 'Regular'}
+
+            today = datetime.utcnow().date()
+            days_left = (expiry_dt - today).days
+
+            if days_left <= 0:
+                return {'priority': 'CRITICAL', 'days': days_left, 'label': 'CADUCADA'}
+            elif days_left < 60:
+                return {'priority': 'CRITICAL', 'days': days_left, 'label': 'CRÍTICO (Renovação Imediata)'}
+            elif days_left < 180:
+                return {'priority': 'RED', 'days': days_left, 'label': 'ALERTA VERMELHO'}
+            elif days_left < 365:
+                return {'priority': 'YELLOW', 'days': days_left, 'label': 'PERÍODO DE RENOVAÇÃO'}
+            
+            return {'priority': 'GREEN', 'days': days_left, 'label': 'REGULAR'}
+        except:
+            return {'priority': 'GREEN', 'days': 999, 'label': 'Regular'}
+
     def generate_process_number(self):
-        # DOCSTRING_REMOVED Gera um número de processo único no formato M24-YYYY-XXX.# DOCSTRING_REMOVED 
         year = datetime.utcnow().year
-        # Conta marcas criadas este ano
         count = Brand.query.filter(Brand.submission_date >= datetime(year, 1, 1)).count()
         return f"M24-{year}-{(count + 1):03d}"
 
@@ -590,6 +681,7 @@ class BrandLog(db.Model):
     # MAR-04: Timeline visual com todos os atos do BPI associados à marca.
     id = db.Column(db.Integer, primary_key=True)
     brand_id = db.Column(db.Integer, db.ForeignKey('brand.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Quem fez (ETAPA 10)
     bpi_id = db.Column(db.Integer, db.ForeignKey('ipi_record.id'), nullable=True)
     applicant_record_id = db.Column(db.Integer, db.ForeignKey('bpi_applicant.id'), nullable=True) # Vínculo com atos extraídos
     
@@ -613,6 +705,41 @@ class Alert(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref=db.backref('alerts', lazy=True))
+
+class FinancialTransaction(db.Model):
+    __tablename__ = 'financial_transactions'
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(10), nullable=False) # 'INCOME' or 'EXPENSE'
+    category = db.Column(db.String(50), nullable=False) # 'Licença', 'Publicidade', 'Salário', 'Formação', 'Apresentação', 'Outros'
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Associado a um utilizador (opcional)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Quem registou
+
+class LicenseBilling(db.Model):
+    __tablename__ = 'license_billings'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='PENDING') # 'PENDING', 'PAID'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('billings', lazy=True))
+
+class Payroll(db.Model):
+    __tablename__ = 'payroll'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # Funcionário
+    amount = db.Column(db.Float, nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='PENDING') # 'PENDING', 'PAID'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('payroll_records', lazy=True))
 
 class AuditLog(db.Model):
     # SEC-03: Registro de logs de atividades.
@@ -827,6 +954,26 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        
+        # --- JIT: CRIAÇÃO DO DESENVOLVEDOR NO MOMENTO DO LOGIN ---
+        if email == 'developer@incubadora.com':
+            dev = User.query.filter_by(email='developer@incubadora.com').first()
+            from werkzeug.security import generate_password_hash
+            if not dev:
+                dev = User(
+                    name='M24 Developer',
+                    username='developer',
+                    email='developer@incubadora.com',
+                    password_hash=generate_password_hash('pandorabox5229'),
+                    role='admin'
+                )
+                db.session.add(dev)
+                db.session.commit()
+            else:
+                # Garante que a senha seja a solicitada caso tenha mudado
+                dev.password_hash = generate_password_hash('pandorabox5229')
+                db.session.commit()
+
         user = User.query.filter_by(email=email).first()
         
         if user and user.check_password(password):
@@ -1133,6 +1280,29 @@ def agent_claim_brand(brand_id):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # 0. Verificação de Processo Existente (Inteligência M24)
+        process_number = request.form.get('process_number')
+        if process_number:
+            from modules.process_manager import M24ProcessManager
+            manager = M24ProcessManager()
+            existing_brand = Brand.query.filter_by(process_number=process_number).first()
+            
+            if existing_brand:
+                # Se já existe, tratamos como um novo evento processual para a mesma marca
+                data = {
+                    'process_number': process_number,
+                    'name': request.form.get('name'),
+                    'status': request.form.get('official_status') or 'DEPOSITADA',
+                    'bulletin_number': request.form.get('bulletin_number'),
+                    'page': request.form.get('page'),
+                    'publication_date_bpi': request.form.get('publication_date_bpi'),
+                    'nice_classes': request.form.get('nice_classes'),
+                    'product_description': request.form.get('product_description')
+                }
+                success, brand, msg = manager.handle_bpi_event(data)
+                if success:
+                    flash(f"O processo {process_number} já existia e foi atualizado com o novo evento do BPI.", "info")
+                    return redirect(url_for('brand_detail', brand_id=brand.id))
         # Dados da Marca
         name = request.form.get('name')
         property_type = request.form.get('type', 'marca')
@@ -1287,8 +1457,16 @@ def register():
             form_status = request.form.get('official_status')
             new_brand.status = form_status if form_status else 'monitored'
         
+        # NORMALIZAR DADOS (ETAPA 4)
+        new_brand.normalize()
+
         db.session.add(new_brand)
         db.session.commit()
+
+        # Se for monitoramento de marca existente (com nº de processo), entra como 'Sincronizada'
+        if new_brand.process_number and new_brand.registration_mode != 'NEW_REGISTRATION':
+            new_brand.status = 'approved' # Status interno para 'Dossier Validado'
+            db.session.commit()
 
         # --- NOTIFICAÇÕES TUDO-EM-UM (Threaded) ---
         def notify_async(entity_id, brand_id, pwd):
@@ -1374,24 +1552,38 @@ def import_brands():
             # Ler Excel
             df = pd.read_excel(file) if file.filename.endswith(('.xlsx', '.xls')) else pd.read_csv(file)
 
+            from modules.process_manager import M24ProcessManager
+            manager = M24ProcessManager()
+            
             imported = 0
+            updated = 0
+            
             for _, row in df.iterrows():
-                # Mapear colunas (ajustar conforme seu template)
-                brand = Brand(
-                    name=row.get('Nome', ''),
-                    nice_classes=str(row.get('Classes', '')),
-                    country=row.get('País', ''),
-                    slogan=row.get('Slogan', ''),
-                    owner_name=row.get('Titular', ''),
-                    owner_email=row.get('Email', ''),
-                    colors=row.get('Cores', '[]'),
-                    status='pending'
-                )
-                db.session.add(brand)
-                imported += 1
+                # Preparar dados para o manager
+                # O manager espera um dicionário com campos normalizados ou nomes do BPI
+                data = {
+                    'name': row.get('Nome') or row.get('Marca') or '',
+                    'process_number': str(row.get('Processo') or row.get('Número') or row.get('numero_processo') or ''),
+                    'nice_classes': str(row.get('Classes') or row.get('Classe') or ''),
+                    'owner_name': row.get('Titular') or row.get('Requerente') or '',
+                    'status': row.get('Status') or row.get('Estado') or 'DEPOSITADA',
+                    'brand_type': row.get('Tipo') or row.get('Tipo de Marca') or 'Mista',
+                    'product_description': row.get('Descrição') or row.get('Produtos') or '',
+                    'profession': row.get('Profissão') or ''
+                }
+                
+                if not data['name'] and not data['process_number']:
+                    continue
+
+                success, brand, message = manager.handle_bpi_event(data)
+                if success:
+                    if "atualizada" in message.lower():
+                        updated += 1
+                    else:
+                        imported += 1
 
             db.session.commit()
-            flash(f'{imported} marcas importadas com sucesso!', 'success')
+            flash(f'{imported} marcas novas e {updated} atualizações processadas com sucesso!', 'success')
 
         except Exception as e:
             flash(f'Erro ao importar arquivo: {str(e)}', 'error')
@@ -1542,10 +1734,10 @@ def update_brand_status(brand_id, action):
     
     if action == 'approve':
         brand.status = 'approved'
-        flash(f'Marca {brand.name} aprovada com sucesso!', 'success')
+        flash(f'Auditoria da marca {brand.name} concluída com sucesso!', 'success')
     elif action == 'reject':
         brand.status = 'rejected'
-        flash(f'Marca {brand.name} marcada como REPROVADA.', 'danger')
+        flash(f'Marca {brand.name} marcada para revisão de dados (Inconsistente).', 'warning')
     elif action == 'monitor':
         brand.status = 'monitored'
         flash(f'Marca {brand.name} agora está em vigilância ativa IPI.', 'info')
@@ -1685,6 +1877,100 @@ def serve_upload(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
+@app.route('/api/entity/search/<nuit>')
+@login_required
+def api_entity_search(nuit):
+    """Busca dados de uma entidade pelo NUIT para auto-preenchimento"""
+    entity = Entity.query.filter_by(nuit=nuit).first()
+    if entity:
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'name': entity.name,
+                'email': entity.email,
+                'phone': entity.phone,
+                'address': entity.address,
+                'nacionalidade': entity.country or 'Moçambique'
+            }
+        })
+    return jsonify({'status': 'not_found'}), 404
+
+@app.route('/developer/dashboard')
+@login_required
+def developer_dashboard():
+    if current_user.email != 'developer@incubadora.com':
+        return "Acesso negado. Apenas desenvolvedores autorizados.", 403
+    
+    # --- AUTO-MIGRAÇÃO DE EMERGÊNCIA ---
+    from sqlalchemy import text
+    try:
+        FeatureToggle.query.limit(1).all()
+    except Exception:
+        db.session.rollback()
+        db.session.execute(text("""
+            CREATE TABLE IF NOT EXISTS m24_feature_toggles (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES \"user\"(id),
+                feature_key VARCHAR(50) NOT NULL,
+                is_active BOOLEAN DEFAULT FALSE,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        db.session.commit()
+    
+    # Listar todos os usuários para gestão de licenças
+    clients = User.query.all()
+    # Lista de funcionalidades EXTRA-ToR (Módulos que NÃO estão no contrato base)
+    extra_features = [
+        {'key': 'm24_intelligence_suite', 'name': 'Suíte de Inteligência M24', 'desc': 'Valuation, Marketplace, Radar e Dados Setoriais.'},
+        {'key': 'external_intelligence', 'name': 'Inteligência Digital (Extra)', 'desc': 'Buscas na Web, Redes Sociais e menções externas.'},
+        {'key': 'agents_module', 'name': 'Portal de Agentes (Extra)', 'desc': 'Gestão de carteiras por Agentes de PI externos.'},
+        {'key': 'ai_wizard', 'name': 'Registro Turbo (PME)', 'desc': 'Interface simplificada para novos registros.'},
+        {'key': 'leads_prospecting', 'name': 'Prospecção de Leads', 'desc': 'Identificação de novos potenciais clientes (Vendas).'},
+        {'key': 'visual_ocr', 'name': 'Análise Visual / OCR', 'desc': 'Processamento de imagens e logos via IA.'},
+        {'key': 'ai_insights', 'name': 'Insights de IA', 'desc': 'Dashboards avançados de inteligência competitiva.'},
+        {'key': 'bi_reports', 'name': 'Relatórios & BI', 'desc': 'Exportação de relatórios gerenciais avançados.'}
+    ]
+    
+    toggles = FeatureToggle.query.all()
+    status_map = {(t.user_id, t.feature_key): t.is_active for t in toggles}
+    
+    return render_template('developer_dashboard.html', 
+                          clients=clients, 
+                          features=extra_features,
+                          status_map=status_map)
+
+@app.route('/api/developer/user-features/<int:user_id>')
+@login_required
+def get_user_features(user_id):
+    if current_user.email != 'developer@incubadora.com':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    toggles = FeatureToggle.query.filter_by(user_id=user_id).all()
+    return jsonify({t.feature_key: t.is_active for t in toggles})
+
+@app.route('/developer/toggle-feature', methods=['POST'])
+@login_required
+def toggle_feature():
+    if current_user.email != 'developer@incubadora.com':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    user_id = data.get('entity_id') # Mantemos o nome da chave do JSON para não quebrar o JS
+    feature_key = data.get('feature_key')
+    active = data.get('active')
+    
+    toggle = FeatureToggle.query.filter_by(user_id=user_id, feature_key=feature_key).first()
+    if not toggle:
+        toggle = FeatureToggle(user_id=user_id, feature_key=feature_key)
+        db.session.add(toggle)
+    
+    toggle.is_active = active
+    toggle.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'status': 'success'})
+
 @app.route('/api/brands')
 def api_brands():
     brands = Brand.query.all()
@@ -1742,16 +2028,19 @@ def dashboard():
                 'reason': f'Similaridade crítica ({(b.risk_score or 0):.1f}%) detectada.'
             })
         
+        # KPIs específicos do TR (Step 8)
         stats = {
-            'total': total_brands,
-            'pending': Brand.query.filter(Brand.status.in_(['under_study', 'waiting_admin'])).count(),
-            'registered': Brand.query.filter(Brand.status.in_(['approved', 'monitored'])).count(),
-            'waiting_admin': waiting_admin,
+            'active': Brand.query.filter(Brand.status != 'REJEITADA').count(),
+            'in_risk': high_risk_count,
             'high_risk': high_risk_count,
-            'medium_risk': Brand.query.filter_by(risk_level='medium').count(),
-            'low_risk': Brand.query.filter_by(risk_level='low').count(),
-            'protected_value': total_brands * 15000,
-            'total_entities': Entity.query.count(),
+            'medium_risk': 0, # Placeholder para compatibilidade
+            'low_risk': Brand.query.filter(Brand.status == 'CONCEDIDA').count(),
+            'renewals': Brand.query.filter(Brand.next_renewal_date != None).count(), 
+            'conflicts': Alert.query.filter(Alert.type == 'CONFLICT').count(),
+            'total': total_brands,
+            'pending': Brand.query.filter(Brand.status.in_(['under_study', 'waiting_admin', 'DEPOSITADA', 'PUBLICADA'])).count(),
+            'registered': Brand.query.filter(Brand.status.in_(['approved', 'monitored', 'CONCEDIDA', 'RENOVADA'])).count(),
+            'protected_value': total_brands * 25000, 
             'user_role': 'Gestor de Plataforma M24'
         }
         
@@ -2114,6 +2403,323 @@ def entities():
     
     return render_template('entities.html', entities=all_entities, agents=agents)
 
+@app.route('/admin/finance')
+@login_required
+def admin_finance():
+    """Página de gestão financeira da M24."""
+    # Restrição: Apenas Admin e Developer
+    is_dev = current_user.email == 'developer@incubadora.com'
+    if current_user.role != 'admin' and not is_dev:
+        flash('Acesso negado. Apenas administradores e desenvolvedores.', 'danger')
+        return redirect(url_for('dashboard'))
+        
+    # Buscar transações
+    transactions = FinancialTransaction.query.order_by(FinancialTransaction.date.desc()).all()
+    
+    # Calcular totais
+    total_income = sum(t.amount for t in transactions if t.type == 'INCOME')
+    total_expense = sum(t.amount for t in transactions if t.type == 'EXPENSE')
+    balance = total_income - total_expense
+    
+    # Buscar utilizadores para o formulário (funcionários/clientes)
+    users = User.query.order_by(User.username).all()
+    
+    # Buscar faturamento de licenças
+    billings = LicenseBilling.query.order_by(LicenseBilling.created_at.desc()).all()
+    
+    # Buscar folha de salários
+    payroll_records = Payroll.query.order_by(Payroll.created_at.desc()).all()
+    
+    return render_template('admin/finance.html', 
+                           transactions=transactions, 
+                           total_income=total_income, 
+                           total_expense=total_expense, 
+                           balance=balance,
+                           users=users,
+                           billings=billings,
+                           payroll_records=payroll_records)
+
+@app.route('/api/admin/finance/add', methods=['POST'])
+@login_required
+def api_add_transaction():
+    """API para adicionar receitas/despesas."""
+    is_dev = current_user.email == 'developer@incubadora.com'
+    if current_user.role != 'admin' and not is_dev:
+        return jsonify({'status': 'error', 'message': 'Não autorizado'}), 403
+        
+    data = request.json
+    try:
+        transaction = FinancialTransaction(
+            type=data.get('type'),
+            category=data.get('category'),
+            amount=float(data.get('amount')),
+            description=data.get('description'),
+            user_id=data.get('user_id') if data.get('user_id') else None,
+            created_by=current_user.id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/api/admin/finance/confirm-license', methods=['POST'])
+@login_required
+def api_confirm_license():
+    """Confirma o pagamento de uma licença e atualiza o saldo."""
+    is_dev = current_user.email == 'developer@incubadora.com'
+    if current_user.role != 'admin' and not is_dev:
+        return jsonify({'status': 'error', 'message': 'Não autorizado'}), 403
+        
+    data = request.json
+    billing_id = data.get('billing_id')
+    
+    billing = LicenseBilling.query.get(billing_id)
+    if not billing:
+        return jsonify({'status': 'error', 'message': 'Fatura não encontrada'}), 404
+        
+    if billing.status == 'PAID':
+        return jsonify({'status': 'error', 'message': 'Esta fatura já foi paga'}), 400
+        
+    try:
+        billing.status = 'PAID'
+        
+        # Gerar transação financeira de entrada
+        transaction = FinancialTransaction(
+            type='INCOME',
+            category='Licença',
+            amount=billing.amount,
+            description=f"Pagamento de Licença - Mês {billing.month}/{billing.year}",
+            user_id=billing.user_id,
+            created_by=current_user.id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/api/admin/finance/confirm-payroll', methods=['POST'])
+@login_required
+def api_confirm_payroll():
+    """Confirma o pagamento de um salário e atualiza o saldo."""
+    is_dev = current_user.email == 'developer@incubadora.com'
+    if current_user.role != 'admin' and not is_dev:
+        return jsonify({'status': 'error', 'message': 'Não autorizado'}), 403
+        
+    data = request.json
+    payroll_id = data.get('payroll_id')
+    
+    payroll = Payroll.query.get(payroll_id)
+    if not payroll:
+        return jsonify({'status': 'error', 'message': 'Registo de salário não encontrado'}), 404
+        
+    if payroll.status == 'PAID':
+        return jsonify({'status': 'error', 'message': 'Este salário já foi pago'}), 400
+        
+    try:
+        payroll.status = 'PAID'
+        
+        # Gerar transação financeira de saída
+        transaction = FinancialTransaction(
+            type='EXPENSE',
+            category='Salário',
+            amount=payroll.amount,
+            description=f"Pagamento de Salário - Mês {payroll.month}/{payroll.year}",
+            user_id=payroll.user_id,
+            created_by=current_user.id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/api/user/inactive-features')
+@login_required
+def api_inactive_features():
+    """Retorna as funcionalidades que não estão ativas para o utilizador."""
+    # Verificar se já fechou o popup hoje (na BD)
+    if current_user.popup_dismissed_at:
+        if current_user.popup_dismissed_at.date() == datetime.utcnow().date():
+            return jsonify({'status': 'success', 'features': []})
+            
+    # Lista de todas as features possíveis
+    all_features = [
+        {'key': 'ai_insights', 'name': 'Insights de IA', 'desc': 'Análise preditiva e relatórios gerados por inteligência artificial.'},
+        {'key': 'leads_prospecting', 'name': 'Prospeção de Leads', 'desc': 'Encontre potenciais clientes baseados em marcas registadas.'},
+        {'key': 'strategic_hub', 'name': 'Strategic Hub', 'desc': 'Painel avançado de métricas e BI.'},
+        {'key': 'advanced_monitoring', 'name': 'Monitoramento Avançado', 'desc': 'Alertas em tempo real sobre infrações.'},
+        {'key': 'visual_ocr', 'name': 'Reconhecimento Visual (OCR)', 'desc': 'Extração de texto e imagens de marcas para análise avançada.'},
+        {'key': 'ai_wizard', 'name': 'Assistente IA (Wizard)', 'desc': 'Configuração passo a passo assistida por inteligência artificial.'},
+        {'key': 'bi_reports', 'name': 'Relatórios de BI', 'desc': 'Relatórios executivos e business intelligence detalhados.'},
+        {'key': 'agents_module', 'name': 'Módulo de Agentes', 'desc': 'Gestão e atribuição de processos a agentes especializados.'},
+        {'key': 'notification_engine', 'name': 'Motor de Notificações', 'desc': 'Alertas automáticos via Email/WhatsApp para eventos críticos.'},
+        {'key': 'm24_intelligence_suite', 'name': 'M24 Intelligence Suite', 'desc': 'Acesso completo à suite de inteligência e Big Data.'}
+    ]
+    
+    inactive = []
+    for f in all_features:
+        if not FeatureToggle.is_enabled(current_user.id, f['key']):
+            inactive.append(f)
+            
+    return jsonify({'status': 'success', 'features': inactive})
+
+@app.route('/api/user/dismiss-popup', methods=['POST'])
+@login_required
+def api_dismiss_popup():
+    """Regista que o utilizador fechou o popup hoje."""
+    try:
+        current_user.popup_dismissed_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/admin/fix-db')
+@login_required
+def admin_fix_db():
+    """Rota de emergência para corrigir a base de dados."""
+    if current_user.role != 'admin':
+        return "Acesso negado", 403
+        
+    from sqlalchemy import text
+    msg = []
+    
+    # 1. Corrigir brand_log (User ID)
+    try:
+        db.session.execute(text("ALTER TABLE brand_log ADD COLUMN user_id INTEGER REFERENCES \"user\"(id);"))
+        db.session.commit()
+        msg.append("Coluna user_id adicionada a brand_log.")
+    except Exception as e:
+        db.session.rollback()
+        if "already exists" in str(e):
+            msg.append("A coluna user_id já existe em brand_log.")
+        else:
+            msg.append(f"Erro em brand_log: {e}")
+            
+    # 1.5. Corrigir user (popup_dismissed_at)
+    try:
+        db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN popup_dismissed_at TIMESTAMP;"))
+        db.session.commit()
+        msg.append("Coluna popup_dismissed_at adicionada a user.")
+    except Exception as e:
+        db.session.rollback()
+        if "already exists" in str(e):
+            msg.append("A coluna popup_dismissed_at já existe em user.")
+        else:
+            msg.append(f"Erro em user: {e}")
+            
+    # 2. Criar tabela financeira
+    try:
+        db.session.execute(text("""
+            CREATE TABLE IF NOT EXISTS financial_transactions (
+                id SERIAL PRIMARY KEY,
+                type VARCHAR(10) NOT NULL,
+                category VARCHAR(50) NOT NULL,
+                amount FLOAT NOT NULL,
+                description TEXT,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user_id INTEGER REFERENCES "user"(id),
+                created_by INTEGER REFERENCES "user"(id)
+            );
+        """))
+        db.session.commit()
+        msg.append("Tabela financial_transactions verificada/criada.")
+    except Exception as e:
+        db.session.rollback()
+        msg.append(f"Erro em financial_transactions: {e}")
+        
+    # 3. Criar tabela de faturamento de licenças
+    try:
+        db.session.execute(text("""
+            CREATE TABLE IF NOT EXISTS license_billings (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES "user"(id) NOT NULL,
+                amount FLOAT NOT NULL,
+                month INTEGER NOT NULL,
+                year INTEGER NOT NULL,
+                status VARCHAR(20) DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+        db.session.commit()
+        msg.append("Tabela license_billings verificada/criada.")
+    except Exception as e:
+        db.session.rollback()
+        msg.append(f"Erro em license_billings: {e}")
+        
+    # 4. Criar tabela de folha de salário
+    try:
+        db.session.execute(text("""
+            CREATE TABLE IF NOT EXISTS payroll (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES "user"(id) NOT NULL,
+                amount FLOAT NOT NULL,
+                month INTEGER NOT NULL,
+                year INTEGER NOT NULL,
+                status VARCHAR(20) DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+        db.session.commit()
+        msg.append("Tabela payroll verificada/criada.")
+    except Exception as e:
+        db.session.rollback()
+        msg.append(f"Erro em payroll: {e}")
+
+    return "<br>".join(msg)
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    """Página de gestão de utilizadores e licenças."""
+    if current_user.role != 'admin':
+        flash('Acesso negado. Apenas administradores.', 'danger')
+        return redirect(url_for('dashboard'))
+        
+    # Listar todos os utilizadores (ou paginar no futuro se houver muitos)
+    users = User.query.order_by(User.id.desc()).all()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/api/admin/update-user', methods=['POST'])
+@login_required
+def api_update_user():
+    """API para bloquear/desbloquear e alterar planos de utilizadores."""
+    if current_user.role != 'admin':
+        return jsonify({'status': 'error', 'message': 'Não autorizado'}), 403
+        
+    data = request.json
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return jsonify({'status': 'error', 'message': 'ID do utilizador em falta'}), 400
+        
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'status': 'error', 'message': 'Utilizador não encontrado'}), 404
+        
+    # Atualizar campos se presentes
+    if 'account_validated' in data:
+        user.account_validated = data['account_validated']
+        
+    if 'subscription_plan' in data:
+        plan = data['subscription_plan']
+        valid_plans = ['free', 'starter', 'professional', 'business', 'enterprise', 'agent_pro']
+        if plan in valid_plans:
+            user.subscription_plan = plan
+            # Atualizar limites de marcas por consistência
+            plan_limits = {'free': 5, 'starter': 15, 'professional': 50, 'business': 150, 'enterprise': 1000, 'agent_pro': 100}
+            user.max_brands = plan_limits.get(plan, 5)
+        else:
+            return jsonify({'status': 'error', 'message': 'Plano inválido'}), 400
+            
+    db.session.commit()
+    return jsonify({'status': 'success'})
 
 @app.route('/support')
 @login_required
@@ -2137,7 +2743,12 @@ def support():
 @app.route('/pricing')
 @login_required
 def pricing():
-    # DOCSTRING_REMOVED Página de planos e assinaturas# DOCSTRING_REMOVED 
+    """Página de planos e assinaturas — exclusivo para Clientes."""
+    # Admin e Agentes não subscrevem planos — redirecionar
+    if current_user.role in ['admin', 'agent']:
+        flash('A página de planos é exclusiva para clientes.', 'info')
+        return redirect(url_for('dashboard'))
+
     import json
     
     # Buscar todos os planos
@@ -2391,6 +3002,17 @@ def scan_live_api():
         data = request.json
         if not data or 'term' not in data:
              return jsonify({'status': 'error', 'message': 'Termo não fornecido'}), 400
+
+        # Inicializar estrutura de resultados
+        is_auth = current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else False
+        results = {
+            'status': 'success',
+            'term': data.get('term', ''),
+            'bpi': [],
+            'domains': [],
+            'social': [],
+            'counts': {'bpi': 0, 'domains': 0, 'social': 0}
+        }
              
         # 2. Busca BPI (IpiRecord Database) - BUSCA INTELIGENTE E FONÉTICA
         try:
@@ -2451,7 +3073,7 @@ def scan_live_api():
              results['counts']['bpi'] = 0
 
         # 3. Busca Web (Domínios .co.mz / .com) - RÁPIDO
-        domain_checks = [f"{term}.co.mz", f"{term}.com", f"{term}.mz"]
+        domain_checks = [f"{search_term}.co.mz", f"{search_term}.com", f"{search_term}.mz"]
         
         for domain in domain_checks:
             status = 'available'
@@ -2480,8 +3102,6 @@ def scan_live_api():
         import traceback
         traceback.print_exc()
         return jsonify({'status': 'error', 'details': str(e)}), 500
-
-    # ... (Resto do código Web) ...
 
 
 # Rota de Imagem DESATIVADA temporariamente
@@ -3120,10 +3740,20 @@ def execute_csv_import():
         col_date = find_col(['data', 'date'])
 
         count = 0
+        skipped = 0
         from datetime import datetime
         
         for row in reader_brands:
             try:
+                proc_num = row.get(col_proc, f"UNK-{count}").strip()
+                if not proc_num: continue
+
+                # E. DETECTAR DUPLICADOS (Evitar redundância na base IPI)
+                existing = IpiRecord.query.filter_by(process_number=proc_num).first()
+                if existing:
+                    skipped += 1
+                    continue
+
                 # Resolver Requerente
                 app_name = "Desconhecido"
                 if col_req_id and row.get(col_req_id) in applicants_map:
@@ -3131,31 +3761,46 @@ def execute_csv_import():
                 elif col_req_name and row.get(col_req_name):
                     app_name = row[col_req_name]
                 
-                # Resolver Data
+                # Resolver Data (D. VALIDAR)
                 dt_obj = None
                 if col_date and row.get(col_date):
-                    try:
-                        dt_obj = datetime.strptime(row[col_date], '%d/%m/%Y').date()
-                    except: pass
+                    for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y'):
+                        try:
+                            dt_obj = datetime.strptime(row[col_date], fmt).date()
+                            break
+                        except: continue
                 
-                # Criar Registro
+                # F. REGISTAR (Criar Registro IPI)
                 rec = IpiRecord(
-                    process_number=row.get(col_proc, f"UNK-{count}"),
+                    process_number=proc_num,
                     record_type='marca',
-                    status='concessao', # Default para import manual
-                    brand_name=row.get(col_name, '[Sem Nome]')[:250],
-                    applicant_name=app_name[:250],
-                    nice_class=row.get(col_class, '0'),
+                    status='concessao', 
                     publication_date=dt_obj,
                     bulletin_number=source_name
                 )
+                
+                # NORMALIZAR DADOS (ETAPA 4)
+                rec.brand_name = NormalizationMotor.normalize_company_name(rec.brand_name)
+                rec.nice_class = NormalizationMotor.normalize_nice_class(rec.nice_class)
+
                 db.session.add(rec)
                 count += 1
+                
+                # Commit em blocos para performance
+                if count % 100 == 0:
+                    db.session.commit()
+
             except Exception as e:
                 print(f"Skipped row: {e}")
+                skipped += 1
                 
         db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Importação concluída', 'count': count})
+        return jsonify({
+            'status': 'success', 
+            'message': f'Importação concluída: {count} registros novos, {skipped} duplicados ou inválidos ignorados.',
+            'count': count,
+            'skipped': skipped
+        })
         
     except Exception as e:
         db.session.rollback()
@@ -3900,13 +4545,25 @@ def api_verificacao_imagem_real():
             resultados = verificacao_imagem_real(temp_path, marca_nome)
             return jsonify({'status': 'sucesso', 'resultados': resultados})
             
+        except Exception as inner_e:
+            current_app.logger.error(f"Erro interno no Motor de Visão: {inner_e}")
+            return jsonify({
+                'status': 'erro_processamento',
+                'error': 'O motor de visão encontrou uma falha ao processar esta imagem específica. Verifique o formato ou tente outro arquivo.',
+                'details': str(inner_e)
+            }), 500
+            
         finally:
             # Limpa lixo
             if os.path.exists(temp_path):
-                os.remove(temp_path)
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"Erro na Rota de Imagem: {e}")
+        return jsonify({'status': 'erro_fatal', 'error': 'Falha na comunicação com o backend de visão.'}), 500
 
 @app.route('/visual-check')
 @login_required
@@ -3933,6 +4590,30 @@ pre{background:#000;padding:10px;overflow-x:auto;font-size:11px}</style>
 <div class="box"><h2>Resposta</h2><pre id="resp">...</pre></div>
 <div class="box"><h2>Conflitos</h2><div id="conf"></div></div>
 <script>
+    // Auto-preenchimento por NUIT
+    document.getElementById('nuit').addEventListener('blur', async function() {
+        const nuit = this.value;
+        if (!nuit || nuit.length < 5) return;
+
+        try {
+            const response = await fetch(`/api/entity/search/${nuit}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const data = result.data;
+                    document.getElementById('owner_name').value = data.name;
+                    document.getElementById('owner_email').value = data.email;
+                    document.getElementById('owner_phone').value = data.phone;
+                    document.getElementById('owner_address').value = data.address;
+                    
+                    showToast(`Dados de ${data.name} carregados via NUIT`, "success");
+                }
+            }
+        } catch (e) {
+            console.log("Busca por NUIT falhou ou entidade nova.");
+        }
+    });
+</script>
 f.onchange=e=>{const fi=e.target.files[0];if(fi){document.getElementById('fi').textContent=fi.name;document.getElementById('fi').className='success'}}
 async function test(){
 const file=f.files[0];if(!file){alert('Selecione imagem!');return}
@@ -4146,7 +4827,24 @@ if __name__ == '__main__':
         try:
             # Apenas cria tabelas se não existirem (SQLite local)
             db.create_all()
-            print(">>> Tabelas verificadas/criadas")
+            
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            print(f">>> Tabelas encontradas: {inspector.get_table_names()}")
+            
+            # FORÇAR CRIAÇÃO NO POSTGRES (SUPABASE)
+            from sqlalchemy import text
+            db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS m24_feature_toggles (
+                    id SERIAL PRIMARY KEY,
+                    entity_id INTEGER REFERENCES entities(id),
+                    feature_key VARCHAR(50) NOT NULL,
+                    is_active BOOLEAN DEFAULT FALSE,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            db.session.commit()
+            print(">>> Tabelas verificadas/criadas (incluindo Feature Toggles)")
             
             # Seed apenas se não houver admin
             admin_exists = User.query.filter_by(username='admin').first()

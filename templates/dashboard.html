@@ -259,44 +259,41 @@
     <p class="hero-desc">Visão geral do seu portfólio de Propriedade Industrial</p>
 </div>
 
-<!-- KPI Cards -->
+<!-- KPI Cards (TR STEP 8 ALIGNMENT) -->
 <div class="stats-row">
     <div class="stat-card">
-        <div class="stat-label">Total de Marcas</div>
-        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label"><i class="ri-checkbox-multiple-line"></i> Marcas Activas</div>
+        <div class="stat-value">{{ stats.active }}</div>
         <div class="stat-trend trend-up">
-            <i class="ri-arrow-up-line"></i>
-            <span>+12% este mês</span>
+            <i class="ri-shield-check-line"></i>
+            <span>Monitorização 24h</span>
+        </div>
+    </div>
+
+    <div class="stat-card" style="border-bottom: 3px solid var(--danger);">
+        <div class="stat-label"><i class="ri-error-warning-line"></i> Em Risco</div>
+        <div class="stat-value" style="color: var(--danger);">{{ stats.in_risk }}</div>
+        <div class="stat-trend trend-down">
+            <i class="ri-alert-fill"></i>
+            <span>Ações Urgentes</span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-label">Registados</div>
-        <div class="stat-value">{{ stats.registered|default(0) }}</div>
-        <div class="stat-trend trend-up">
-            <i class="ri-checkbox-circle-line"></i>
-            <span>{% if stats.total|default(0) > 0 %}{{ ((stats.registered|default(0) / stats.total|default(1)) * 100) | round(1) }}%{% else %}0%{% endif %} do total</span>
+        <div class="stat-label"><i class="ri-refresh-line"></i> Renovações</div>
+        <div class="stat-value" style="color: var(--warning);">{{ stats.renewals }}</div>
+        <div class="stat-trend" style="color: var(--warning);">
+            <i class="ri-calendar-event-line"></i>
+            <span>Próximos 12 meses</span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-label">Pendentes</div>
-        <div class="stat-value">{{ stats.pending|default(0) }}</div>
-        <div class="stat-trend">
-            <i class="ri-time-line"></i>
-            <span>Vigilância M24</span>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-label">Valor Protegido (Est.)</div>
-        <div class="stat-value" style="color: var(--brand-accent);">
-            {{ "{:,.0f}".format(stats.protected_value|default(0)|int) }} 
-            <span style="font-size: 1rem;">MT</span>
-        </div>
+        <div class="stat-label"><i class="ri-radar-line"></i> Conflitos</div>
+        <div class="stat-value" style="color: var(--brand-accent);">{{ stats.conflicts }}</div>
         <div class="stat-trend trend-up">
-            <i class="ri-money-dollar-circle-line"></i>
-            <span>Capital Intelectual</span>
+            <i class="ri-search-eye-line"></i>
+            <span>Detetados pela IA</span>
         </div>
     </div>
 </div>

@@ -1,0 +1,323 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestão de Utilizadores | m24 Guardian{% endblock %}
+
+{% block extra_css %}
+<style>
+    .users-container {
+        margin-top: 2rem;
+    }
+
+    .glass-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        margin-top: 1rem;
+    }
+
+    .glass-table th {
+        padding: 1rem;
+        text-align: left;
+        color: var(--text-dim);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+
+    .glass-table tr {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        transition: all 0.2s ease;
+    }
+
+    .glass-table tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+        transform: translateY(-2px);
+    }
+
+    .glass-table td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        border-top: 1px solid var(--border-subtle);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .glass-table td:first-child {
+        border-left: 1px solid var(--border-subtle);
+        border-top-left-radius: var(--radius-lg);
+        border-bottom-left-radius: var(--radius-lg);
+    }
+
+    .glass-table td:last-child {
+        border-right: 1px solid var(--border-subtle);
+        border-top-right-radius: var(--radius-lg);
+        border-bottom-right-radius: var(--radius-lg);
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .status-active {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--success);
+    }
+
+    .status-blocked {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--danger);
+    }
+
+    .plan-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--radius-md);
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-vibrant);
+        border: 1px solid var(--border-subtle);
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-subtle);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-dim);
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .action-btn:hover {
+        border-color: var(--brand-primary);
+        color: var(--text-vibrant);
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .action-btn.btn-danger:hover {
+        border-color: var(--danger);
+        color: white;
+        background: rgba(239, 68, 68, 0.2);
+    }
+
+    select.form-select-sm {
+        background-color: var(--bg-body);
+        border-color: var(--border-subtle);
+        color: var(--text-vibrant);
+        font-size: 0.85rem;
+        border-radius: var(--radius-md);
+    }
+
+    select.form-select-sm:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="hero-title" style="font-size: 2rem; margin-bottom: 0.5rem;">Gestão de Utilizadores</h1>
+            <p class="hero-desc" style="margin-bottom: 0;">Controle de acessos, bloqueios e licenças da plataforma.</p>
+        </div>
+        <div class="text-muted">
+            Total: <strong>{{ users|length }}</strong> utilizadores
+        </div>
+    </div>
+
+    <!-- Filtros ou Busca rápida (Opcional para futuro) -->
+
+    <div class="users-container">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Utilizador</th>
+                    <th>E-mail</th>
+                    <th>Função</th>
+                    <th>Plano Atual</th>
+                    <th>Estado</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr id="user-row-{{ user.id }}">
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="user-avatar">
+                                {{ user.username[0]|upper if user.username else 'U' }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--text-vibrant);">{{ user.username }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-dim);">ID: {{ user.id }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.9rem; color: var(--text-standard);">{{ user.email }}</div>
+                    </td>
+                    <td>
+                        <span class="badge {% if user.role == 'admin' %}bg-danger{% elif user.role == 'agent' %}bg-info{% else %}bg-secondary{% endif %}">
+                            {{ user.role|upper }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="plan-badge" id="plan-badge-{{ user.id }}">
+                                {{ user.subscription_plan|upper }}
+                            </span>
+                            <select class="form-select form-select-sm" style="width: auto; padding-top: 0.2rem; padding-bottom: 0.2rem;" 
+                                    onchange="updateUserPlan({{ user.id }}, this.value)">
+                                <option value="free" {% if user.subscription_plan == 'free' %}selected{% endif %}>FREE</option>
+                                <option value="starter" {% if user.subscription_plan == 'starter' %}selected{% endif %}>STARTER</option>
+                                <option value="professional" {% if user.subscription_plan == 'professional' %}selected{% endif %}>PROFESSIONAL</option>
+                                <option value="business" {% if user.subscription_plan == 'business' %}selected{% endif %}>BUSINESS</option>
+                                <option value="enterprise" {% if user.subscription_plan == 'enterprise' %}selected{% endif %}>ENTERPRISE</option>
+                                <option value="agent_pro" {% if user.subscription_plan == 'agent_pro' %}selected{% endif %}>AGENT PRO</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge {% if user.account_validated %}status-active{% else %}status-blocked{% endif %}" id="status-badge-{{ user.id }}">
+                            {% if user.account_validated %}
+                                <i class="ri-checkbox-circle-fill"></i> Ativo
+                            {% else %}
+                                <i class="ri-close-circle-fill"></i> Bloqueado
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <!-- Toggle Block/Unlock -->
+                            <button class="action-btn {% if user.account_validated %}btn-danger{% endif %}" 
+                                    title="{% if user.account_validated %}Bloquear Utilizador{% else %}Desbloquear Utilizador{% endif %}"
+                                    onclick="toggleUserStatus({{ user.id }}, {{ 'true' if user.account_validated else 'false' }})"
+                                    id="action-btn-{{ user.id }}">
+                                {% if user.account_validated %}
+                                    <i class="ri-lock-2-line"></i>
+                                {% else %}
+                                    <i class="ri-lock-unlock-line"></i>
+                                {% endif %}
+                            </button>
+                            
+                            <!-- Ver detalhes ou editar (Futuro) -->
+                            <button class="action-btn" title="Ver Detalhes (Em breve)" disabled>
+                                <i class="ri-eye-line"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function toggleUserStatus(userId, currentStatus) {
+        const btn = document.getElementById(`action-btn-${userId}`);
+        const badge = document.getElementById(`status-badge-${userId}`);
+        const newStatus = !currentStatus;
+        
+        btn.disabled = true;
+        
+        try {
+            const response = await fetch('/api/admin/update-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    account_validated: newStatus
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                showToast(`Utilizador ${newStatus ? 'desbloqueado' : 'bloqueado'} com sucesso!`, 'success');
+                
+                // Atualizar UI
+                if (newStatus) {
+                    badge.className = 'status-badge status-active';
+                    badge.innerHTML = '<i class="ri-checkbox-circle-fill"></i> Ativo';
+                    btn.className = 'action-btn btn-danger';
+                    btn.title = 'Bloquear Utilizador';
+                    btn.innerHTML = '<i class="ri-lock-2-line"></i>';
+                } else {
+                    badge.className = 'status-badge status-blocked';
+                    badge.innerHTML = '<i class="ri-close-circle-fill"></i> Bloqueado';
+                    btn.className = 'action-btn';
+                    btn.title = 'Desbloquear Utilizador';
+                    btn.innerHTML = '<i class="ri-lock-unlock-line"></i>';
+                }
+                
+                // Atualizar o onclick
+                btn.setAttribute('onclick', `toggleUserStatus(${userId}, ${newStatus})`);
+            } else {
+                showToast(data.message || 'Erro ao atualizar status', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast('Erro de conexão com o servidor', 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function updateUserPlan(userId, newPlan) {
+        const badge = document.getElementById(`plan-badge-${userId}`);
+        
+        try {
+            const response = await fetch('/api/admin/update-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    subscription_plan: newPlan
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                showToast('Plano atualizado com sucesso!', 'success');
+                badge.textContent = newPlan.toUpperCase();
+            } else {
+                showToast(data.message || 'Erro ao atualizar plano', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast('Erro de conexão com o servidor', 'danger');
+        }
+    }
+</script>
+{% endblock %}

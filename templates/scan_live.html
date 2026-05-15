@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}Varredura LIVE | m24 Guardian{% endblock %}
+{% block title %}Pesquisa em Tempo Real | m24 Guardian{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -97,7 +97,7 @@
     .scan-input {
         background: transparent;
         border: none;
-        color: #fff;
+        color: var(--text-standard);
         font-family: inherit;
         font-size: 1.1rem;
         flex-grow: 1;
@@ -225,7 +225,7 @@
         <div class="scan-container">
             <div class="terminal-header">
                 <div>
-                    <i class="ri-terminal-box-fill"></i> M24 GUARDIAN PROTOCOL <span class="badge bg-danger">LIVE</span>
+                    <i class="ri-terminal-box-fill"></i> M24 GUARDIAN PROTOCOL <span class="badge bg-danger">TEMPO REAL</span>
                 </div>
                 <div class="text-muted small">v6.0.0 (Build 2026)</div>
             </div>
@@ -238,7 +238,7 @@
                 <!-- Mode Toggle -->
                 <div style="margin-bottom: 20px; display: flex; gap: 10px;">
                     <button onclick="setMode('text')" id="btnText" class="mode-btn active">PESQUISA TEXTO (COMPLETA)</button>
-                    <a href="{{ url_for('visual_check_page') }}" class="mode-btn" style="text-decoration:none; display:inline-block;">VARREDURA VISUAL (OCR IA)</a>
+                    <a href="{{ url_for('visual_check_page') }}" class="mode-btn" style="text-decoration:none; display:inline-block;">PESQUISA VISUAL (OCR IA)</a>
                 </div>
 
                 <div id="scanLogs"></div>

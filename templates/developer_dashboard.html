@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 2rem; background: var(--bg-base); min-height: 100vh;">
+    <!-- HEADER -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="background: var(--brand-primary); color: white; padding: 15px; border-radius: 12px; font-size: 1.5rem;">
+                <i class="ri-terminal-box-line"></i>
+            </div>
+            <div>
+                <h1 style="font-family: 'Outfit'; font-weight: 900; color: #0f172a; margin: 0;">Developer Lab</h1>
+                <p style="color: var(--text-dim); margin: 0;">Gestão Centralizada de Licenciamento</p>
+            </div>
+        </div>
+        
+        <!-- SELETOR DE USUÁRIO -->
+        <div style="width: 400px; position: relative;">
+            <label style="font-size: 0.75rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; margin-bottom: 8px; display: block;">Selecionar Cliente/Usuário</label>
+            <select id="userSelector" class="form-select" style="border-radius: 12px; height: 50px; border: 1px solid var(--border-strong); background: white; color: #0f172a; font-weight: 600;" onchange="loadUserFeatures(this.value)">
+                <option value="">-- Escolha um usuário para gerir --</option>
+                {% for client in clients %}
+                <option value="{{ client.id }}">{{ client.name or client.username }} ({{ client.email }})</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- PAINEL DE FUNCIONALIDADES -->
+    <div id="featurePanel" style="display: none; animation: revealUp 0.4s ease;">
+        <div class="bento-card" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 3rem; border-radius: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.1);">
+            <div style="margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.5rem;">
+                <h2 id="selectedUserName" style="font-family: 'Outfit'; font-size: 1.5rem; color: #0f172a; margin-bottom: 5px;">Nome do Cliente</h2>
+                <span id="selectedUserEmail" style="font-size: 0.85rem; color: var(--brand-primary); font-weight: 700;">email@empresa.com</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+                {% for feature in features %}
+                <div style="background: var(--bg-base); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;">
+                    <div style="flex: 1; padding-right: 20px;">
+                        <div style="font-weight: 800; color: #0f172a; font-size: 1rem; margin-bottom: 4px;">{{ feature.name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">{{ feature.desc }}</div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input feature-toggle" type="checkbox" 
+                               data-feature="{{ feature.key }}"
+                               style="width: 50px; height: 26px; cursor: pointer;"
+                               onchange="updateFeatureToggle(this)">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- MENSAGEM INICIAL -->
+    <div id="emptyState" style="text-align: center; padding: 100px 0;">
+        <i class="ri-user-search-line" style="font-size: 4rem; color: var(--border-strong); margin-bottom: 1.5rem; display: block;"></i>
+        <h3 style="color: var(--text-dim); font-weight: 600;">Selecione um usuário acima para começar a gestão</h3>
+    </div>
+</div>
+
+<script>
+let currentUserId = null;
+
+async function loadUserFeatures(userId) {
+    if (!userId) {
+        document.getElementById('featurePanel').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+    }
+
+    currentUserId = userId;
+    const selector = document.getElementById('userSelector');
+    const selectedOption = selector.options[selector.selectedIndex].text;
+    
+    // Atualizar Header do Painel
+    document.getElementById('selectedUserName').innerText = selectedOption.split(' (')[0];
+    document.getElementById('selectedUserEmail').innerText = selectedOption.match(/\(([^)]+)\)/)[1];
+    
+    // Mostrar Painel
+    document.getElementById('featurePanel').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+
+    // Reset de todas as chaves
+    document.querySelectorAll('.feature-toggle').forEach(t => t.checked = false);
+
+    // Carregar estados reais do servidor
+    try {
+        const response = await fetch(`/api/developer/user-features/${userId}`);
+        const data = await response.json();
+        
+        for (const [key, isActive] of Object.entries(data)) {
+            const toggle = document.querySelector(`.feature-toggle[data-feature="${key}"]`);
+            if (toggle) toggle.checked = isActive;
+        }
+    } catch (e) {
+        console.error("Erro ao carregar licenças:", e);
+        showToast("Erro ao carregar dados do usuário.", "danger");
+    }
+}
+
+async function updateFeatureToggle(element) {
+    if (!currentUserId) return;
+
+    const featureKey = element.getAttribute('data-feature');
+    const isActive = element.checked;
+
+    try {
+        const response = await fetch('/developer/toggle-feature', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                entity_id: currentUserId,
+                feature_key: featureKey,
+                active: isActive
+            })
+        });
+
+        if (response.ok) {
+            showToast(`Módulo atualizado para este usuário!`, "success");
+        } else {
+            element.checked = !isActive; // Reverter se der erro
+            showToast("Falha ao salvar alteração.", "danger");
+        }
+    } catch (e) {
+        element.checked = !isActive;
+        showToast("Erro de conexão.", "danger");
+    }
+}
+</script>
+
+<style>
+    .form-check-input:checked {
+        background-color: var(--brand-primary) !important;
+        border-color: var(--brand-primary) !important;
+    }
+    .form-check-input {
+        background-color: #cbd5e1;
+        border: none;
+    }
+    .nav-link.active {
+        background: var(--brand-primary) !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}

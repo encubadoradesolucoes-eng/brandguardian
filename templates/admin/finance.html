@@ -1,0 +1,379 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestão Financeira | m24 Guardian{% endblock %}
+
+{% block extra_css %}
+<style>
+    .finance-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-2xl);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 900;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .glass-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+
+    .glass-table tr {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+    }
+
+    .glass-table td, .glass-table th {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .glass-table th {
+        color: var(--text-dim);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .type-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 800;
+    }
+
+    .type-income { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .type-expense { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    
+    select.form-select option {
+        background-color: #1e1e2d !important;
+        color: white !important;
+    }
+
+    /* Tabs Custom */
+    .nav-tabs {
+        border-bottom: 1px solid var(--border-subtle);
+        gap: 1rem;
+    }
+
+    .nav-tabs .nav-link {
+        color: var(--text-dim);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 700;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+
+    .nav-tabs .nav-link.active {
+        background: var(--bg-surface);
+        color: var(--text-vibrant);
+        border: 1px solid var(--border-subtle);
+        border-bottom-color: var(--bg-surface);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-reveal">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="hero-title" style="font-size: 2rem; margin-bottom: 0.5rem;">Gestão Financeira</h1>
+            <p class="hero-desc" style="margin-bottom: 0;">Controle de receitas, despesas, licenças e salários.</p>
+        </div>
+        <button class="btn-m24 btn-m24-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+            <i class="ri-add-circle-line"></i> Adicionar Transação Manual
+        </button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="finance-grid">
+        <div class="kpi-card" style="border-left: 4px solid var(--success);">
+            <div class="stat-label">Total Receitas</div>
+            <div class="kpi-value" style="color: var(--success);">{{ "%.2f"|format(total_income) }} MT</div>
+        </div>
+        <div class="kpi-card" style="border-left: 4px solid var(--danger);">
+            <div class="stat-label">Total Despesas</div>
+            <div class="kpi-value" style="color: var(--danger);">{{ "%.2f"|format(total_expense) }} MT</div>
+        </div>
+        <div class="kpi-card" style="border-left: 4px solid var(--brand-primary);">
+            <div class="stat-label">Saldo Atual</div>
+            <div class="kpi-value" style="color: var(--text-vibrant);">{{ "%.2f"|format(balance) }} MT</div>
+        </div>
+    </div>
+
+    <!-- Tabs para alternar entre Fluxo de Caixa, Licenças e Salários -->
+    <ul class="nav nav-tabs mb-4" id="financeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">Fluxo de Caixa</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="licenses-tab" data-bs-toggle="tab" data-bs-target="#licenses" type="button" role="tab">Faturamento de Licenças</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab">Folha de Salários</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="financeTabsContent">
+        <!-- Tab 1: Fluxo de Caixa -->
+        <div class="tab-pane fade show active" id="transactions" role="tabpanel">
+            <div class="activity-card">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transactions %}
+                        <tr>
+                            <td style="color: var(--text-dim); font-size: 0.85rem;">{{ t.date.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <span class="type-badge {% if t.type == 'INCOME' %}type-income{% else %}type-expense{% endif %}">
+                                    {{ t.type }}
+                                </span>
+                            </td>
+                            <td style="font-weight: 700;">{{ t.category }}</td>
+                            <td style="color: var(--text-standard);">{{ t.description }}</td>
+                            <td style="font-weight: 800; color: {% if t.type == 'INCOME' %}var(--success){% else %}var(--danger){% endif %};">
+                                {% if t.type == 'EXPENSE' %}-{% endif %}{{ "%.2f"|format(t.amount) }} MT
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 2: Faturamento de Licenças -->
+        <div class="tab-pane fade" id="licenses" role="tabpanel">
+            <div class="activity-card">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Mês/Ano</th>
+                            <th>Valor</th>
+                            <th>Estado</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in billings %}
+                        <tr>
+                            <td style="font-weight: 700;">{{ b.user.username if b.user else 'N/A' }}</td>
+                            <td style="color: var(--text-dim);">{{ b.month }}/{{ b.year }}</td>
+                            <td style="font-weight: 800; color: var(--success);">{{ "%.2f"|format(b.amount) }} MT</td>
+                            <td>
+                                <span class="type-badge {% if b.status == 'PAID' %}type-income{% else %}type-expense{% endif %}">
+                                    {{ b.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if b.status == 'PENDING' %}
+                                <button class="btn-m24 btn-m24-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="confirmLicense({{ b.id }})">
+                                    Confirmar Pagamento
+                                </button>
+                                {% else %}
+                                <span class="text-muted"><i class="ri-checkbox-circle-line"></i> Pago</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Folha de Salários -->
+        <div class="tab-pane fade" id="payroll" role="tabpanel">
+            <div class="activity-card">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Funcionário</th>
+                            <th>Mês/Ano</th>
+                            <th>Valor</th>
+                            <th>Estado</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payroll_records %}
+                        <tr>
+                            <td style="font-weight: 700;">{{ p.user.username if p.user else 'N/A' }}</td>
+                            <td style="color: var(--text-dim);">{{ p.month }}/{{ p.year }}</td>
+                            <td style="font-weight: 800; color: var(--danger);">{{ "%.2f"|format(p.amount) }} MT</td>
+                            <td>
+                                <span class="type-badge {% if p.status == 'PAID' %}type-income{% else %}type-expense{% endif %}">
+                                    {{ p.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if p.status == 'PENDING' %}
+                                <button class="btn-m24 btn-m24-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="confirmPayroll({{ p.id }})">
+                                    Confirmar Pagamento
+                                </button>
+                                {% else %}
+                                <span class="text-muted"><i class="ri-checkbox-circle-line"></i> Pago</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Adicionar Transação Manual -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle);">
+                <h5 class="modal-title" style="color: white; font-weight: 800;">Adicionar Transação Manual</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="finance-form">
+                    <div class="mb-3">
+                        <label class="form-label" style="color: var(--text-dim);">Tipo</label>
+                        <select class="form-select" id="trans-type" required style="background-color: var(--bg-body); color: white; border-color: var(--border-subtle);">
+                            <option value="INCOME">Receita (+)</option>
+                            <option value="EXPENSE">Despesa (-)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: var(--text-dim);">Categoria</label>
+                        <select class="form-select" id="trans-category" required style="background-color: var(--bg-body); color: white; border-color: var(--border-subtle);">
+                            <option value="Publicidade">Publicidade</option>
+                            <option value="Formação">Formação</option>
+                            <option value="Apresentação">Apresentação</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: var(--text-dim);">Valor (MT)</label>
+                        <input type="number" step="0.01" class="form-control" id="trans-amount" required style="background-color: var(--bg-body); color: white; border-color: var(--border-subtle);">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: var(--text-dim);">Descrição</label>
+                        <input type="text" class="form-control" id="trans-desc" style="background-color: var(--bg-body); color: white; border-color: var(--border-subtle);">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: var(--text-dim);">Associar a Utilizador (Opcional)</label>
+                        <select class="form-select" id="trans-user" style="background-color: var(--bg-body); color: white; border-color: var(--border-subtle);">
+                            <option value="">Nenhum</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}">{{ u.username }} ({{ u.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid var(--border-subtle);">
+                <button type="button" class="btn-m24 btn-m24-ghost" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-m24 btn-m24-primary" onclick="submitTransaction()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function submitTransaction() {
+        const type = document.getElementById('trans-type').value;
+        const category = document.getElementById('trans-category').value;
+        const amount = document.getElementById('trans-amount').value;
+        const description = document.getElementById('trans-desc').value;
+        const user_id = document.getElementById('trans-user').value;
+
+        if (!amount) {
+            showToast('Por favor, insira o valor.', 'danger');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/finance/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, category, amount, description, user_id })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                showToast('Transação adicionada com sucesso!', 'success');
+                location.reload();
+            } else {
+                showToast(data.message || 'Erro ao adicionar transação', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast('Erro de conexão com o servidor', 'danger');
+        }
+    }
+
+    async function confirmLicense(billingId) {
+        try {
+            const response = await fetch('/api/admin/finance/confirm-license', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ billing_id: billingId })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                showToast('Pagamento de licença confirmado!', 'success');
+                location.reload();
+            } else {
+                showToast(data.message || 'Erro ao confirmar pagamento', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast('Erro de conexão com o servidor', 'danger');
+        }
+    }
+
+    async function confirmPayroll(payrollId) {
+        try {
+            const response = await fetch('/api/admin/finance/confirm-payroll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payroll_id: payrollId })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                showToast('Pagamento de salário confirmado!', 'success');
+                location.reload();
+            } else {
+                showToast(data.message || 'Erro ao confirmar pagamento', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast('Erro de conexão com o servidor', 'danger');
+        }
+    }
+</script>
+{% endblock %}

@@ -975,29 +975,45 @@ def verificacao_imagem_real(caminho_imagem: str, marca_nome: str = "") -> Dict[s
                 from app import Brand, IpiRecord
                 
                 # 1. PASSO: IPI RECORDS (Base Oficial)
-                ipi_items = IpiRecord.query.filter(IpiRecord.image_data.isnot(None)).all()
-                ipi_records = []
-                for r in ipi_items:
-                    ipi_records.append({
-                        'id': r.id,
-                        'brand_name': r.brand_name,
-                        'image_data': r.image_data, # Binário direto
-                        'applicant_name': r.applicant_name,
-                        'process_number': r.process_number
-                    })
-                print(f"[RASTREIO VISUAL] IpiRecord: {len(ipi_records)} binários encontrados no Supabase.")
+                try:
+                    ipi_items = IpiRecord.query.filter(IpiRecord.image_data.isnot(None)).all()
+                    ipi_records = []
+                    for r in ipi_items:
+                        try:
+                            if r.image_data:
+                                ipi_records.append({
+                                    'id': r.id,
+                                    'brand_name': r.brand_name,
+                                    'image_data': r.image_data, # Binário direto
+                                    'applicant_name': r.applicant_name,
+                                    'process_number': r.process_number
+                                })
+                        except Exception as row_e:
+                            print(f"[RASTREIO VISUAL] Pulando linha IPI {r.id} devido a erro: {row_e}")
+                            continue
+                    print(f"[RASTREIO VISUAL] IpiRecord: {len(ipi_records)} binários encontrados no Supabase.")
+                except Exception as query_e:
+                    print(f"[RASTREIO VISUAL] Erro ao buscar registros IPI: {query_e}")
 
                 # 2. PASSO: BRANDS (Clientes M24)
-                brands = Brand.query.filter(Brand.image_data.isnot(None)).all()
-                brand_records = []
-                for b in brands:
-                    brand_records.append({
-                        'id': b.id,
-                        'name': b.name,
-                        'image_data': b.image_data, # Binário direto
-                        'owner_name': b.owner_name
-                    })
-                print(f"[RASTREIO VISUAL] Brands: {len(brand_records)} binários de clientes encontrados.")
+                try:
+                    brands = Brand.query.filter(Brand.image_data.isnot(None)).all()
+                    brand_records = []
+                    for b in brands:
+                        try:
+                            if b.image_data:
+                                brand_records.append({
+                                    'id': b.id,
+                                    'name': b.name,
+                                    'image_data': b.image_data, # Binário direto
+                                    'owner_name': b.owner_name
+                                })
+                        except Exception as row_e:
+                            print(f"[RASTREIO VISUAL] Pulando linha Brand {b.id} devido a erro: {row_e}")
+                            continue
+                    print(f"[RASTREIO VISUAL] Brands: {len(brand_records)} binários de clientes encontrados.")
+                except Exception as query_e:
+                    print(f"[RASTREIO VISUAL] Erro ao buscar registros Brand: {query_e}")
             else:
                 print("[RASTREIO VISUAL] ⚠️ Aviso: Fora de contexto Flask. Rodando busca sem banco.")
         except Exception as e:

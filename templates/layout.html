@@ -833,6 +833,18 @@
             </div>
         </div>
 
+        <!-- GRUPO 0: DEVELOPER TOOLS (EXCLUSIVO) -->
+        {% if current_user.email == 'developer@incubadora.com' %}
+        <div class="nav-section" style="background: rgba(139, 92, 246, 0.1); border: 1px dashed var(--brand-primary); border-radius: 16px; padding: 10px; margin-bottom: 2rem;">
+            <div class="nav-header" style="color: var(--brand-primary); margin-bottom: 5px;">Developer Tools</div>
+            <a href="/developer/dashboard" class="nav-link {% if request.path == '/developer/dashboard' %}active{% endif %}">
+                <span class="link-content">
+                    <i class="ri-flask-line"></i> Developer Lab
+                </span>
+            </a>
+        </div>
+        {% endif %}
+
         <!-- GRUPO 1: PANORAMA -->
         <div class="nav-section">
             <div class="nav-header">Panorama</div>
@@ -856,39 +868,38 @@
             
             <a href="{{ url_for('m24_keyword_watch') }}" class="nav-link {% if request.endpoint == 'm24_keyword_watch' %}active{% endif %}">
                 <span class="link-content">
-                    <i class="ri-key-2-line"></i> Vigilância de Keywords
+                    <i class="ri-key-2-line"></i> Serviço de Monitoria (Watch)
                 </span>
-                <span class="badge" style="background:#6366f1; color:white; font-size: 0.6rem;">HOT</span>
             </a>
 
             <a href="{{ url_for('conflicts') }}" class="nav-link {% if request.endpoint == 'conflicts' %}active{% endif %}" style="color: #ef4444;">
                 <span class="link-content">
-                    <i class="ri-alert-line"></i> Alertas de Conflito
+                    <i class="ri-alert-line"></i> Gestão de Alertas (Conflito)
                 </span>
                 <span class="pulse-status" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-left: auto;"></span>
             </a>
 
             <a href="/scan-live" class="nav-link {% if request.endpoint == 'scan_live_page' %}active{% endif %}">
                 <span class="link-content">
-                    <i class="ri-radar-line"></i> Varredura Live (Fonética)
+                    <i class="ri-radar-line"></i> Pesquisa em Tempo Real
                 </span>
-                <span class="badge" style="background:#ef4444; color:white; font-size: 0.6rem;">LIVE</span>
             </a>
 
             {% if current_user.role == 'admin' %}
             <a href="{{ url_for('purification_page') }}" class="nav-link {% if request.endpoint == 'purification_page' %}active{% endif %}" style="color: #f472b6;">
                 <span class="link-content">
-                    <i class="ri-shield-check-line"></i> Auditoria de Risco
+                    <i class="ri-shield-check-line"></i> Análise de Riscos (KPI)
                 </span>
             </a>
             {% endif %}
 
+            {% if FeatureToggle.is_enabled(current_user.id, 'visual_ocr') %}
             <a href="{{ url_for('visual_check_page') }}" class="nav-link {% if request.endpoint == 'visual_check_page' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-eye-2-line"></i> Análise Visual / OCR
                 </span>
-                <span class="badge" style="background:#8b5cf6; color:white; font-size: 0.6rem;">IA</span>
             </a>
+            {% endif %}
         </div>
 
         <!-- GRUPO 3: GESTÃO OPERACIONAL -->
@@ -915,30 +926,46 @@
                 </span>
             </a>
 
+            {% if FeatureToggle.is_enabled(current_user.id, 'ai_wizard') %}
             <a href="/wizard" class="nav-link" style="color: #38bdf8;">
                 <span class="link-content">
                     <i class="ri-magic-line"></i> Registro Turbo (PME)
                 </span>
             </a>
+            {% endif %}
         </div>
 
         <!-- GRUPO 4: INTELIGÊNCIA & BIG DATA -->
         <div class="nav-section highlight-inteligencia">
             <div class="nav-header" style="color: #8b5cf6; font-weight: 800; text-transform: uppercase;">Inteligência & Big Data</div>
 
+            {% if FeatureToggle.is_enabled(current_user.id, 'ai_insights') %}
             <a href="{{ url_for('analysis_page') }}" class="nav-link {% if request.endpoint == 'analysis_page' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-bubble-chart-line"></i> Insights de IA
                 </span>
             </a>
+            {% endif %}
 
             {% if current_user.role == 'admin' %}
             <a href="{{ url_for('ipi_data') }}" class="nav-link {% if request.endpoint == 'ipi_data' %}active{% endif %}" style="color: #a78bfa;">
                 <span class="link-content">
-                    <i class="ri-database-2-line"></i> Base Oficial BPI
+                    <i class="ri-database-2-line"></i> Pesquisa Nacional BPI (Arquivo)
                 </span>
             </a>
+            <a href="{{ url_for('admin_users') }}" class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}" style="color: #60a5fa;">
+                <span class="link-content">
+                    <i class="ri-user-settings-line"></i> Gestão de Utilizadores
+                </span>
+            </a>
+            <a href="{{ url_for('admin_finance') }}" class="nav-link {% if request.endpoint == 'admin_finance' %}active{% endif %}" style="color: #10b981;">
+                <span class="link-content">
+                    <i class="ri-money-dollar-box-line"></i> Gestão Financeira
+                </span>
+            </a>
+            {% endif %}
 
+            {% if current_user.role == 'admin' and FeatureToggle.is_enabled(current_user.id, 'leads_prospecting') %}
             <a href="/admin/bpi/requerentes" class="nav-link" style="color: #fbbf24;">
                 <span class="link-content">
                     <i class="ri-user-search-line"></i> Prospecção de Leads
@@ -946,11 +973,13 @@
             </a>
             {% endif %}
 
+            {% if FeatureToggle.is_enabled(current_user.id, 'bi_reports') %}
             <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-pie-chart-2-line"></i> Relatórios & BI
                 </span>
             </a>
+            {% endif %}
         </div>
 
         <!-- GRUPO 5: REDE & CONFIGURAÇÕES -->
@@ -958,11 +987,13 @@
             <div class="nav-header">Rede & Configurações</div>
 
             {% if current_user.role == 'admin' %}
+            {% if FeatureToggle.is_enabled(current_user.id, 'agents_module') %}
             <a href="{{ url_for('agents_list') }}" class="nav-link {% if request.endpoint == 'agents_list' %}active{% endif %}">
                 <span class="link-content">
-                    <i class="ri-briefcase-4-line"></i> Agentes de PI
+                    <i class="ri-briefcase-4-line"></i> Gestão de Agentes (Extra)
                 </span>
             </a>
+            {% endif %}
             <a href="{{ url_for('import_csv_page') }}" class="nav-link {% if request.endpoint == 'import_csv_page' %}active{% endif %}">
                  <span class="link-content">
                      <i class="ri-upload-cloud-2-line"></i> Bulk Import (CSV)
@@ -970,7 +1001,7 @@
             </a>
             {% endif %}
 
-            {% if current_user.role == 'agent' %}
+            {% if current_user.role == 'agent' and FeatureToggle.is_enabled(current_user.id, 'agents_module') %}
             <a href="{{ url_for('agent_requests') }}" class="nav-link {% if request.endpoint == 'agent_requests' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-user-received-fill"></i> Pedidos pendentes
@@ -978,7 +1009,7 @@
             </a>
             {% endif %}
 
-            {% if current_user.role == 'client' %}
+            {% if current_user.role == 'client' and FeatureToggle.is_enabled(current_user.id, 'agents_module') %}
             <a href="{{ url_for('find_agents') }}" class="nav-link {% if request.endpoint == 'find_agents' %}active{% endif %}">
                 <span class="link-content">
                     <i class="ri-user-search-line"></i> Contratar Agente
@@ -1079,7 +1110,7 @@
                 <a href="/scan-live" class="sub-link" style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:8px; border:none; margin-bottom:4px;">
                     <i class="ri-radar-line" style="font-size:1.2rem; color:#ef4444;"></i>
                     <div>
-                        <div style="color:var(--text-vibrant); font-weight:600;">Varredura Live</div>
+                        <div style="color:var(--text-vibrant); font-weight:600;">Pesquisa em Tempo Real</div>
                         <div style="font-size:0.8rem; color:var(--text-dim);">Analisar conflitos em tempo real</div>
                     </div>
                 </a>
@@ -1123,6 +1154,7 @@
                 <div class="hub-btn" title="Comandos" onclick="openCmdPalette()">
                     <i class="ri-command-line"></i>
                 </div>
+                {% if FeatureToggle.is_enabled(current_user.id, 'notification_engine') %}
                 <div class="hub-btn" title="Notificações" id="notif-trigger" onclick="toggleNotifs()">
                     <i class="ri-notification-3-line"></i>
                     <span id="notif-badge" class="notify-dot" style="display: none;"></span>
@@ -1140,6 +1172,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 <a href="{{ url_for('support') }}" class="hub-btn" title="Suporte e Assistência" style="color: inherit; text-decoration: none;">
                     <i class="ri-message-3-line"></i>
                 </a>
@@ -1297,6 +1330,8 @@
             const list = document.getElementById('notif-list');
             const badge = document.getElementById('notif-badge');
             
+            if (!list || !badge) return;
+
             if (!alerts || alerts.length === 0) {
                 list.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: 0.9rem;">Nenhum alerta pendente no momento.</div>';
                 badge.style.display = 'none';
@@ -1356,6 +1391,7 @@
         document.head.appendChild(style);
     </script>
     
+    {% if FeatureToggle.is_enabled(current_user.id, 'm24_intelligence_suite') %}
     <!-- STRATEGIC FLOATING HUB -->
     <div id="strategicHub" class="strategic-hub">
         <button class="hub-toggle" onclick="toggleStrategicMenu()" title="Strategic Intelligence Hub">
@@ -1414,6 +1450,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <style>
         .strategic-hub {
@@ -1554,14 +1591,98 @@
         // Close when clicking outside
         document.addEventListener('click', (e) => {
             const hub = document.getElementById('strategicHub');
-            if (!hub.contains(e.target)) {
-                document.getElementById('strategicMenu').classList.remove('active');
+            const menu = document.getElementById('strategicMenu');
+            if (hub && !hub.contains(e.target)) {
+                if (menu) menu.classList.remove('active');
             }
         });
     </script>
 
     <!-- Bootstrap 5 JS (Critical for Components) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Modal de Funcionalidades Extra (Upselling) -->
+    <div class="modal fade" id="extraFeaturesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-2xl);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle);">
+                    <h5 class="modal-title" style="color: white; font-weight: 800;">Descubra o m24 Pro</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: var(--text-dim); font-size: 0.9rem;">Estas são as funcionalidades extra que não estão ativas na sua licença atual:</p>
+                    <div id="inactive-features-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-height: 350px; overflow-y: auto; padding-right: 10px; margin-top: 1rem;">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-subtle);">
+                    <button type="button" class="btn-m24 btn-m24-ghost" data-bs-dismiss="modal">Lembrar mais tarde</button>
+                    <a href="/pricing" class="btn-m24 btn-m24-primary">Fazer Upgrade</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @media (max-width: 768px) {
+            #inactive-features-list {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        /* Estilizar scrollbar do modal */
+        #inactive-features-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        #inactive-features-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
+        #inactive-features-list::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 10px;
+        }
+        #inactive-features-list::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+    </style>
+
+    <script>
+        // Carregar funcionalidades inativas e mostrar o popup
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/user/inactive-features');
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.features.length > 0) {
+                    const list = document.getElementById('inactive-features-list');
+                    list.innerHTML = '';
+                    
+                    data.features.forEach(f => {
+                        const item = document.createElement('div');
+                        item.className = 'p-3 rounded-3';
+                        item.style.background = 'rgba(255,255,255,0.02)';
+                        item.style.border = '1px solid var(--border-subtle)';
+                        item.innerHTML = `
+                            <div style="font-weight: 700; color: var(--text-vibrant);">${f.name}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">${f.desc}</div>
+                        `;
+                        list.appendChild(item);
+                    });
+                    
+                    // Mostrar o modal
+                    const myModal = new bootstrap.Modal(document.getElementById('extraFeaturesModal'));
+                    myModal.show();
+                    
+                    // Registar que viu hoje ao fechar
+                    document.getElementById('extraFeaturesModal').addEventListener('hidden.bs.modal', () => {
+                        fetch('/api/user/dismiss-popup', { method: 'POST' });
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar features inativas:', error);
+            }
+        });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

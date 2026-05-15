@@ -235,7 +235,7 @@
                     {{ (brand.status or 'N/A')|upper|replace('_', ' ') }}
                 </span>
             </div>
-            <p style="font-size: 1.4rem; color: var(--text-standard); margin-bottom: 2.5rem; font-weight: 300;">{{ brand.slogan or 'Identidade visual em monitoramento estratégico.' }}</p>
+            <p style="font-size: 1.4rem; color: var(--text-standard); margin-bottom: 2.5rem; font-weight: 300;">Identidade visual em monitoramento estratégico.</p>
             
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;" class="stats-grid-mobile">
                 <div class="analysis-bubble" style="padding: 1.5rem;">
@@ -254,16 +254,16 @@
         </div>
     </div>
     
-    <!-- ADMIN DECISION HUB (Centro de Decisão) -->
-    {% if current_user.role == 'admin' %}
+    <!-- ADMIN AUDIT HUB (Centro de Integridade de Dados) -->
+    {% if current_user.role == 'admin' and brand.status in ['under_study', 'waiting_admin'] %}
     <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid var(--brand-primary); padding: 1.5rem; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; animation: revealUp 0.5s ease;">
         <div>
-            <div style="font-weight: 800; color: var(--brand-primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Centro de Decisão m24</div>
-            <div style="color: white; font-size: 0.95rem; margin-top: 4px;">Este processo aguarda validação humana após diagnóstico IA.</div>
+            <div style="font-weight: 800; color: var(--brand-primary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Auditoria de Sincronização BPI</div>
+            <div style="color: white; font-size: 0.95rem; margin-top: 4px;">Confirme se os dados digitados conferem com o Boletim (BPI) original.</div>
         </div>
         <div style="display: flex; gap: 15px;">
-            <a href="{{ url_for('update_brand_status', brand_id=brand.id, action='reject') }}" class="btn-m24" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); text-decoration: none; padding: 10px 25px;">Reprovar</a>
-            <a href="{{ url_for('update_brand_status', brand_id=brand.id, action='approve') }}" class="btn-m24 btn-m24-primary" style="text-decoration: none; padding: 10px 25px;">Aprovar e Validar</a>
+            <a href="{{ url_for('update_brand_status', brand_id=brand.id, action='reject') }}" class="btn-m24" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); text-decoration: none; padding: 10px 25px;">Dados Inconsistentes</a>
+            <a href="{{ url_for('update_brand_status', brand_id=brand.id, action='approve') }}" class="btn-m24 btn-m24-primary" style="text-decoration: none; padding: 10px 25px;">Auditoria Concluída</a>
         </div>
     </div>
     {% endif %}
@@ -336,7 +336,7 @@
                         <span>{{ entity.name }}</span>
                     </div>
                     <div class="data-item">
-                        <label>NUIT / Tax ID</label>
+                        <label>NUIT</label>
                         <span class="nuit-badge">{{ entity.nuit or 'N/A' }}</span>
                     </div>
                 </div>

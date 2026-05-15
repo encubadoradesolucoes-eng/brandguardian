@@ -184,6 +184,14 @@
     </div>
 
     <form action="{{ url_for('register') }}" method="POST" enctype="multipart/form-data" id="registerForm">
+        <!-- BPI Compliance Alert -->
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); padding: 1.5rem; border-radius: 16px; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 15px;">
+            <i class="ri-information-line" style="font-size: 1.5rem; color: var(--brand-primary);"></i>
+            <div style="font-size: 0.9rem; color: var(--text-vibrant); line-height: 1.5;">
+                <strong>Conformidade BPI:</strong> Todos os dados inseridos neste sistema devem ser baseados rigorosamente nas publicações oficiais do <strong>Boletim de Propriedade Industrial (BPI)</strong> para garantir a validade jurídica e auditoria do processo.
+            </div>
+        </div>
+
         <!-- Step 1: Identidade -->
         <div class="form-section active" id="step1">
             <div class="bento-card">
@@ -212,6 +220,14 @@
                         </select>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Selecione 'Novo Registro' se a marca ainda não possui registro legal no IPI.</p>
                     </div>
+                    <div class="form-group">
+                        <label class="label-m24">Estado Legal (Opcional BPI)</label>
+                        <select name="official_status" class="input-m24">
+                            <option value="">-- Automático --</option>
+                            {% for status in BrandStatus.all() %}
+                            <option value="{{ status }}">{{ status|replace('_', ' ') }}</option>
+                            {% endfor %}
+                        </select>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Forçar um estado oficial do Boletim Industrial (BPI).</p>
                     </div>
                 </div>
@@ -221,7 +237,7 @@
                     <textarea name="product_description" class="input-m24" rows="3" placeholder="Liste os produtos ou serviços que esta marca irá proteger..."></textarea>
                 </div>
 
-                <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                <div style="margin-top: 2rem;">
                     <div class="form-group">
                         <label class="label-m24">Agente Responsável (Consultoria)</label>
                         <select name="agent_id" class="input-m24" style="border-color: var(--brand-primary);">
@@ -231,10 +247,6 @@
                             {% endfor %}
                         </select>
                         <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 8px;">* O agente selecionado será responsável por gerir este ativo profissionalmente.</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="label-m24">Slogan Estratégico</label>
-                        <input type="text" name="slogan" class="input-m24" placeholder="A frase que define o seu valor">
                     </div>
                 </div>
             </div>
@@ -488,7 +500,7 @@
                         <input type="text" name="owner_name" id="owner_name" class="input-m24" placeholder="Ex: Global Tech, SA" required {% if current_user.role != 'admin' %}value="{{ current_user.name }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
                     </div>
                     <div class="form-group">
-                        <label class="label-m24">NUIT / TAX ID</label>
+                        <label class="label-m24">NUIT</label>
                         <input type="text" name="nuit" id="nuit" class="input-m24" placeholder="Identificador Fiscal" required {% if current_user.role != 'admin' %}value="{{ entity.nuit if entity else '' }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
                     </div>
                     
@@ -501,14 +513,6 @@
                         <input type="text" name="owner_phone" id="owner_phone" class="input-m24" placeholder="+258 ..." {% if current_user.role != 'admin' %}value="{{ entity.phone if entity else '' }}" readonly style="background:var(--bg-base); color:var(--text-dim);"{% endif %}>
                     </div>
 
-                    <div class="form-group">
-                        <label class="label-m24">Cidade</label>
-                        <input type="text" name="owner_city" id="owner_city" class="input-m24" placeholder="Maputo">
-                    </div>
-                    <div class="form-group">
-                        <label class="label-m24">País</label>
-                        <input type="text" name="owner_country" id="owner_country" class="input-m24" value="Moçambique">
-                    </div>
 
                     <div class="form-group" style="grid-column: span 2;">
                         <label class="label-m24">Endereço Físico</label>
@@ -681,46 +685,38 @@
     // AUTO-DETECÇÃO DE ENTIDADE POR NUIT/EMAIL
     async function autoCheckEntity(field, type) {
         const val = field.value;
-        const select = document.getElementById('entitySelect');
-        
-        // Só verifica se estiver em modo "Novo"
-        if (select.value !== 'new' || !val || val.length < 3) return;
+        if (!val || val.length < 3) return;
 
         try {
-            const res = await fetch(`/api/check-entity-exists?${type}=${val}`);
-            const data = await res.json();
+            // Se for NUIT, usamos a nova API direta
+            let url = (type === 'nuit') ? `/api/entity/search/${val}` : `/api/check-entity-exists?email=${val}`;
+            const res = await fetch(url);
             
-            if (data) {
-                // Encontrou! Selecionar no dropdown e preencher
+            if (res.ok) {
+                const result = await res.json();
+                const data = result.data || result; // Suporta os dois formatos de retorno
                 
-                // Tenta achar a option correspondente
-                let optionFound = false;
-                for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value == data.id) {
-                        select.selectedIndex = i;
-                        optionFound = true;
-                        break;
-                    }
-                }
-                
-                if (optionFound) {
+                if (data && data.name) {
+                    // Preencher campos
+                    document.getElementById('owner_name').value = data.name;
+                    document.getElementById('owner_email').value = data.email || '';
+                    document.getElementById('owner_phone').value = data.phone || '';
+                    document.getElementById('owner_address').value = data.address || '';
+                    
                     // Feedback visual
                     const feedback = document.createElement('div');
-                    feedback.textContent = `⚡ Entidade '${data.name}' encontrada! Carregando dados...`;
+                    feedback.textContent = `⚡ Dados de '${data.name}' carregados via NUIT!`;
                     feedback.style.color = 'var(--success)';
                     feedback.style.fontSize = '0.8rem';
                     feedback.style.marginTop = '5px';
                     feedback.style.fontWeight = 'bold';
                     field.parentNode.appendChild(feedback);
                     
-                    setTimeout(() => {
-                        feedback.remove();
-                        toggleEntityFields(); // Dispara o preenchimento e lock
-                    }, 1500);
+                    setTimeout(() => feedback.remove(), 3000);
                 }
             }
         } catch (e) {
-            console.error("Erro check entity:", e);
+            console.log("Check entity failed:", e);
         }
     }
 

@@ -88,6 +88,8 @@
     .status-pill.success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
     .status-pill.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
     .status-pill.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .status-pill.critical { background: #ef4444; color: white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+    .status-pill.alert-red { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
 
     .risk-meter {
         width: 120px;
@@ -426,11 +428,11 @@
                             <span class="status-pill success">
                                 <i class="ri-checkbox-circle-line"></i> Aprovado
                             </span>
-                        {% elif brand.status == 'monitored' %}
+{% elif brand.status == 'monitored' %}
                             <span class="status-pill" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
                                 <i class="ri-eye-line"></i> Vigiando (IPI)
                             </span>
-                        {% elif brand.status.startswith('STATUS_') %}
+                        {% elif brand.status.startswith('STATUS_') or brand.status in ['DEPOSITADA', 'PUBLICADA', 'CONCEDIDA', 'CADUCADA'] %}
                             <span class="status-pill" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
                                 <i class="ri-shield-check-line"></i> {{ brand.status }}
                             </span>
@@ -438,6 +440,26 @@
                              <span class="status-pill danger">
                                 <i class="ri-close-circle-line"></i> Reprovado
                             </span>
+                        {% endif %}
+
+                        <!-- MOTOR DE ALERTAS (ETAPA 6) -->
+                        {% set alert = brand.get_alert_status() %}
+                        {% if alert.priority != 'GREEN' %}
+                        <div style="margin-top: 8px;">
+                            {% if alert.priority == 'CRITICAL' %}
+                                <span class="status-pill critical">
+                                    <i class="ri-alarm-warning-line"></i> {{ alert.label }}
+                                </span>
+                            {% elif alert.priority == 'RED' %}
+                                <span class="status-pill alert-red">
+                                    <i class="ri-error-warning-line"></i> {{ alert.label }}
+                                </span>
+                            {% elif alert.priority == 'YELLOW' %}
+                                <span class="status-pill warning">
+                                    <i class="ri-time-line"></i> {{ alert.label }}
+                                </span>
+                            {% endif %}
+                        </div>
                         {% endif %}
                     </td>
                     <td>

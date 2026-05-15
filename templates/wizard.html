@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{% block title %}Wizard de Registro TurboTax | m24 Guardian{% endblock %}
+{% block title %}Wizard de Registro Profissional | m24 Guardian{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -110,7 +110,7 @@
 {% block content %}
 <div class="animate-reveal">
     <div style="text-align: center; margin-bottom: 3rem;">
-        <h1 class="hero-title" style="font-size: 2.5rem;">Registro TurboTax <span style="color: var(--brand-primary);">PME</span></h1>
+        <h1 class="hero-title" style="font-size: 2.5rem;">Registro Profissional <span style="color: var(--brand-primary);">PME</span></h1>
         <p class="hero-desc">O caminho mais rápido e inteligente para proteger sua marca em Moçambique.</p>
     </div>
 
@@ -127,7 +127,7 @@
         <form id="wizardForm" method="POST" enctype="multipart/form-data">
             <!-- Passo 1: A Marca -->
             <div class="wizard-step active" id="step-1">
-                <h3 style="margin-bottom: 1.5rem; color: white;">1. Que marca deseja proteger?</h3>
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-vibrant);">1. Que marca deseja proteger?</h3>
                 <div style="margin-bottom: 2rem;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 700;">Nome da Marca</label>
                     <input type="text" name="name" class="global-search" style="width: 100%;" placeholder="Ex: Pastelaria Delícia" required>
@@ -149,13 +149,13 @@
 
             <!-- Passo 2: O que você faz? (Auto-Classification) -->
             <div class="wizard-step" id="step-2">
-                <h3 style="margin-bottom: 1.5rem; color: white;">2. O que a sua empresa faz?</h3>
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-vibrant);">2. O que a sua empresa faz?</h3>
                 <p style="margin-bottom: 2rem; color: var(--text-dim);">Descreva seus produtos ou serviços. Nossa IA irá sugerir as classes de Nice ideais.</p>
                 
                 <textarea id="businessDescription" class="global-search" style="width: 100%; height: 120px; padding: 1rem; border-radius: 16px;" placeholder="Ex: Fazemos bolos por encomenda, pães artesanais e temos uma cafeteria no local."></textarea>
                 
                 <button type="button" onclick="autoClassify()" class="btn-m24 btn-m24-ghost" style="margin-top: 1rem; width: 100%; justify-content: center;" id="btnClassify">
-                    <i class="ri-magic-line"></i> Analisar com IA TurboTax
+                    <i class="ri-magic-line"></i> Analisar com IA Profissional
                 </button>
 
                 <div id="classificationResults" style="margin-top: 2rem;">
@@ -172,7 +172,7 @@
 
             <!-- Passo 3: Dados do Titular -->
             <div class="wizard-step" id="step-3">
-                <h3 style="margin-bottom: 1.5rem; color: white;">3. Quem é o proprietário?</h3>
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-vibrant);">3. Quem é o proprietário?</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <label style="display: block; margin-bottom: 8px; font-weight: 700;">Nome Completo / Razão Social</label>
@@ -196,7 +196,7 @@
 
             <!-- Passo 4: Representação -->
             <div class="wizard-step" id="step-4">
-                <h3 style="margin-bottom: 1.5rem; color: white;">4. Quem irá representá-lo?</h3>
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-vibrant);">4. Quem irá representá-lo?</h3>
                 <p style="color: var(--text-dim); margin-bottom: 2rem;">Escolha como deseja submeter seu pedido ao INPI.</p>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -248,7 +248,7 @@
 
             <!-- Passo 5: Pagamento e Documentação -->
             <div class="wizard-step" id="step-5">
-                <h3 style="margin-bottom: 1.5rem; color: white;">5. Quase pronto!</h3>
+                <h3 style="margin-bottom: 1.5rem; color: var(--text-vibrant);">5. Quase pronto!</h3>
                 <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--success); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -262,7 +262,7 @@
                 <div class="q-card selected">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-weight: 800; font-size: 1.1rem; color: white;">Taxa de Submissão TurboTax</div>
+                            <div style="font-weight: 800; font-size: 1.1rem; color: white;">Taxa de Submissão Profissional</div>
                             <div style="font-size: 0.85rem;">Inclui geração de DAR, formulários preenchidos e guia de submissão.</div>
                         </div>
                         <div style="font-size: 1.5rem; font-weight: 900; color: var(--brand-primary);">1.500 MT</div>
@@ -355,7 +355,7 @@
         } catch (e) {
             showToast("Erro ao classificar. Tente novamente.", "danger");
         } finally {
-            btn.innerHTML = '<i class="ri-magic-line"></i> Analisar com IA TurboTax';
+            btn.innerHTML = '<i class="ri-magic-line"></i> Analisar com IA Profissional';
             btn.disabled = false;
         }
     }
