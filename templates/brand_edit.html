@@ -98,18 +98,34 @@
                 </div>
             </div>
 
-            <label class="label-m24">Slogan</label>
             <input type="text" name="slogan" class="input-m24" value="{{ brand.slogan or '' }}">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <div>
+                    <label class="label-m24">Tipo de Marca</label>
+                    <select name="brand_type" class="input-m24">
+                        <option value="">-- Selecione --</option>
+                        {% for type in BrandType.all() %}
+                        <option value="{{ type }}" {% if brand.brand_type == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="label-m24">Profissão do Requerente</label>
+                    <input type="text" name="profession" class="input-m24" value="{{ brand.profession or '' }}" placeholder="Ex: Comerciante, Advogado...">
+                </div>
+            </div>
+
+            <label class="label-m24">Descrição de Produtos/Serviços</label>
+            <textarea name="product_description" class="input-m24" rows="4" placeholder="Descreva detalhadamente os produtos ou serviços associados à marca...">{{ brand.product_description or '' }}</textarea>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div>
-                    <label class="label-m24">Status</label>
+                    <label class="label-m24">Status do Processo</label>
                     <select name="status" class="input-m24" {% if current_user.role != 'admin' %}disabled{% endif %}>
-                        <option value="under_study" {% if brand.status == 'under_study' %}selected{% endif %}>Sob Estudo</option>
-                        <option value="waiting_admin" {% if brand.status == 'waiting_admin' %}selected{% endif %}>Aguardando Gestor</option>
-                        <option value="approved" {% if brand.status == 'approved' %}selected{% endif %}>Aprovado</option>
-                        <option value="rejected" {% if brand.status == 'rejected' %}selected{% endif %}>Reprovado</option>
-                        <option value="monitored" {% if brand.status == 'monitored' %}selected{% endif %}>Vigiando</option>
+                        {% for s in BrandStatus.all() %}
+                        <option value="{{ s }}" {% if brand.status == s %}selected{% endif %}>{{ s|replace('_', ' ') }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div>

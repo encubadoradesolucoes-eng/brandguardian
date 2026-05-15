@@ -283,6 +283,10 @@
                         <label>Categoria do Titular</label>
                         <span>{{ brand.category or 'Empresa' }}</span>
                     </div>
+                    <div class="data-item">
+                        <label>Tipo de Marca</label>
+                        <span>{{ brand.brand_type or 'N/A' }}</span>
+                    </div>
                 </div>
                 <div class="data-row">
                     <div class="data-item">
@@ -314,6 +318,12 @@
                         <span>{{ brand.total_processes or '1' }}</span>
                     </div>
                 </div>
+                <div class="data-row" style="grid-template-columns: 1fr;">
+                    <div class="data-item">
+                        <label>Descrição de Produtos/Serviços</label>
+                        <p style="font-size: 0.9rem; color: var(--text-standard); margin-top: 5px; line-height: 1.5; white-space: pre-wrap;">{{ brand.product_description or 'Descrição não fornecida.' }}</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Dados da Entidade -->
@@ -328,6 +338,12 @@
                     <div class="data-item">
                         <label>NUIT / Tax ID</label>
                         <span class="nuit-badge">{{ entity.nuit or 'N/A' }}</span>
+                    </div>
+                </div>
+                <div class="data-row">
+                    <div class="data-item">
+                        <label>Profissão</label>
+                        <span>{{ brand.profession or 'N/A' }}</span>
                     </div>
                 </div>
                 <div class="data-row">

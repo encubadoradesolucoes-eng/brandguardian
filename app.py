@@ -25,6 +25,7 @@ from modules.real_scanner import (
     verificacao_imagem_real
 )
 from modules.report_generator import BrandReportGenerator
+from modules.constants import BrandStatus, BrandType
 
 # Suporte para Executável (PyInstaller)
 def get_resource_path(relative_path):
@@ -77,7 +78,9 @@ def migrate_db_hotfix():
             ("definite_expiry_date", "VARCHAR(50)"), ("nationality", "VARCHAR(100)"),
             ("full_address", "TEXT"), ("total_processes", "INTEGER"),
             ("suffix", "VARCHAR(50)"), ("category", "VARCHAR(100)"),
-            ("detected_year", "VARCHAR(10)"), ("page", "INTEGER")
+            ("detected_year", "VARCHAR(10)"), ("page", "INTEGER"),
+            ("profession", "VARCHAR(150)"), ("brand_type", "VARCHAR(50)"),
+            ("product_description", "TEXT")
         ]
         for col_name, col_type in cols:
             try:
@@ -439,8 +442,8 @@ class Brand(db.Model):
     nice_classes = db.Column(db.String(200))  
     country = db.Column(db.String(100), default='Moçambique')
     
-    # Status do Processo: under_study, waiting_admin, approved, rejected, monitored
-    status = db.Column(db.String(50), default='under_study')  
+    # Status do Processo: DEPOSITADA, PUBLICADA, etc.
+    status = db.Column(db.String(50), default=BrandStatus.DEPOSITADA)  
     
     logo_path = db.Column(db.Text)
     colors = db.Column(db.Text)  
@@ -496,6 +499,11 @@ class Brand(db.Model):
     category = db.Column(db.String(100))
     detected_year = db.Column(db.String(10))
     page = db.Column(db.Integer)
+    
+    # --- NOVOS CAMPOS TR M24 ---
+    profession = db.Column(db.String(150))
+    brand_type = db.Column(db.String(50)) # Nominativa, Figurativa, Mista
+    product_description = db.Column(db.Text) # (511) Produtos/Serviços
 
     def generate_process_number(self):
         # DOCSTRING_REMOVED Gera um número de processo único no formato M24-YYYY-XXX.# DOCSTRING_REMOVED 
@@ -542,7 +550,7 @@ class BpiApplicant(db.Model):
     country = db.Column(db.String(100))
     detected_year = db.Column(db.String(10))
     page = db.Column(db.Integer)          # Página do Boletim
-    status = db.Column(db.String(50), default='new') # STATUS_01 to STATUS_09
+    status = db.Column(db.String(50), default=BrandStatus.DEPOSITADA) # DEPOSITADA to OPOSICAO
     
     # Novos Campos para STATUS_09 / Detalhamento BPI
     brand_name = db.Column(db.String(200))
@@ -569,6 +577,11 @@ class BpiApplicant(db.Model):
     nationality = db.Column(db.String(100))        # Nacionalidade
     full_address = db.Column(db.Text)              # Endereço Completo
     total_processes = db.Column(db.Integer)        # Total de Processos
+    
+    # --- NOVOS CAMPOS TR M24 ---
+    profession = db.Column(db.String(150))
+    brand_type = db.Column(db.String(50))
+    product_description = db.Column(db.Text)
 
     def __repr__(self):
         return f"<BpiApplicant {self.name} - {self.status}>"
@@ -793,7 +806,7 @@ def utility_processor():
     def get_user_by_email(email):
         if not email: return None
         return User.query.filter_by(email=email).first()
-    return dict(get_user_by_email=get_user_by_email)
+    return dict(get_user_by_email=get_user_by_email, BrandStatus=BrandStatus, BrandType=BrandType)
 
 
 # ========== FUNÇÕES AUXILIARES ==========
@@ -1256,7 +1269,11 @@ def register():
             suffix=request.form.get('suffix'),
             category=request.form.get('category'),
             detected_year=request.form.get('detected_year'),
-            page=request.form.get('page')
+            page=request.form.get('page'),
+            # Novos campos TR M24
+            profession=request.form.get('profession'),
+            brand_type=request.form.get('brand_type'),
+            product_description=request.form.get('product_description')
         )
         
         # Gerar número de processo para novos pedidos
@@ -1583,6 +1600,11 @@ def edit_brand(brand_id):
         brand.country = request.form.get('country')
         brand.nice_classes = request.form.get('nice_classes')
         
+        # Novos campos TR M24
+        brand.profession = request.form.get('profession')
+        brand.brand_type = request.form.get('brand_type')
+        brand.product_description = request.form.get('product_description')
+        
         # Apenas admin altera status diretamente aqui
         if current_user.role == 'admin':
             new_status = request.form.get('status', brand.status)
@@ -1735,16 +1757,19 @@ def dashboard():
         
         recent = Brand.query.order_by(Brand.submission_date.desc()).limit(8).all()
         
-        # Alertas e Documentos (Admin vê tudo ou apenas os globais - ajustável)
+        # Alertas e Documentos
         alerts = Alert.query.order_by(Alert.created_at.desc()).limit(10).all()
         documents = BrandDocument.query.order_by(BrandDocument.uploaded_at.desc()).limit(5).all()
+        # Eventos Processuais Recentes (BrandLog)
+        events = BrandLog.query.order_by(BrandLog.event_date.desc()).limit(10).all()
         
         return render_template('dashboard.html', 
                                stats=stats, 
                                recent=recent, 
                                recommendations=recommendations,
                                alerts=alerts,
-                               documents=documents)
+                               documents=documents,
+                               events=events)
     
     else:
         # CLIENTE: Vê apenas suas estatísticas
@@ -1765,12 +1790,15 @@ def dashboard():
         alerts = Alert.query.filter_by(user_id=current_user.id).order_by(Alert.created_at.desc()).limit(10).all()
         my_brand_ids = [b.id for b in my_brands.all()]
         documents = BrandDocument.query.filter(BrandDocument.brand_id.in_(my_brand_ids)).order_by(BrandDocument.uploaded_at.desc()).all()
+        # Eventos do Cliente
+        events = BrandLog.query.filter(BrandLog.brand_id.in_(my_brand_ids)).order_by(BrandLog.event_date.desc()).limit(10).all()
         
         return render_template('dashboard.html', 
                                stats=stats, 
                                recent=recent, 
                                alerts=alerts,
-                               documents=documents)
+                               documents=documents,
+                               events=events)
 
 @app.route('/client-dashboard')
 @login_required

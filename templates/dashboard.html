@@ -431,6 +431,36 @@ function runGlobalScan(btn) {
             </div>
         </div>
 
+        <!-- TIMELINE DE EVENTOS PROCESSUAIS (NEW TR MODULE) -->
+        <div class="activity-card" style="border-color: rgba(99, 102, 241, 0.2); background: linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, transparent 100%);">
+            <div class="card-header">
+                <h2 class="card-title"><i class="ri-history-line"></i> Linha do Tempo Processual</h2>
+                <span class="badge badge-soft-success">Sincronizado BPI</span>
+            </div>
+            
+            <div style="padding-left: 10px;">
+                {% if events %}
+                    {% for event in events %}
+                    <div style="position: relative; padding-left: 25px; padding-bottom: 1.5rem; border-left: 2px solid var(--border-subtle);">
+                        <div style="position: absolute; left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--brand-primary); border: 2px solid var(--bg-surface); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);"></div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                            <span style="font-weight: 800; color: var(--text-vibrant); font-size: 0.9rem;">{{ event.event_type }}</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim); font-weight: 700;">{{ event.event_date.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-standard); margin-bottom: 3px;">
+                            Marca: <a href="{{ url_for('brand_detail', brand_id=event.brand_id) }}" style="color: var(--brand-accent); text-decoration: none; font-weight: 700;">{{ event.brand.name }}</a>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">{{ event.description }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 2rem 0;">
+                        <p style="color: var(--text-dim); font-size: 0.85rem;">Nenhum evento registrado no histórico global.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="activity-card">
             <div class="card-header">
                 <h2 class="card-title">Atividade Recente</h2>

@@ -194,13 +194,11 @@
                         <input type="text" name="name" class="input-m24" placeholder="Ex: m24 Intelligence" required>
                     </div>
                     <div class="form-group">
-                        <label class="label-m24">Tipo de Ativo</label>
-                        <select name="type" class="input-m24">
-                            <option value="marca">Marca (Logotipo)</option>
-                            <option value="patente">Patente de Invenção</option>
-                            <option value="utilidade">Modelo de Utilidade</option>
-                            <option value="desenho">Desenho Industrial</option>
-                            <option value="insignia">Insígnia de Estabelecimento</option>
+                        <label class="label-m24">Tipo de Marca</label>
+                        <select name="brand_type" class="input-m24">
+                            {% for type in BrandType.all() %}
+                            <option value="{{ type }}">{{ type }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>
@@ -209,27 +207,18 @@
                     <div class="form-group">
                         <label class="label-m24">Finalidade do Registro</label>
                         <select name="registration_mode" class="input-m24" style="border-color: var(--brand-primary);">
-                            <option value="NEW_REGISTRATION">🆕 Iniciar Pedido de Novo Registro (Inédito em Moçambique)</option>
+                            <option value="NEW_REGISTRATION">🆕 Iniciar Pedido de Novo Registro </option>
                             <option value="PROTECTION">🛡 Proteger Marca já Existente (Monitoramento 24h)</option>
                         </select>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Selecione 'Novo Registro' se a marca ainda não possui registro legal no IPI.</p>
                     </div>
-                    <div class="form-group">
-                        <label class="label-m24">Estado Legal (Opcional)</label>
-                        <select name="official_status" class="input-m24">
-                            <option value="">-- Automático (Baseado na Finalidade) --</option>
-                            <option value="STATUS_01">STATUS_01 - PUBLICADO</option>
-                            <option value="STATUS_02">STATUS_02 - CONCEDIDO</option>
-                            <option value="STATUS_03">STATUS_03 - RENOVADO</option>
-                            <option value="STATUS_04">STATUS_04 - RECUSA PROVISÓRIA</option>
-                            <option value="STATUS_05">STATUS_05 - RENUNCIADO</option>
-                            <option value="STATUS_06">STATUS_06 - RECUSA DEFINITIVA</option>
-                            <option value="STATUS_07">STATUS_07 - AVISO CADUCIDADE</option>
-                            <option value="STATUS_08">STATUS_08 - CADUCO DEFINITIVO</option>
-                            <option value="STATUS_09">STATUS_09 - ALTERADO</option>
-                        </select>
                         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">* Forçar um estado oficial do Boletim Industrial (BPI).</p>
                     </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <label class="label-m24">Descrição de Produtos/Serviços (Ref: 511)</label>
+                    <textarea name="product_description" class="input-m24" rows="3" placeholder="Liste os produtos ou serviços que esta marca irá proteger..."></textarea>
                 </div>
 
                 <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
@@ -400,8 +389,8 @@
                             <input type="text" name="detected_year" class="input-m24" placeholder="2024">
                         </div>
                         <div class="form-group">
-                            <label class="label-m24">Página do Boletim</label>
-                            <input type="number" name="page" class="input-m24" placeholder="0">
+                            <label class="label-m24">Profissão do Requerente</label>
+                            <input type="text" name="profession" class="input-m24" placeholder="Ex: Empresário">
                         </div>
                         <div class="form-group" style="grid-column: span 2;">
                             <label class="label-m24">Endereço Completo no BPI</label>

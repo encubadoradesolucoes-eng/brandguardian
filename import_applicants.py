@@ -2,22 +2,24 @@ import csv
 import os
 import secrets
 from app import app, db, BpiApplicant
+from modules.constants import BrandStatus
+from modules.normalizer import normalize_name, normalize_status, normalize_date
 
 def get_status_from_page(page_str):
     """Mapeamento solicitado pelo usuário baseado nas páginas do Boletim"""
     try:
         page = int(page_str)
-        if 9 <= page <= 44: return 'STATUS_01'  # PUBLICADO
-        if page == 45: return 'STATUS_02'       # CONCEDIDO
-        if 46 <= page <= 48: return 'STATUS_03' # RENOVADO
-        if page == 49: return 'STATUS_04'       # RECUSA_PROVISORIA
-        if page == 50: return 'STATUS_06'       # RECUSA_DEFINITIVA
-        if 51 <= page <= 63: return 'STATUS_07' # AVISO_CADUCIDADE
-        if 64 <= page <= 74: return 'STATUS_08' # CADUCO_DEFINITIVO
-        if 75 <= page <= 91: return 'STATUS_09' # ALTERADO
-        return 'new'
+        if 9 <= page <= 44: return BrandStatus.PUBLICADA
+        if page == 45: return BrandStatus.CONCEDIDA
+        if 46 <= page <= 48: return BrandStatus.RENOVADA
+        if page == 49: return BrandStatus.RECUSA_PROVISORIA
+        if page == 50: return BrandStatus.RECUSA_DEFINITIVA
+        if 51 <= page <= 63: return BrandStatus.CADUCADA # AVISO_CADUCIDADE -> CADUCADA
+        if 64 <= page <= 74: return BrandStatus.CADUCADA # CADUCO_DEFINITIVO -> CADUCADA
+        if 75 <= page <= 91: return BrandStatus.CORRIGIDA # ALTERADO -> CORRIGIDA
+        return BrandStatus.DEPOSITADA
     except:
-        return 'new'
+        return BrandStatus.DEPOSITADA
 
 def import_applicants():
     print("🚀 Iniciando importação de Requerentes (Leads BPI)...")
